@@ -1,0 +1,19 @@
+{
+  "id": "skwd-wall",
+  "name": "SKWD Wall",
+  "version": "0.1.0",
+  "description": "SKWD-Wall aufs Handy: Wallpaper-Picker (eigene Bilder + Wallhaven), Ansichts-Modi, Farbschema automatisch aus dem Bild, Übergänge, Live-Wallpaper (nativ). Läuft überall.",
+  "author": "Sojus",
+  "main": "main.js",
+  "type": "gui",
+  "platforms": [
+    "mobile",
+    "desktop",
+    "web"
+  ],
+  "capabilities": [
+    "folders",
+    "wallpaper",
+    "live-wallpaper"
+  ]
+}

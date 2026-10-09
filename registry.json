@@ -1,0 +1,41 @@
+{
+  "plugins": [
+    {
+      "id": "welcome",
+      "name": "Willkommen",
+      "description": "Demo-Plugin — beweist, dass der Kern Plugins lädt, Views öffnet und Commands registriert.",
+      "author": "Sojus",
+      "version": "0.1.0",
+      "type": "gui",
+      "main": "welcome/main.js"
+    },
+    {
+      "id": "theme",
+      "name": "Design",
+      "description": "Theme-Sets: Farbe, Hell/Dunkel, Wallpaper, Schrift, Dichte, Animationen. Palette aus einer Farbe oder einem Wallpaper (Material You).",
+      "author": "Sojus",
+      "version": "0.1.0",
+      "type": "theme",
+      "main": "theme/main.js"
+    },
+    {
+      "id": "skwd-wall",
+      "name": "SKWD Wall",
+      "description": "SKWD-Wall aufs Handy: Wallpaper-Picker (eigene Bilder + Wallhaven), Ansichts-Modi, Farbschema automatisch aus dem Bild, Übergänge, Live-Wallpaper (nativ). Läuft überall.",
+      "author": "Sojus",
+      "version": "0.1.0",
+      "type": "gui",
+      "platforms": [
+        "mobile",
+        "desktop",
+        "web"
+      ],
+      "capabilities": [
+        "folders",
+        "wallpaper",
+        "live-wallpaper"
+      ],
+      "main": "skwd-wall/main.js"
+    }
+  ]
+}
