@@ -20850,8 +20850,8 @@ var root_12 = from_svg(`<rect x="108" width="44" height="78" rx="6" fill="url(#s
 var root_13 = from_svg(`<g class="svelte-zd540h"><!></g>`);
 var root_14 = from_svg(`<svg viewBox="0 0 260 210" class="il svelte-zd540h"><g class="float svelte-zd540h"><rect x="90" y="20" width="80" height="170" rx="16" class="phone svelte-zd540h"></rect><clipPath id="vClip" class="svelte-zd540h"><rect x="96" y="26" width="68" height="158" rx="10" class="svelte-zd540h"></rect></clipPath><g clip-path="url(#vClip)" class="svelte-zd540h"><rect x="96" y="26" width="68" height="158" fill="url(#skwdGradSoft)" class="svelte-zd540h"></rect><!></g></g></svg>`);
 var root_15 = from_svg(`<svg viewBox="0 0 260 210" class="il svelte-zd540h"><rect x="48" y="55" width="100" height="100" rx="14" fill="url(#skwdGradSoft)" class="xf a svelte-zd540h"></rect><rect x="112" y="55" width="100" height="100" rx="14" fill="url(#skwdGrad)" class="xf b svelte-zd540h"></rect><g class="float svelte-zd540h"><path d="M126 105 h18 m-6 -6 l6 6 l-6 6" class="arrow svelte-zd540h"></path></g></svg>`);
-var root_16 = from_svg(`<rect width="9" height="9" rx="2.5" class="appdot svelte-zd540h"></rect>`);
-var root_17 = from_svg(`<svg viewBox="0 0 260 210" class="il svelte-zd540h"><g class="spin svelte-zd540h" style="transform-origin:130px 105px"><ellipse cx="130" cy="105" rx="78" ry="72" class="ring svelte-zd540h"></ellipse></g><g class="float svelte-zd540h"><rect x="101" y="23" width="58" height="164" rx="16" class="phone svelte-zd540h"></rect><clipPath id="mClip" class="svelte-zd540h"><rect x="107" y="29" width="46" height="152" rx="11" class="svelte-zd540h"></rect></clipPath><g clip-path="url(#mClip)" class="svelte-zd540h"><rect x="107" y="29" width="46" height="152" fill="url(#skwdGradSoft)" class="svelte-zd540h"></rect><path class="wave svelte-zd540h" d="M100 118 q12 -14 24 0 t24 0 t24 0 t24 0 V181 H100 Z" fill="url(#skwdGrad)" opacity="0.92"></path><path class="wave w2 svelte-zd540h" d="M100 132 q12 -12 24 0 t24 0 t24 0 t24 0 V181 H100 Z" fill="url(#skwdGrad)" opacity="0.5"></path></g><rect x="121" y="33" width="18" height="4" rx="2" class="notch svelte-zd540h"></rect><rect x="120" y="173" width="20" height="3" rx="1.5" class="notch svelte-zd540h"></rect><!></g></svg>`);
+var root_16 = from_svg(`<rect width="10" height="10" rx="2.5" class="appdot svelte-zd540h"></rect>`);
+var root_17 = from_svg(`<svg viewBox="0 0 260 210" class="il svelte-zd540h"><g class="spin svelte-zd540h" style="transform-origin:130px 105px"><ellipse cx="130" cy="105" rx="82" ry="72" class="ring svelte-zd540h"></ellipse></g><g class="float svelte-zd540h"><rect x="92" y="26" width="76" height="158" rx="17" class="phone svelte-zd540h"></rect><clipPath id="mClip" class="svelte-zd540h"><rect x="98" y="32" width="64" height="146" rx="12" class="svelte-zd540h"></rect></clipPath><g clip-path="url(#mClip)" class="svelte-zd540h"><rect x="98" y="32" width="64" height="146" fill="url(#skwdGradSoft)" class="svelte-zd540h"></rect><path class="wave svelte-zd540h" d="M94 120 q16 -15 32 0 t32 0 t32 0 V178 H94 Z" fill="url(#skwdGrad)" opacity="0.92"></path><path class="wave w2 svelte-zd540h" d="M94 134 q16 -13 32 0 t32 0 t32 0 V178 H94 Z" fill="url(#skwdGrad)" opacity="0.5"></path></g><rect x="121" y="36" width="18" height="4" rx="2" class="notch svelte-zd540h"></rect><rect x="119" y="170" width="22" height="3" rx="1.5" class="notch svelte-zd540h"></rect><!></g></svg>`);
 var root_18 = from_svg(`<svg viewBox="0 0 260 210" class="il svelte-zd540h"><g class="spin svelte-zd540h" style="transform-origin:130px 105px"><ellipse cx="130" cy="105" rx="80" ry="80" class="ring svelte-zd540h"></ellipse></g><circle cx="130" cy="105" r="46" fill="url(#skwdGrad)" class="float svelte-zd540h"></circle><path d="M110 106 l14 14 l26 -30" class="check svelte-zd540h"></path></svg>`);
 var root_19 = from_html(`<div class="art svelte-zd540h"><!></div>`);
 var root_20 = from_html(`<button> </button>`);
@@ -21196,10 +21196,10 @@ function Intro($$anchor, $$props) {
 
 					template_effect(
 						($0) => {
-							set_attribute(rect_5, 'x', 114 + k % 3 * 13);
+							set_attribute(rect_5, 'x', 110 + k % 3 * 15);
 							set_attribute(rect_5, 'y', $0);
 						},
-						[() => 46 + Math.floor(k / 3) * 13]
+						[() => 50 + Math.floor(k / 3) * 14]
 					);
 
 					append($$anchor, rect_5);
@@ -21437,6 +21437,24 @@ class PickerView extends View {
   getIcon() {
     return "image";
   }
+  /** Mount the full-screen intro/setup overlay (idempotent). */
+  showIntro() {
+    if (this.intro || !this.containerEl) return;
+    this.intro = mount(Intro, {
+      target: this.containerEl,
+      props: {
+        app: this.app,
+        manager: this.manager,
+        onDone: () => {
+          this.app.config.set("skwd-wall", "introSeen", true);
+          if (this.intro) {
+            unmount(this.intro);
+            this.intro = null;
+          }
+        }
+      }
+    });
+  }
   async onOpen() {
     this.component = mount(Picker, {
       target: this.containerEl,
@@ -21446,20 +21464,7 @@ class PickerView extends View {
       }
     });
     if (this.app.platform.isMobile && this.app.config.get("skwd-wall", "introSeen") !== true) {
-      this.intro = mount(Intro, {
-        target: this.containerEl,
-        props: {
-          app: this.app,
-          manager: this.manager,
-          onDone: () => {
-            this.app.config.set("skwd-wall", "introSeen", true);
-            if (this.intro) {
-              unmount(this.intro);
-              this.intro = null;
-            }
-          }
-        }
-      });
+      this.showIntro();
     }
   }
   async onClose() {
@@ -21477,6 +21482,14 @@ class WallpaperPlugin extends Plugin {
   manager;
   constructor(app, m) {
     super(app, m);
+  }
+  /** Reset the seen-flag and show the setup on the OPEN view (no close+reopen,
+   *  which left an empty tab). Opens the view first if it isn't open. */
+  replayIntro() {
+    this.app.config.set("skwd-wall", "introSeen", false);
+    this.app.workspace.openView(VIEW_ID);
+    const v = this.app.workspace.getView(VIEW_ID);
+    if (v instanceof PickerView) v.showIntro();
   }
   async onload() {
     this.manager = new WallpaperManager(this.app);
@@ -21498,20 +21511,14 @@ class WallpaperPlugin extends Plugin {
     this.addCommand({
       id: "show-intro",
       name: "Einführung anzeigen",
-      callback: () => {
-        this.app.config.set("skwd-wall", "introSeen", false);
-        this.app.workspace.closeView(VIEW_ID);
-        this.app.workspace.openView(VIEW_ID);
-      }
+      callback: () => this.replayIntro()
     });
     this.addCommand({
       id: "clear-data",
       name: "Daten löschen",
       callback: () => {
         void this.manager.clearAllData();
-        this.app.config.set("skwd-wall", "introSeen", false);
-        this.app.workspace.closeView(VIEW_ID);
-        this.app.workspace.openView(VIEW_ID);
+        this.replayIntro();
       }
     });
     let settingsComponent = null;
