@@ -20,6 +20,14 @@ var array_prototype = Array.prototype;
 var get_prototype_of = Object.getPrototypeOf;
 var is_extensible = Object.isExtensible;
 
+/**
+ * @param {any} thing
+ * @returns {thing is Function}
+ */
+function is_function(thing) {
+	return typeof thing === 'function';
+}
+
 const noop = () => {};
 
 /** @param {Array<() => void>} arr */
@@ -171,6 +179,7 @@ const EACH_INDEX_REACTIVE = 1 << 1;
 const EACH_IS_CONTROLLED = 1 << 2;
 const EACH_IS_ANIMATED = 1 << 3;
 const EACH_ITEM_IMMUTABLE = 1 << 4;
+const TRANSITION_GLOBAL = 1 << 2;
 
 const TEMPLATE_FRAGMENT = 1;
 const TEMPLATE_USE_IMPORT_NODE = 1 << 1;
@@ -5308,6 +5317,13 @@ class Boundary {
 /** @import { Component, ComponentType, SvelteComponent, MountOptions } from '../../index.js' */
 
 /**
+ * This is normally true — block effects should run their intro transitions —
+ * but is false during hydration (unless `options.intro` is `true`) and
+ * when creating the children of a `<svelte:element>` that just changed tag
+ */
+let should_intro = true;
+
+/**
  * @param {Element} text
  * @param {string} value
  * @returns {void}
@@ -5372,8 +5388,11 @@ function _mount(
 					// We can't spread the object or else we'd lose the state proxy stuff, if it is one
 					/** @type {any} */ (props).$$events = events;
 				}
+
+				should_intro = intro;
 				// @ts-expect-error the public typings are not what the actual function looks like
 				component = Component(anchor_node, props) || mark_as_component();
+				should_intro = true;
 
 				pop();
 			},
@@ -5743,6 +5762,33 @@ function if_block(node, fn, elseif = false) {
 			update_branch(-1, null);
 		}
 	}, flags);
+}
+
+/** @import { TemplateNode } from '#client' */
+
+const NAN = Symbol('NaN');
+
+/**
+ * @template V
+ * @param {TemplateNode} node
+ * @param {() => V} get_key
+ * @param {(anchor: Node) => TemplateNode | void} render_fn
+ * @returns {void}
+ */
+function key(node, get_key, render_fn) {
+
+	var branches = new BranchManager(node);
+
+	block(() => {
+		var key = get_key();
+
+		// NaN !== NaN, hence we do this workaround to not trigger remounts unnecessarily
+		if (key !== key) {
+			key = /** @type {any} */ (NAN);
+		}
+
+		branches.ensure(key, render_fn);
+	});
 }
 
 /** @import { EachItem, EachOutroGroup, EachState, Effect, EffectNodes, MaybeSource, TemplateNode, TransitionManager } from '#client' */
@@ -6405,6 +6451,423 @@ function snippet(node, get_snippet, ...args) {
 	}, EFFECT_TRANSPARENT);
 }
 
+/** @import { Raf } from '#client' */
+
+const now = () => performance.now() ;
+
+/** @type {Raf} */
+const raf = {
+	// don't access requestAnimationFrame eagerly outside method
+	// this allows basic testing of user code without JSDOM
+	// bunder will eval and remove ternary when the user's app is built
+	tick: /** @param {any} _ */ (_) => (requestAnimationFrame )(_),
+	now: () => now(),
+	tasks: new Set()
+};
+
+/** @import { TaskCallback, Task, TaskEntry } from '#client' */
+
+// TODO move this into timing.js where it probably belongs
+
+/**
+ * @returns {void}
+ */
+function run_tasks() {
+	// use `raf.now()` instead of the `requestAnimationFrame` callback argument, because
+	// otherwise things can get wonky https://github.com/sveltejs/svelte/pull/14541
+	const now = raf.now();
+
+	raf.tasks.forEach((task) => {
+		if (!task.c(now)) {
+			raf.tasks.delete(task);
+			task.f();
+		}
+	});
+
+	if (raf.tasks.size !== 0) {
+		raf.tick(run_tasks);
+	}
+}
+
+/**
+ * Creates a new task that runs on each raf frame
+ * until it returns a falsy value or is aborted
+ * @param {TaskCallback} callback
+ * @returns {Task}
+ */
+function loop(callback) {
+	/** @type {TaskEntry} */
+	let task;
+
+	if (raf.tasks.size === 0) {
+		raf.tick(run_tasks);
+	}
+
+	return {
+		promise: new Promise((fulfill) => {
+			raf.tasks.add((task = { c: callback, f: fulfill }));
+		}),
+		abort() {
+			raf.tasks.delete(task);
+		}
+	};
+}
+
+/** @import { AnimateFn, Animation, AnimationConfig, EachItem, Effect, EffectNodes, TransitionFn, TransitionManager } from '#client' */
+
+/**
+ * @param {Element} element
+ * @param {'introstart' | 'introend' | 'outrostart' | 'outroend'} type
+ * @returns {void}
+ */
+function dispatch_event(element, type) {
+	without_reactive_context(() => {
+		element.dispatchEvent(new CustomEvent(type));
+	});
+}
+
+/**
+ * Converts a property to the camel-case format expected by Element.animate(), KeyframeEffect(), and KeyframeEffect.setKeyframes().
+ * @param {string} style
+ * @returns {string}
+ */
+function css_property_to_camelcase(style) {
+	// in compliance with spec
+	if (style === 'float') return 'cssFloat';
+	if (style === 'offset') return 'cssOffset';
+
+	// do not rename custom @properties
+	if (style.startsWith('--')) return style;
+
+	const parts = style.split('-');
+	if (parts.length === 1) return parts[0];
+	return (
+		parts[0] +
+		parts
+			.slice(1)
+			.map(/** @param {any} word */ (word) => word[0].toUpperCase() + word.slice(1))
+			.join('')
+	);
+}
+
+/**
+ * @param {string} css
+ * @returns {Keyframe}
+ */
+function css_to_keyframe(css) {
+	/** @type {Keyframe} */
+	const keyframe = {};
+	const parts = css.split(';');
+	for (const part of parts) {
+		const [property, value] = part.split(':');
+		if (!property || value === undefined) break;
+
+		const formatted_property = css_property_to_camelcase(property.trim());
+		keyframe[formatted_property] = value.trim();
+	}
+	return keyframe;
+}
+
+/** @param {number} t */
+const linear$1 = (t) => t;
+
+/**
+ * Called inside block effects as `$.transition(...)`. This creates a transition manager and
+ * attaches it to the current effect — later, inside `pause_effect` and `resume_effect`, we
+ * use this to create `intro` and `outro` transitions.
+ * @template P
+ * @param {number} flags
+ * @param {HTMLElement} element
+ * @param {() => TransitionFn<P | undefined>} get_fn
+ * @param {(() => P) | null} get_params
+ * @returns {void}
+ */
+function transition(flags, element, get_fn, get_params) {
+	var is_global = (flags & TRANSITION_GLOBAL) !== 0;
+
+	/** @type {'in' | 'out' | 'both'} */
+	var direction = 'in' ;
+
+	/** @type {AnimationConfig | ((opts: { direction: 'in' | 'out' }) => AnimationConfig) | undefined} */
+	var current_options;
+
+	var inert = element.inert;
+
+	/**
+	 * The default overflow style, stashed so we can revert changes during the transition
+	 * that are necessary to work around a Safari <18 bug
+	 * TODO 6.0 remove this, if older versions of Safari have died out enough
+	 */
+	var overflow = element.style.overflow;
+
+	/** @type {Animation | undefined} */
+	var intro;
+
+	/** @type {Animation | undefined} */
+	var outro;
+
+	function get_options() {
+		return without_reactive_context(() => {
+			// If a transition is still ongoing, we use the existing options rather than generating
+			// new ones. This ensures that reversible transitions reverse smoothly, rather than
+			// jumping to a new spot because (for example) a different `duration` was used
+			return (current_options ??= get_fn()(element, get_params?.() ?? /** @type {P} */ ({}), {
+				direction
+			}));
+		});
+	}
+
+	/** @type {TransitionManager} */
+	var transition = {
+		is_global,
+		in() {
+			element.inert = inert;
+
+			{
+				// if we intro then outro then intro again, we want to abort the first intro,
+				// if it's not a bidirectional transition
+				intro?.abort();
+			}
+
+			intro = animate(
+				element,
+				get_options(),
+				outro,
+				1,
+				() => {
+					dispatch_event(element, 'introstart');
+				},
+				() => {
+					dispatch_event(element, 'introend');
+
+					// Ensure we cancel the animation to prevent leaking
+					intro?.abort();
+					intro = current_options = undefined;
+
+					element.style.overflow = overflow;
+				}
+			);
+		},
+		out(fn) {
+			{
+				fn?.();
+				current_options = undefined;
+				return;
+			}
+		},
+		stop: () => {
+			intro?.abort();
+		}
+	};
+
+	var e = /** @type {Effect & { nodes: EffectNodes }} */ (active_effect);
+
+	(e.nodes.t ??= []).push(transition);
+
+	// if this is a local transition, we only want to run it if the parent (branch) effect's
+	// parent (block) effect is where the state change happened. we can determine that by
+	// looking at whether the block effect is currently initializing
+	if (should_intro) {
+		var run = is_global;
+
+		if (!run) {
+			var block = /** @type {Effect | null} */ (e.parent);
+
+			// skip over transparent blocks (e.g. snippets, else-if blocks)
+			while (block && (block.f & EFFECT_TRANSPARENT) !== 0) {
+				while ((block = block.parent)) {
+					if ((block.f & BLOCK_EFFECT) !== 0) break;
+				}
+			}
+
+			run = !block || (block.f & REACTION_RAN) !== 0;
+		}
+
+		if (run) {
+			effect(() => {
+				untrack(() => transition.in());
+			});
+		}
+	}
+}
+
+/**
+ * Animates an element, according to the provided configuration
+ * @param {Element} element
+ * @param {AnimationConfig | ((opts: { direction: 'in' | 'out' }) => AnimationConfig)} options
+ * @param {Animation | undefined} counterpart The corresponding intro/outro to this outro/intro
+ * @param {number} t2 The target `t` value — `1` for intro, `0` for outro
+ * @param {(() => void)} on_begin Called just before beginning the animation
+ * @param {(() => void)} on_finish Called after successfully completing the animation
+ * @returns {Animation}
+ */
+function animate(element, options, counterpart, t2, on_begin, on_finish) {
+	var aborted = false;
+
+	if (is_function(options)) {
+		// In the case of a deferred transition (such as `crossfade`), `option` will be
+		// a function rather than an `AnimationConfig`. We need to call this function
+		// once the DOM has been updated...
+		/** @type {Animation} */
+		var a;
+
+		queue_micro_task(() => {
+			if (aborted) return;
+			var o = options({ direction: 'in'  });
+			a = animate(element, o, counterpart, t2, on_begin, on_finish);
+		});
+
+		// ...but we want to do so without using `async`/`await` everywhere, so
+		// we return a facade that allows everything to remain synchronous
+		return {
+			abort: () => {
+				aborted = true;
+				a?.abort();
+			},
+			deactivate: () => a?.deactivate(),
+			reset: () => a?.reset(),
+			t: () => a?.t() ?? 1 - t2
+		};
+	}
+
+	if (!options?.duration && !options?.delay) {
+		on_begin();
+		on_finish();
+
+		return {
+			abort: noop,
+			deactivate: noop,
+			reset: noop,
+			t: () => t2
+		};
+	}
+
+	const { delay = 0, css, tick, easing = linear$1 } = options;
+
+	/** @type {globalThis.Animation} */
+	var animation;
+
+	var get_t = () => 1 - t2;
+
+	// wait a microtask before applying the initial styles and creating the dummy animation,
+	// so that transitions created in the same batch (e.g. on nested elements) all measure
+	// the DOM first (#18421). this still happens before the next paint, so the element
+	// won't be rendered without styles applied (#14732)
+	queue_micro_task(() => {
+		if (aborted) return;
+
+		var keyframes = [];
+
+		{
+			if (tick) {
+				tick(0, 1); // TODO put in nested effect, to avoid interleaved reads/writes?
+			}
+
+			if (css) {
+				var styles = css_to_keyframe(css(0, 1));
+				keyframes.push(styles, styles);
+			}
+		}
+
+		// create a dummy animation that lasts as long as the delay (but with whatever devtools
+		// multiplier is in effect). in the common case that it is `0`, we keep it anyway so that
+		// the CSS keyframes aren't created until the DOM is updated
+		//
+		// fill forwards to prevent the element from rendering without styles applied
+		// see https://github.com/sveltejs/svelte/issues/14732
+		animation = element.animate(keyframes, { duration: delay, fill: 'forwards' });
+
+		animation.onfinish = () => {
+			// remove dummy animation from the stack to prevent conflict with main animation
+			animation.cancel();
+
+			on_begin();
+
+			// for bidirectional transitions, we start from the current position,
+			// rather than doing a full intro/outro
+			var t1 = 1 - t2;
+
+			var delta = t2 - t1;
+			var duration = /** @type {number} */ (options.duration) * Math.abs(delta);
+			var keyframes = [];
+
+			if (duration > 0) {
+				/**
+				 * Whether or not the CSS includes `overflow: hidden`, in which case we need to
+				 * add it as an inline style to work around a Safari <18 bug
+				 * TODO 6.0 remove this, if possible
+				 */
+				var needs_overflow_hidden = false;
+
+				if (css) {
+					var n = Math.ceil(duration / (1000 / 60)); // `n` must be an integer, or we risk missing the `t2` value
+
+					for (var i = 0; i <= n; i += 1) {
+						var t = t1 + delta * easing(i / n);
+						var styles = css_to_keyframe(css(t, 1 - t));
+						keyframes.push(styles);
+
+						needs_overflow_hidden ||= styles.overflow === 'hidden';
+					}
+				}
+
+				if (needs_overflow_hidden) {
+					/** @type {HTMLElement} */ (element).style.overflow = 'hidden';
+				}
+
+				get_t = () => {
+					var time = /** @type {number} */ (
+						/** @type {globalThis.Animation} */ (animation).currentTime
+					);
+
+					return t1 + delta * easing(time / duration);
+				};
+
+				if (tick) {
+					loop(() => {
+						if (animation.playState !== 'running') return false;
+
+						var t = get_t();
+						tick(t, 1 - t);
+
+						return true;
+					});
+				}
+			}
+
+			animation = element.animate(keyframes, { duration, fill: 'forwards' });
+
+			animation.onfinish = () => {
+				get_t = () => t2;
+				tick?.(t2, 1 - t2);
+				on_finish();
+			};
+		};
+	});
+
+	return {
+		abort: () => {
+			aborted = true;
+
+			if (animation) {
+				animation.cancel();
+				// This prevents memory leaks in Chromium
+				animation.effect = null;
+				// This prevents onfinish to be launched after cancel(),
+				// which can happen in some rare cases
+				// see https://github.com/sveltejs/svelte/issues/13681
+				animation.onfinish = noop;
+			}
+		},
+		deactivate: () => {
+			on_finish = noop;
+		},
+		reset: () => {
+		},
+		t: () => get_t()
+	};
+}
+
 /**
  * @param {Node} anchor
  * @param {{ hash: string, code: string }} css
@@ -6486,6 +6949,10 @@ const whitespace = [...' \t\n\r\f\u00a0\u000b\ufeff'];
 function to_class(value, hash, directives) {
 	var classname = value == null ? '' : '' + value;
 
+	if (hash) {
+		classname = classname ? classname + ' ' + hash : hash;
+	}
+
 	if (directives) {
 		for (var key of Object.keys(directives)) {
 			if (directives[key]) {
@@ -6548,8 +7015,10 @@ function set_class(dom, is_html, value, hash, prev_classes, next_classes) {
 			// and there no hash/directives :
 			if (next_class_name == null) {
 				dom.removeAttribute('class');
-			} else {
+			} else if (is_html) {
 				dom.className = next_class_name;
+			} else {
+				dom.setAttribute('class', next_class_name);
 			}
 		}
 
@@ -15573,17 +16042,17 @@ function rgbToHsl(r, g, b) {
 
 var root$4 = from_html(`<div class="subhead svelte-eje18g"> </div>`);
 var root_1$4 = from_html(`<span class="desc svelte-eje18g"> </span>`);
-var root_2$3 = from_html(`<div class="field row svelte-eje18g"><div class="meta svelte-eje18g"><span class="label svelte-eje18g"> </span><!></div> <button type="button" role="switch"><span class="knob svelte-eje18g"></span></button></div>`);
-var root_3$3 = from_html(`· <span class="inline-desc svelte-eje18g"> </span>`, 1);
-var root_4$3 = from_html(`<div class="field svelte-eje18g"><span class="label svelte-eje18g"> <!> <span class="val svelte-eje18g"> </span></span> <div class="slider svelte-eje18g" role="slider" tabindex="0"><div class="slider-track svelte-eje18g"><div class="slider-fill svelte-eje18g"></div></div> <div class="slider-thumb svelte-eje18g"></div></div></div>`);
-var root_5$3 = from_html(`<button> </button>`);
-var root_6$3 = from_html(`<div class="field svelte-eje18g"><span class="label svelte-eje18g"> </span> <div class="seg wrap svelte-eje18g"></div></div>`);
-var root_7$2 = from_html(`<option> </option>`);
-var root_8$2 = from_html(`<div class="field row svelte-eje18g"><div class="meta svelte-eje18g"><span class="label svelte-eje18g"> </span><!></div> <select class="svelte-eje18g"></select></div>`);
-var root_9$2 = from_html(`<div class="field svelte-eje18g"><span class="label svelte-eje18g"> </span> <!> <input class="text svelte-eje18g" type="text" spellcheck="false"/></div>`);
-var root_10$2 = from_html(`<div class="field row svelte-eje18g"><span class="label svelte-eje18g"> </span> <input type="color" class="svelte-eje18g"/></div>`);
-var root_11$2 = from_html(`<div class="field row svelte-eje18g"><div class="meta svelte-eje18g"><span class="label svelte-eje18g"> </span><!></div> <button class="action svelte-eje18g"> </button></div>`);
-var root_12$2 = from_html(`<div class="cat-tabs svelte-eje18g"></div>`);
+var root_2$4 = from_html(`<div class="field row svelte-eje18g"><div class="meta svelte-eje18g"><span class="label svelte-eje18g"> </span><!></div> <button type="button" role="switch"><span class="knob svelte-eje18g"></span></button></div>`);
+var root_3$4 = from_html(`· <span class="inline-desc svelte-eje18g"> </span>`, 1);
+var root_4$4 = from_html(`<div class="field svelte-eje18g"><span class="label svelte-eje18g"> <!> <span class="val svelte-eje18g"> </span></span> <div class="slider svelte-eje18g" role="slider" tabindex="0"><div class="slider-track svelte-eje18g"><div class="slider-fill svelte-eje18g"></div></div> <div class="slider-thumb svelte-eje18g"></div></div></div>`);
+var root_5$4 = from_html(`<button> </button>`);
+var root_6$4 = from_html(`<div class="field svelte-eje18g"><span class="label svelte-eje18g"> </span> <div class="seg wrap svelte-eje18g"></div></div>`);
+var root_7$3 = from_html(`<option> </option>`);
+var root_8$3 = from_html(`<div class="field row svelte-eje18g"><div class="meta svelte-eje18g"><span class="label svelte-eje18g"> </span><!></div> <select class="svelte-eje18g"></select></div>`);
+var root_9$3 = from_html(`<div class="field svelte-eje18g"><span class="label svelte-eje18g"> </span> <!> <input class="text svelte-eje18g" type="text" spellcheck="false"/></div>`);
+var root_10$3 = from_html(`<div class="field row svelte-eje18g"><span class="label svelte-eje18g"> </span> <input type="color" class="svelte-eje18g"/></div>`);
+var root_11$3 = from_html(`<div class="field row svelte-eje18g"><div class="meta svelte-eje18g"><span class="label svelte-eje18g"> </span><!></div> <button class="action svelte-eje18g"> </button></div>`);
+var root_12$3 = from_html(`<div class="cat-tabs svelte-eje18g"></div>`);
 var root_13$2 = from_html(`<h3 class="svelte-eje18g"> </h3>`);
 var root_14$2 = from_html(`<!> <!>`, 1);
 var root_15$2 = from_html(`<div class="settings svelte-eje18g"><!> <!></div>`);
@@ -15643,7 +16112,7 @@ function SettingsView($$anchor, $$props) {
 			};
 
 			var consequent_4 = ($$anchor) => {
-				var div_1 = root_2$3();
+				var div_1 = root_2$4();
 				var div_2 = child(div_1);
 				var span = child(div_2);
 				var text_1 = only_child(span, true);
@@ -15684,14 +16153,14 @@ function SettingsView($$anchor, $$props) {
 			};
 
 			var consequent_6 = ($$anchor) => {
-				var div_3 = root_4$3();
+				var div_3 = root_4$4();
 				var span_2 = child(div_3);
 				var text_3 = child(span_2);
 				var node_4 = sibling(text_3);
 
 				{
 					var consequent_5 = ($$anchor) => {
-						var fragment_3 = root_3$3();
+						var fragment_3 = root_3$4();
 						var span_3 = sibling(first_child(fragment_3));
 						var text_4 = only_child(span_3, true);
 
@@ -15739,13 +16208,13 @@ function SettingsView($$anchor, $$props) {
 			};
 
 			var consequent_7 = ($$anchor) => {
-				var div_8 = root_6$3();
+				var div_8 = root_6$4();
 				var span_5 = child(div_8);
 				var text_6 = only_child(span_5, true);
 				var div_9 = sibling(span_5, 2);
 
 				each(div_9, 21, () => def().options ?? [], (o) => o.value, ($$anchor, o) => {
-					var button_1 = root_5$3();
+					var button_1 = root_5$4();
 					let classes_1;
 					var text_7 = only_child(button_1, true);
 
@@ -15765,7 +16234,7 @@ function SettingsView($$anchor, $$props) {
 			};
 
 			var consequent_9 = ($$anchor) => {
-				var div_10 = root_8$2();
+				var div_10 = root_8$3();
 				var div_11 = child(div_10);
 				var span_6 = child(div_11);
 				var text_8 = only_child(span_6, true);
@@ -15788,7 +16257,7 @@ function SettingsView($$anchor, $$props) {
 				var select = sibling(div_11, 2);
 
 				each(select, 21, () => def().options ?? [], (o) => o.value, ($$anchor, o) => {
-					var option = root_7$2();
+					var option = root_7$3();
 					var text_10 = only_child(option, true);
 					var option_value = {};
 
@@ -15826,7 +16295,7 @@ function SettingsView($$anchor, $$props) {
 			};
 
 			var consequent_11 = ($$anchor) => {
-				var div_12 = root_9$2();
+				var div_12 = root_9$3();
 				var span_8 = child(div_12);
 				var text_11 = only_child(span_8, true);
 				var node_6 = sibling(span_8, 2);
@@ -15861,7 +16330,7 @@ function SettingsView($$anchor, $$props) {
 			};
 
 			var consequent_12 = ($$anchor) => {
-				var div_13 = root_10$2();
+				var div_13 = root_10$3();
 				var span_10 = child(div_13);
 				var text_13 = only_child(span_10, true);
 				var input_1 = sibling(span_10, 2);
@@ -15879,7 +16348,7 @@ function SettingsView($$anchor, $$props) {
 			};
 
 			var consequent_14 = ($$anchor) => {
-				var div_14 = root_11$2();
+				var div_14 = root_11$3();
 				var div_15 = child(div_14);
 				var span_11 = child(div_15);
 				var text_14 = only_child(span_11, true);
@@ -16028,10 +16497,10 @@ function SettingsView($$anchor, $$props) {
 
 	{
 		var consequent_15 = ($$anchor) => {
-			var div_17 = root_12$2();
+			var div_17 = root_12$3();
 
 			each(div_17, 20, () => get(cats), (c) => c, ($$anchor, c) => {
-				var button_3 = root_5$3();
+				var button_3 = root_5$4();
 				let classes_2;
 				var text_17 = only_child(button_3, true);
 
@@ -16124,11 +16593,11 @@ delegate([
 
 var root$3 = from_html(`<button></button>`);
 var root_1$3 = from_html(`<button> </button>`);
-var root_2$2 = from_html(`<div class="ip-tags svelte-o97s3m"></div>`);
-var root_3$2 = from_html(`<div class="ip-empty svelte-o97s3m">Kein Bild passt zu den Filtern.</div>`);
-var root_4$2 = from_html(`<button class="ip-tile svelte-o97s3m"><span class="ip-name svelte-o97s3m"> </span></button>`);
-var root_5$2 = from_html(`<div class="ip-grid svelte-o97s3m"></div>`);
-var root_6$2 = from_html(`<div class="ip-overlay svelte-o97s3m" role="presentation"><div class="ip-sheet svelte-o97s3m" role="dialog" tabindex="-1"><div class="ip-head svelte-o97s3m"><span> </span> <button class="ip-close svelte-o97s3m" aria-label="Schließen">×</button></div> <input class="ip-search svelte-o97s3m" placeholder="Name oder Tag…" spellcheck="false"/> <div class="ip-filters svelte-o97s3m"><button>★ Favoriten</button> <!></div> <!> <!></div></div>`);
+var root_2$3 = from_html(`<div class="ip-tags svelte-o97s3m"></div>`);
+var root_3$3 = from_html(`<div class="ip-empty svelte-o97s3m">Kein Bild passt zu den Filtern.</div>`);
+var root_4$3 = from_html(`<button class="ip-tile svelte-o97s3m"><span class="ip-name svelte-o97s3m"> </span></button>`);
+var root_5$3 = from_html(`<div class="ip-grid svelte-o97s3m"></div>`);
+var root_6$3 = from_html(`<div class="ip-overlay svelte-o97s3m" role="presentation"><div class="ip-sheet svelte-o97s3m" role="dialog" tabindex="-1"><div class="ip-head svelte-o97s3m"><span> </span> <button class="ip-close svelte-o97s3m" aria-label="Schließen">×</button></div> <input class="ip-search svelte-o97s3m" placeholder="Name oder Tag…" spellcheck="false"/> <div class="ip-filters svelte-o97s3m"><button>★ Favoriten</button> <!></div> <!> <!></div></div>`);
 
 const $$css$3 = {
 	hash: 'svelte-o97s3m',
@@ -16185,7 +16654,7 @@ function ImagePicker($$anchor, $$props) {
 		return u ? `background-image:url(${u})` : '';
 	}
 
-	var div = root_6$2();
+	var div = root_6$3();
 	var div_1 = child(div);
 	var div_2 = child(div_1);
 	var span = child(div_2);
@@ -16218,7 +16687,7 @@ function ImagePicker($$anchor, $$props) {
 
 	{
 		var consequent = ($$anchor) => {
-			var div_4 = root_2$2();
+			var div_4 = root_2$3();
 
 			each(div_4, 20, () => get(allTags), (t) => t, ($$anchor, t) => {
 				var button_3 = root_1$3();
@@ -16248,16 +16717,16 @@ function ImagePicker($$anchor, $$props) {
 
 	{
 		var consequent_1 = ($$anchor) => {
-			var div_5 = root_3$2();
+			var div_5 = root_3$3();
 
 			append($$anchor, div_5);
 		};
 
 		var alternate = ($$anchor) => {
-			var div_6 = root_5$2();
+			var div_6 = root_5$3();
 
 			each(div_6, 21, () => get(items), (it) => it.id, ($$anchor, it) => {
-				var button_4 = root_4$2();
+				var button_4 = root_4$3();
 				var span_1 = child(button_4);
 				var text_2 = only_child(span_1, true);
 
@@ -16319,17 +16788,17 @@ const pathsNote = ($$anchor) => {
 
 var root$2 = from_html(`<p class="hint ok svelte-j0aff2">✓ „SKWD Wall" ist als Live-Wallpaper aktiv.</p>`);
 var root_1$2 = from_html(`<p class="hint warn svelte-j0aff2">⚠ Nicht aktiv (Neuinstallation setzt das zurück). Unten neu auswählen.</p>`);
-var root_2$1 = from_html(`<!> <button class="btn primary svelte-j0aff2">Als Handy-Hintergrund aktivieren…</button>`, 1);
-var root_3$1 = from_html(`<button class="preset-x svelte-j0aff2" aria-label="Preset löschen">×</button>`);
-var root_4$1 = from_html(`<span class="preset svelte-j0aff2"><button> </button> <!></span>`);
-var root_5$1 = from_html(`<div class="chips svelte-j0aff2"><!> <span class="hint svelte-j0aff2">Leeres C = aktuelle Geometrie speichern · gefülltes = anwenden · × löscht.</span></div>`);
-var root_6$1 = from_html(`<span class="preset svelte-j0aff2"><button class="preset-apply svelte-j0aff2"> </button> <button class="preset-x svelte-j0aff2" aria-label="Preset löschen">×</button></span>`);
-var root_7$1 = from_html(`<div class="chips svelte-j0aff2"></div>`);
-var root_8$1 = from_html(`<textarea class="ta svelte-j0aff2" readonly="" rows="3"></textarea>`);
-var root_9$1 = from_html(`<p class="hint svelte-j0aff2"> </p>`);
-var root_10$1 = from_html(`<textarea class="ta svelte-j0aff2" rows="3" placeholder="Presets-JSON einfügen…"></textarea> <button class="btn svelte-j0aff2">Import bestätigen</button> <!>`, 1);
-var root_11$1 = from_html(`<!> <div class="row-inputs svelte-j0aff2"><input class="ti svelte-j0aff2" placeholder="Theme speichern als…" spellcheck="false"/> <button class="btn svelte-j0aff2">Speichern</button></div> <div class="row-inputs svelte-j0aff2"><button class="btn svelte-j0aff2">Exportieren</button> <button class="btn svelte-j0aff2">Importieren</button></div> <!> <!>`, 1);
-var root_12$1 = from_html(`<div class="chips svelte-j0aff2"><button>🏠 Startbildschirm</button> <button>🔒 Sperrbildschirm</button></div>`);
+var root_2$2 = from_html(`<!> <button class="btn primary svelte-j0aff2">Als Handy-Hintergrund aktivieren…</button>`, 1);
+var root_3$2 = from_html(`<button class="preset-x svelte-j0aff2" aria-label="Preset löschen">×</button>`);
+var root_4$2 = from_html(`<span class="preset svelte-j0aff2"><button> </button> <!></span>`);
+var root_5$2 = from_html(`<div class="chips svelte-j0aff2"><!> <span class="hint svelte-j0aff2">Leeres C = aktuelle Geometrie speichern · gefülltes = anwenden · × löscht.</span></div>`);
+var root_6$2 = from_html(`<span class="preset svelte-j0aff2"><button class="preset-apply svelte-j0aff2"> </button> <button class="preset-x svelte-j0aff2" aria-label="Preset löschen">×</button></span>`);
+var root_7$2 = from_html(`<div class="chips svelte-j0aff2"></div>`);
+var root_8$2 = from_html(`<textarea class="ta svelte-j0aff2" readonly="" rows="3"></textarea>`);
+var root_9$2 = from_html(`<p class="hint svelte-j0aff2"> </p>`);
+var root_10$2 = from_html(`<textarea class="ta svelte-j0aff2" rows="3" placeholder="Presets-JSON einfügen…"></textarea> <button class="btn svelte-j0aff2">Import bestätigen</button> <!>`, 1);
+var root_11$2 = from_html(`<!> <div class="row-inputs svelte-j0aff2"><input class="ti svelte-j0aff2" placeholder="Theme speichern als…" spellcheck="false"/> <button class="btn svelte-j0aff2">Speichern</button></div> <div class="row-inputs svelte-j0aff2"><button class="btn svelte-j0aff2">Exportieren</button> <button class="btn svelte-j0aff2">Importieren</button></div> <!> <!>`, 1);
+var root_12$2 = from_html(`<div class="chips svelte-j0aff2"><button>🏠 Startbildschirm</button> <button>🔒 Sperrbildschirm</button></div>`);
 var root_13$1 = from_html(`<option> </option>`);
 var root_14$1 = from_html(`<select class="svelte-j0aff2"><option disabled="">Sammlung…</option><!></select>`);
 var root_15$1 = from_html(`<span class="thumb svelte-j0aff2"></span> `, 1);
@@ -16383,7 +16852,7 @@ function WallpaperSettings($$anchor, $$props) {
 	// Menü
 	// Papierkorb
 	live = ($$anchor) => {
-		var fragment = root_2$1();
+		var fragment = root_2$2();
 		var node = first_child(fragment);
 
 		{
@@ -16411,11 +16880,11 @@ function WallpaperSettings($$anchor, $$props) {
 	};
 
 	const presets = ($$anchor) => {
-		var div = root_5$1();
+		var div = root_5$2();
 		var node_1 = child(div);
 
 		each(node_1, 16, () => [0, 1, 2, 3], (i) => i, ($$anchor, i) => {
-			var span = root_4$1();
+			var span = root_4$2();
 			var button_1 = child(span);
 			let classes;
 			var text = only_child(button_1);
@@ -16423,7 +16892,7 @@ function WallpaperSettings($$anchor, $$props) {
 
 			{
 				var consequent_2 = ($$anchor) => {
-					var button_2 = root_3$1();
+					var button_2 = root_3$2();
 
 					delegated('click', button_2, () => $$props.manager.clearGeometryPreset(i));
 					append($$anchor, button_2);
@@ -16449,15 +16918,15 @@ function WallpaperSettings($$anchor, $$props) {
 	};
 
 	const themePresets = ($$anchor) => {
-		var fragment_1 = root_11$1();
+		var fragment_1 = root_11$2();
 		var node_3 = first_child(fragment_1);
 
 		{
 			var consequent_3 = ($$anchor) => {
-				var div_1 = root_7$1();
+				var div_1 = root_7$2();
 
 				each(div_1, 21, () => get(s).themePresets, (p) => p.id, ($$anchor, p) => {
-					var span_1 = root_6$1();
+					var span_1 = root_6$2();
 					var button_3 = child(span_1);
 					var text_1 = only_child(button_3, true);
 					var button_4 = sibling(button_3, 2);
@@ -16487,7 +16956,7 @@ function WallpaperSettings($$anchor, $$props) {
 
 		{
 			var consequent_4 = ($$anchor) => {
-				var textarea = root_8$1();
+				var textarea = root_8$2();
 				template_effect(() => set_value(textarea, get(exportText)));
 				append($$anchor, textarea);
 			};
@@ -16501,7 +16970,7 @@ function WallpaperSettings($$anchor, $$props) {
 
 		{
 			var consequent_6 = ($$anchor) => {
-				var fragment_2 = root_10$1();
+				var fragment_2 = root_10$2();
 				var textarea_1 = first_child(fragment_2);
 
 				var button_8 = sibling(textarea_1, 2);
@@ -16509,7 +16978,7 @@ function WallpaperSettings($$anchor, $$props) {
 
 				{
 					var consequent_5 = ($$anchor) => {
-						var p_3 = root_9$1();
+						var p_3 = root_9$2();
 						var text_2 = only_child(p_3, true);
 
 						template_effect(() => set_text(text_2, get(importMsg)));
@@ -16553,7 +17022,7 @@ function WallpaperSettings($$anchor, $$props) {
 	};
 
 	const osTargets = ($$anchor) => {
-		var div_4 = root_12$1();
+		var div_4 = root_12$2();
 		var button_9 = child(div_4);
 		let classes_1;
 		var button_10 = sibling(button_9, 2);
@@ -17689,17 +18158,17 @@ async function downloadWallhaven(r) {
 
 var root$1 = from_html(`<video class="tile-video svelte-1lk0sb9" loop="" playsinline="" preload="metadata"></video>`, 2);
 var root_1$1 = from_html(`<!> <span class="tile-vidbadge svelte-1lk0sb9" aria-hidden="true">▶</span>`, 1);
-var root_2 = from_html(`<span class="badge svelte-1lk0sb9"><!></span>`);
-var root_3 = from_html(`<span class="tile-favmark svelte-1lk0sb9"><!></span>`);
-var root_4 = from_html(`<span class="tile-name svelte-1lk0sb9"> </span>`);
-var root_5 = from_html(`<!> <!> <!> <!>`, 1);
-var root_6 = from_html(`<button> <span class="coll-count svelte-1lk0sb9"> </span></button>`);
-var root_7 = from_html(`<input class="coll-new svelte-1lk0sb9" placeholder="Name…" spellcheck="false"/>`);
-var root_8 = from_html(`<button class="coll-add svelte-1lk0sb9" title="Neue Sammlung" aria-label="Neue Sammlung">＋</button>`);
-var root_9 = from_html(`<div class="coll-bar svelte-1lk0sb9"><button>Alle</button> <!> <!></div>`);
-var root_10 = from_html(`<div class="empty svelte-1lk0sb9"><h2 class="svelte-1lk0sb9">Wallpaper Engine</h2> <p>Wallpaper-Engine-Szenen laufen nur auf dem PC (Windows/Linux). Auf dem Handy &amp; im Web gibt es sie nicht — hier gehen Bilder und Videos.</p></div>`);
-var root_11 = from_html(`<button class="empty-cta svelte-1lk0sb9"><!> Ordner verknüpfen</button>`);
-var root_12 = from_html(`<div class="empty svelte-1lk0sb9"><h2 class="svelte-1lk0sb9">Noch keine Wallpaper</h2> <p>Lade dein erstes Bild hoch — die ganze App nimmt die Farben an.</p> <label class="upload-cta svelte-1lk0sb9"><!> Wallpaper hochladen <input type="file" accept="image/*,video/*" multiple="" hidden=""/></label> <p class="empty-or svelte-1lk0sb9">oder</p> <!> <button class="empty-cta svelte-1lk0sb9"><!> Online suchen</button></div>`);
+var root_2$1 = from_html(`<span class="badge svelte-1lk0sb9"><!></span>`);
+var root_3$1 = from_html(`<span class="tile-favmark svelte-1lk0sb9"><!></span>`);
+var root_4$1 = from_html(`<span class="tile-name svelte-1lk0sb9"> </span>`);
+var root_5$1 = from_html(`<!> <!> <!> <!>`, 1);
+var root_6$1 = from_html(`<button> <span class="coll-count svelte-1lk0sb9"> </span></button>`);
+var root_7$1 = from_html(`<input class="coll-new svelte-1lk0sb9" placeholder="Name…" spellcheck="false"/>`);
+var root_8$1 = from_html(`<button class="coll-add svelte-1lk0sb9" title="Neue Sammlung" aria-label="Neue Sammlung">＋</button>`);
+var root_9$1 = from_html(`<div class="coll-bar svelte-1lk0sb9"><button>Alle</button> <!> <!></div>`);
+var root_10$1 = from_html(`<div class="empty svelte-1lk0sb9"><h2 class="svelte-1lk0sb9">Wallpaper Engine</h2> <p>Wallpaper-Engine-Szenen laufen nur auf dem PC (Windows/Linux). Auf dem Handy &amp; im Web gibt es sie nicht — hier gehen Bilder und Videos.</p></div>`);
+var root_11$1 = from_html(`<button class="empty-cta svelte-1lk0sb9"><!> Ordner verknüpfen</button>`);
+var root_12$1 = from_html(`<div class="empty svelte-1lk0sb9"><h2 class="svelte-1lk0sb9">Noch keine Wallpaper</h2> <p>Lade dein erstes Bild hoch — die ganze App nimmt die Farben an.</p> <label class="upload-cta svelte-1lk0sb9"><!> Wallpaper hochladen <input type="file" accept="image/*,video/*" multiple="" hidden=""/></label> <p class="empty-or svelte-1lk0sb9">oder</p> <!> <button class="empty-cta svelte-1lk0sb9"><!> Online suchen</button></div>`);
 var root_13 = from_html(`<div class="empty svelte-1lk0sb9"><h2 class="svelte-1lk0sb9">Keine Treffer</h2> <p>Kein Wallpaper passt zu den Filtern.</p> <button class="upload-cta svelte-1lk0sb9">Filter zurücksetzen</button></div>`);
 var root_14 = from_html(`<button><!></button>`);
 var root_15 = from_html(`<div class="hexwrap svelte-1lk0sb9"></div>`);
@@ -17824,7 +18293,7 @@ function Picker($$anchor, $$props) {
 	// ignore the click that trails a browse-drag
 	// "Close on selection": collapse the rail/panels right after picking.
 	tileInner = ($$anchor, item = noop) => {
-		var fragment = root_5();
+		var fragment = root_5$1();
 		var node_1 = first_child(fragment);
 
 		{
@@ -17857,7 +18326,7 @@ function Picker($$anchor, $$props) {
 
 		{
 			var consequent_2 = ($$anchor) => {
-				var span_1 = root_2();
+				var span_1 = root_2$1();
 				var node_4 = child(span_1);
 
 				Icon(node_4, { name: 'check', size: 14 });
@@ -17873,7 +18342,7 @@ function Picker($$anchor, $$props) {
 
 		{
 			var consequent_3 = ($$anchor) => {
-				var span_2 = root_3();
+				var span_2 = root_3$1();
 				var node_6 = child(span_2);
 
 				Icon(node_6, { name: 'heart', size: 13 });
@@ -17889,7 +18358,7 @@ function Picker($$anchor, $$props) {
 
 		{
 			var consequent_4 = ($$anchor) => {
-				var span_3 = root_4();
+				var span_3 = root_4$1();
 				var text = only_child(span_3, true);
 
 				template_effect(() => set_text(text, item().name));
@@ -18974,13 +19443,13 @@ function Picker($$anchor, $$props) {
 
 	{
 		var consequent_6 = ($$anchor) => {
-			var div_2 = root_9();
+			var div_2 = root_9$1();
 			var button = child(div_2);
 			let classes_1;
 			var node_9 = sibling(button, 2);
 
 			each(node_9, 17, () => get(collections), (c) => c.id, ($$anchor, c) => {
-				var button_1 = root_6();
+				var button_1 = root_6$1();
 				let classes_2;
 				var text_1 = child(button_1);
 				var span_4 = sibling(text_1);
@@ -19000,7 +19469,7 @@ function Picker($$anchor, $$props) {
 
 			{
 				var consequent_5 = ($$anchor) => {
-					var input_1 = root_7();
+					var input_1 = root_7$1();
 
 					delegated('keydown', input_1, (e) => {
 						if (e.key === 'Enter') createCollectionFromBar();
@@ -19017,7 +19486,7 @@ function Picker($$anchor, $$props) {
 				};
 
 				var alternate = ($$anchor) => {
-					var button_2 = root_8();
+					var button_2 = root_8$1();
 
 					delegated('click', button_2, () => {
 						set(collBarCreating, true);
@@ -19044,13 +19513,13 @@ function Picker($$anchor, $$props) {
 
 	{
 		var consequent_7 = ($$anchor) => {
-			var div_3 = root_10();
+			var div_3 = root_10$1();
 
 			append($$anchor, div_3);
 		};
 
 		var consequent_9 = ($$anchor) => {
-			var div_4 = root_12();
+			var div_4 = root_12$1();
 			var label = sibling(child(div_4), 4);
 			var node_12 = child(label);
 
@@ -19062,7 +19531,7 @@ function Picker($$anchor, $$props) {
 
 			{
 				var consequent_8 = ($$anchor) => {
-					var button_3 = root_11();
+					var button_3 = root_11$1();
 					var node_14 = child(button_3);
 
 					Icon(node_14, { name: 'folder', size: 18 });
@@ -20207,12 +20676,104 @@ delegate([
 	'pointerup'
 ]);
 
-var root = from_html(`<span></span>`);
-var root_1 = from_html(`<div class="intro-overlay svelte-zd540h"><div class="intro-card svelte-zd540h" role="dialog" aria-modal="true" aria-label="Einführung SKWD Wall"><button class="skip svelte-zd540h">Überspringen</button> <div class="emoji svelte-zd540h"> </div> <h2 class="svelte-zd540h"> </h2> <p class="svelte-zd540h"> </p> <div class="dots svelte-zd540h"></div> <div class="nav svelte-zd540h"><button class="ghost svelte-zd540h">Zurück</button> <button class="go svelte-zd540h"> </button></div></div></div>`);
+/** @import { BlurParams, CrossfadeParams, DrawParams, FadeParams, FlyParams, ScaleParams, SlideParams, TransitionConfig } from './public' */
+
+
+/** @param {number} x */
+const linear = (x) => x;
+
+/** @param {number} t */
+function cubic_out(t) {
+	const f = t - 1.0;
+	return f * f * f + 1.0;
+}
+
+/** @param {number | string} value
+ * @returns {[number, string]}
+ */
+function split_css_unit(value) {
+	const split = typeof value === 'string' && value.match(/^\s*(-?[\d.]+)([^\s]*)\s*$/);
+	return split ? [parseFloat(split[1]), split[2] || 'px'] : [/** @type {number} */ (value), 'px'];
+}
+
+/**
+ * Animates the opacity of an element from 0 to the current opacity for `in` transitions and from the current opacity to 0 for `out` transitions.
+ *
+ * @param {Element} node
+ * @param {FadeParams} [params]
+ * @returns {TransitionConfig}
+ */
+function fade(node, { delay = 0, duration = 400, easing = linear } = {}) {
+	const o = +getComputedStyle(node).opacity;
+	return {
+		delay,
+		duration,
+		easing,
+		css: (t) => `opacity: ${t * o}`
+	};
+}
+
+/**
+ * Animates the x and y positions and the opacity of an element. `in` transitions animate from the provided values, passed as parameters to the element's default values. `out` transitions animate from the element's default values to the provided values.
+ *
+ * @param {Element} node
+ * @param {FlyParams} [params]
+ * @returns {TransitionConfig}
+ */
+function fly(
+	node,
+	{ delay = 0, duration = 400, easing = cubic_out, x = 0, y = 0, opacity = 0 } = {}
+) {
+	const style = getComputedStyle(node);
+	const target_opacity = +style.opacity;
+	const transform = style.transform === 'none' ? '' : style.transform;
+	const od = target_opacity * (1 - opacity);
+	const [x_value, x_unit] = split_css_unit(x);
+	const [y_value, y_unit] = split_css_unit(y);
+	return {
+		delay,
+		duration,
+		easing,
+		css: (t, u) => `
+			transform: ${transform} translate(${(1 - t) * x_value}${x_unit}, ${(1 - t) * y_value}${y_unit});
+			opacity: ${target_opacity - od * u}`
+	};
+}
+
+/*
+Adapted from https://github.com/mattdesl
+Distributed under MIT License https://github.com/mattdesl/eases/blob/master/LICENSE.md
+*/
+
+
+/**
+ * Cubic scaling, decelerate towards end.
+ *
+ * @param {number} t
+ * @returns {number}
+ */
+function cubicOut(t) {
+	const f = t - 1.0;
+	return f * f * f + 1.0;
+}
+
+var root = from_svg(`<svg viewBox="0 0 260 210" class="il svelte-zd540h"><g class="spin svelte-zd540h" style="transform-origin:130px 105px"><ellipse cx="130" cy="105" rx="96" ry="60" class="ring svelte-zd540h"></ellipse><circle cx="226" cy="105" r="5" class="dot accent svelte-zd540h"></circle><circle cx="34" cy="105" r="3.5" class="dot svelte-zd540h"></circle></g><g class="float svelte-zd540h"><rect x="97" y="40" width="66" height="130" rx="16" class="phone svelte-zd540h"></rect><rect x="104" y="47" width="52" height="116" rx="10" fill="url(#skwdGrad)" class="svelte-zd540h"></rect><circle cx="130" cy="92" r="17" class="gloss svelte-zd540h"></circle><rect x="116" y="150" width="28" height="5" rx="2.5" class="bar svelte-zd540h"></rect></g></svg>`);
+var root_1 = from_svg(`<svg viewBox="0 0 260 210" class="il svelte-zd540h"><rect x="60" y="30" width="140" height="150" rx="18" class="phone svelte-zd540h"></rect><rect x="68" y="38" width="124" height="134" rx="12" fill="url(#skwdGradSoft)" class="svelte-zd540h"></rect><g class="slidein svelte-zd540h"><path d="M150 60 L182 66 L182 150 L150 156 Z" class="rail svelte-zd540h"></path><circle cx="166" cy="84" r="5" class="dot accent svelte-zd540h"></circle><circle cx="166" cy="105" r="5" class="dot light svelte-zd540h"></circle><circle cx="166" cy="126" r="5" class="dot light svelte-zd540h"></circle></g><circle cx="150" cy="105" r="12" class="touch svelte-zd540h"></circle><circle cx="150" cy="105" r="12" class="touch ping svelte-zd540h"></circle></svg>`);
+var root_2 = from_svg(`<rect width="28" height="28" rx="6" fill="url(#skwdGrad)" class="tile svelte-zd540h"></rect>`);
+var root_3 = from_svg(`<svg viewBox="0 0 260 210" class="il svelte-zd540h"><g class="float svelte-zd540h"><rect x="150" y="70" width="80" height="80" rx="12" class="phone svelte-zd540h"></rect><!></g><g class="chips svelte-zd540h"><g class="chip svelte-zd540h" style="animation-delay:0ms"><circle cx="46" cy="58" r="18" class="src svelte-zd540h"></circle><path d="M46 51 L46 65 M40 57 L46 51 L52 57" class="ico svelte-zd540h"></path></g><g class="chip svelte-zd540h" style="animation-delay:200ms"><circle cx="46" cy="105" r="18" class="src svelte-zd540h"></circle><path d="M39 107 a7 7 0 0 1 14 0 h2 a5 5 0 0 1 0 10 h-18 a5 5 0 0 1 0 -10 z" class="ico fill svelte-zd540h"></path></g><g class="chip svelte-zd540h" style="animation-delay:400ms"><circle cx="46" cy="152" r="18" class="src svelte-zd540h"></circle><path d="M38 148 h6 l2 -3 h8 v14 h-16 z" class="ico fill svelte-zd540h"></path></g></g><path d="M64 58 C110 58 120 105 150 100" class="flow svelte-zd540h"></path><path d="M64 105 C110 105 120 105 150 110" class="flow svelte-zd540h" style="animation-delay:600ms"></path><path d="M64 152 C110 152 120 110 150 120" class="flow svelte-zd540h" style="animation-delay:1200ms"></path></svg>`);
+var root_4 = from_svg(`<circle cy="176" r="7"></circle>`);
+var root_5 = from_svg(`<svg viewBox="0 0 260 210" class="il svelte-zd540h"><g class="float svelte-zd540h"><rect x="92" y="54" width="76" height="104" rx="12" class="card c3 svelte-zd540h" fill="url(#skwdGradSoft)"></rect><rect x="92" y="54" width="76" height="104" rx="12" class="card c2 svelte-zd540h" fill="url(#skwdGrad)"></rect><rect x="92" y="54" width="76" height="104" rx="12" class="card c1 phone svelte-zd540h"></rect><rect x="100" y="62" width="60" height="70" rx="8" fill="url(#skwdGrad)" class="svelte-zd540h"></rect></g><g class="swatches svelte-zd540h"></g></svg>`);
+var root_6 = from_svg(`<rect width="8" height="8" rx="2.5" class="appdot svelte-zd540h"></rect>`);
+var root_7 = from_svg(`<svg viewBox="0 0 260 210" class="il svelte-zd540h"><g class="float svelte-zd540h"><rect x="97" y="26" width="66" height="158" rx="16" class="phone svelte-zd540h"></rect><clipPath id="screenClip" class="svelte-zd540h"><rect x="104" y="33" width="52" height="144" rx="10" class="svelte-zd540h"></rect></clipPath><g clip-path="url(#screenClip)" class="svelte-zd540h"><rect x="104" y="33" width="52" height="144" fill="url(#skwdGradSoft)" class="svelte-zd540h"></rect><path class="wave svelte-zd540h" d="M90 120 q16 -16 32 0 t32 0 t32 0 t32 0 V180 H90 Z" fill="url(#skwdGrad)" opacity="0.9"></path><path class="wave w2 svelte-zd540h" d="M90 136 q16 -14 32 0 t32 0 t32 0 t32 0 V180 H90 Z" fill="url(#skwdGrad)" opacity="0.55"></path></g><!></g><circle cx="130" cy="150" r="6" class="live svelte-zd540h"></circle></svg>`);
+var root_8 = from_html(`<div class="art svelte-zd540h"><!></div>`);
+var root_9 = from_html(`<div class="svelte-zd540h"><span class="kicker svelte-zd540h"> </span> <h1 class="svelte-zd540h"> </h1> <p class="svelte-zd540h"> </p></div>`);
+var root_10 = from_html(`<button></button>`);
+var root_11 = from_html(`<button class="ghost svelte-zd540h">Zurück</button>`);
+var root_12 = from_html(`<svg class="defs svelte-zd540h" aria-hidden="true" focusable="false"><defs class="svelte-zd540h"><linearGradient id="skwdGrad" x1="0" y1="0" x2="1" y2="1" class="svelte-zd540h"><stop offset="0" class="g0 svelte-zd540h"></stop><stop offset="1" class="g1 svelte-zd540h"></stop></linearGradient><linearGradient id="skwdGradSoft" x1="0" y1="0" x2="0" y2="1" class="svelte-zd540h"><stop offset="0" class="gs0 svelte-zd540h"></stop><stop offset="1" class="gs1 svelte-zd540h"></stop></linearGradient></defs></svg> <div class="intro svelte-zd540h"><div class="aurora a1 svelte-zd540h"></div> <div class="aurora a2 svelte-zd540h"></div> <button class="skip svelte-zd540h">Überspringen</button> <div class="stage svelte-zd540h"><!></div> <div class="copy svelte-zd540h"><!></div> <div class="footer svelte-zd540h"><div class="dots svelte-zd540h"></div> <div class="actions svelte-zd540h"><!> <button class="go svelte-zd540h"> </button></div></div></div>`, 1);
 
 const $$css = {
 	hash: 'svelte-zd540h',
-	code: '.intro-overlay.svelte-zd540h {position:absolute;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:var(--space-4, 16px);background:color-mix(in srgb, var(--bg, #111) 72%, transparent);backdrop-filter:blur(6px);}.intro-card.svelte-zd540h {position:relative;width:min(440px, 100%);background:var(--bg-elevated, #1b1b1b);border:1px solid var(--border, #333);border-radius:var(--radius-lg, 16px);box-shadow:var(--shadow, 0 20px 60px rgba(0, 0, 0, 0.5));padding:var(--space-5, 28px);text-align:center;}.skip.svelte-zd540h {position:absolute;top:var(--space-3, 12px);right:var(--space-3, 12px);background:transparent;border:none;color:var(--text-faint, #888);font-size:0.8rem;cursor:pointer;}.skip.svelte-zd540h:hover {color:var(--text, #fff);}.emoji.svelte-zd540h {font-size:2.6rem;line-height:1;margin:var(--space-2, 8px) 0 var(--space-3, 12px);}h2.svelte-zd540h {margin:0 0 var(--space-3, 12px);font-size:1.3rem;color:var(--text, #fff);}p.svelte-zd540h {margin:0;color:var(--text-muted, #bbb);line-height:1.6;min-height:5.5em;}.dots.svelte-zd540h {display:flex;justify-content:center;gap:7px;margin:var(--space-4, 20px) 0;}.dot.svelte-zd540h {width:7px;height:7px;border-radius:50%;background:var(--bg-active, #444);transition:background 0.2s, width 0.2s;}.dot.on.svelte-zd540h {background:var(--accent, #6aa0ff);width:20px;border-radius:4px;}.nav.svelte-zd540h {display:flex;gap:var(--space-2, 8px);justify-content:space-between;}.ghost.svelte-zd540h, .go.svelte-zd540h {flex:1;padding:var(--space-3, 12px) var(--space-4, 16px);border-radius:var(--radius-md, 10px);font-size:0.95rem;font-weight:600;cursor:pointer;}.ghost.svelte-zd540h {background:transparent;border:1px solid var(--border, #333);color:var(--text-muted, #bbb);}.ghost.svelte-zd540h:disabled {opacity:0.35;cursor:default;}.go.svelte-zd540h {background:var(--accent, #6aa0ff);color:var(--accent-text, #fff);border:none;}'
+	code: '.defs.svelte-zd540h {position:absolute;width:0;height:0;}.g0.svelte-zd540h {stop-color:var(--accent, #6aa0ff);}.g1.svelte-zd540h {stop-color:color-mix(in srgb, var(--accent, #6aa0ff) 55%, #b06cf0);}.gs0.svelte-zd540h {stop-color:color-mix(in srgb, var(--accent, #6aa0ff) 45%, transparent);}.gs1.svelte-zd540h {stop-color:color-mix(in srgb, var(--accent, #6aa0ff) 12%, transparent);}.intro.svelte-zd540h {position:fixed;inset:0;z-index:80;display:flex;flex-direction:column;overflow:hidden;color:var(--text, #fff);background:radial-gradient(130% 80% at 50% -10%, color-mix(in srgb, var(--accent, #6aa0ff) 22%, transparent), transparent 60%),\n      var(--bg, #0e0f13);padding:calc(env(safe-area-inset-top) + 20px) 24px calc(env(safe-area-inset-bottom) + 24px);}.aurora.svelte-zd540h {position:absolute;border-radius:50%;filter:blur(60px);opacity:0.5;pointer-events:none;}.a1.svelte-zd540h {width:320px;height:320px;top:-80px;right:-120px;background:radial-gradient(circle, color-mix(in srgb, var(--accent, #6aa0ff) 60%, transparent), transparent 70%);\n    animation: svelte-zd540h-drift1 14s ease-in-out infinite;}.a2.svelte-zd540h {width:300px;height:300px;bottom:-100px;left:-120px;background:radial-gradient(circle, color-mix(in srgb, #b06cf0 55%, transparent), transparent 70%);\n    animation: svelte-zd540h-drift2 18s ease-in-out infinite;}\n  @keyframes svelte-zd540h-drift1 { 50% { transform: translate(-30px, 40px) scale(1.1); } }\n  @keyframes svelte-zd540h-drift2 { 50% { transform: translate(40px, -30px) scale(1.08); } }.skip.svelte-zd540h {position:absolute;top:calc(env(safe-area-inset-top) + 16px);right:20px;z-index:2;background:color-mix(in srgb, var(--text, #fff) 8%, transparent);border:none;color:var(--text-muted, #c7c9d1);font-size:0.82rem;padding:7px 14px;border-radius:999px;backdrop-filter:blur(6px);cursor:pointer;}.skip.svelte-zd540h:active {transform:scale(0.96);}.stage.svelte-zd540h {flex:1;display:grid;place-items:center;position:relative;min-height:0;}.art.svelte-zd540h {grid-area:1 / 1;}.il.svelte-zd540h {width:min(78vw, 300px);height:auto;overflow:visible;}.copy.svelte-zd540h {position:relative;text-align:center;padding:4px 4px 10px;}.copy.svelte-zd540h > div:where(.svelte-zd540h) {position:absolute;inset:0;}.copy.svelte-zd540h > div:where(.svelte-zd540h):last-child {position:relative;}.kicker.svelte-zd540h {display:inline-block;font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent, #6aa0ff);font-weight:700;margin-bottom:10px;}h1.svelte-zd540h {margin:0 0 12px;font-size:clamp(1.5rem, 7vw, 2rem);line-height:1.12;letter-spacing:-0.02em;font-weight:800;}p.svelte-zd540h {margin:0 auto;max-width:30rem;color:var(--text-muted, #c7c9d1);line-height:1.6;font-size:0.98rem;}.footer.svelte-zd540h {position:relative;z-index:2;}.dots.svelte-zd540h {display:flex;justify-content:center;gap:8px;margin:18px 0 20px;}.dot-btn.svelte-zd540h {width:7px;height:7px;padding:0;border:none;border-radius:999px;background:color-mix(in srgb, var(--text, #fff) 22%, transparent);transition:width 0.3s cubic-bezier(.2,.8,.2,1), background 0.3s;cursor:pointer;}.dot-btn.on.svelte-zd540h {width:24px;background:var(--accent, #6aa0ff);}.actions.svelte-zd540h {display:flex;gap:10px;}.ghost.svelte-zd540h, .go.svelte-zd540h {height:52px;border-radius:15px;font-size:1rem;font-weight:700;cursor:pointer;transition:transform 0.12s, filter 0.2s;}.ghost.svelte-zd540h {flex:0 0 auto;padding:0 22px;background:color-mix(in srgb, var(--text, #fff) 9%, transparent);border:1px solid color-mix(in srgb, var(--text, #fff) 14%, transparent);color:var(--text, #fff);}.go.svelte-zd540h {flex:1;border:none;color:#fff;background:linear-gradient(135deg, var(--accent, #6aa0ff), color-mix(in srgb, var(--accent, #6aa0ff) 55%, #b06cf0));box-shadow:0 10px 30px color-mix(in srgb, var(--accent, #6aa0ff) 40%, transparent);}.go.svelte-zd540h:active, .ghost.svelte-zd540h:active {transform:scale(0.98);}\n\n  /* ---- illustration primitives ---- */.phone.svelte-zd540h {fill:color-mix(in srgb, var(--text, #fff) 7%, transparent);stroke:color-mix(in srgb, var(--text, #fff) 20%, transparent);stroke-width:2;}.ring.svelte-zd540h {fill:none;stroke:color-mix(in srgb, var(--text, #fff) 16%, transparent);stroke-width:1.5;stroke-dasharray:2 7;stroke-linecap:round;}.dot.svelte-zd540h {fill:color-mix(in srgb, var(--text, #fff) 40%, transparent);}.dot.accent.svelte-zd540h {fill:var(--accent, #6aa0ff);}.dot.light.svelte-zd540h {fill:color-mix(in srgb, var(--text, #fff) 55%, transparent);}.gloss.svelte-zd540h {fill:color-mix(in srgb, #fff 30%, transparent);}.bar.svelte-zd540h {fill:color-mix(in srgb, #fff 55%, transparent);}.rail.svelte-zd540h {fill:color-mix(in srgb, var(--accent, #6aa0ff) 85%, #000);}.touch.svelte-zd540h {fill:none;stroke:#fff;stroke-width:2;opacity:0.9;}.src.svelte-zd540h {fill:color-mix(in srgb, var(--text, #fff) 10%, transparent);stroke:color-mix(in srgb, var(--text, #fff) 22%, transparent);stroke-width:1.5;}.ico.svelte-zd540h {fill:none;stroke:var(--accent, #6aa0ff);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}.ico.fill.svelte-zd540h {fill:var(--accent, #6aa0ff);stroke:none;}.tile.svelte-zd540h {opacity:0; animation: svelte-zd540h-pop 0.5s cubic-bezier(.2,.9,.3,1.3) forwards;}.flow.svelte-zd540h {fill:none;stroke:var(--accent, #6aa0ff);stroke-width:2;stroke-dasharray:5 9;stroke-linecap:round;opacity:0.8; animation: svelte-zd540h-dashmove 1.1s linear infinite;}.card.svelte-zd540h {stroke:color-mix(in srgb, var(--text, #fff) 16%, transparent);stroke-width:1.5;}.c1.svelte-zd540h {transform:rotate(-9deg);transform-origin:130px 106px;}.c2.svelte-zd540h {transform:rotate(3deg);transform-origin:130px 106px;opacity:0.85;}.c3.svelte-zd540h {transform:rotate(13deg);transform-origin:130px 106px;opacity:0.6;}.sw.svelte-zd540h {stroke:color-mix(in srgb, var(--text, #fff) 14%, transparent);stroke-width:1;opacity:0; animation: svelte-zd540h-pop 0.5s cubic-bezier(.2,.9,.3,1.3) forwards;}.s0.svelte-zd540h {fill:var(--accent, #6aa0ff);}.s1.svelte-zd540h {fill:color-mix(in srgb, var(--accent, #6aa0ff) 60%, #b06cf0);}.s2.svelte-zd540h {fill:#e9a23b;}.s3.svelte-zd540h {fill:#4bb58b;}.s4.svelte-zd540h {fill:color-mix(in srgb, var(--text, #fff) 70%, transparent);}.appdot.svelte-zd540h {fill:color-mix(in srgb, #fff 45%, transparent);}.live.svelte-zd540h {fill:var(--accent, #6aa0ff); animation: svelte-zd540h-livepulse 1.8s ease-in-out infinite;}.float.svelte-zd540h { animation: svelte-zd540h-floaty 5s ease-in-out infinite;transform-origin:center;}.spin.svelte-zd540h { animation: svelte-zd540h-spin 22s linear infinite;}.chip.svelte-zd540h {opacity:0; animation: svelte-zd540h-pop 0.5s cubic-bezier(.2,.9,.3,1.3) forwards;}.slidein.svelte-zd540h { animation: svelte-zd540h-slidein 0.7s cubic-bezier(.2,.8,.2,1) both;}.ping.svelte-zd540h { animation: svelte-zd540h-ping 1.8s ease-out infinite;transform-origin:150px 105px;}.wave.svelte-zd540h { animation: svelte-zd540h-waveshift 3.5s ease-in-out infinite;}.wave.w2.svelte-zd540h {animation-duration:4.5s;}\n\n  @keyframes svelte-zd540h-floaty { 50% { transform: translateY(-8px); } }\n  @keyframes svelte-zd540h-spin { to { transform: rotate(360deg); } }\n  @keyframes svelte-zd540h-pop { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }\n  @keyframes svelte-zd540h-dashmove { to { stroke-dashoffset: -28; } }\n  @keyframes svelte-zd540h-slidein { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: translateX(0); } }\n  @keyframes svelte-zd540h-ping { 0% { transform: scale(1); opacity: 0.7; } 80%, 100% { transform: scale(2.4); opacity: 0; } }\n  @keyframes svelte-zd540h-livepulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }\n  @keyframes svelte-zd540h-waveshift { 50% { transform: translateX(-14px) translateY(-3px); } }\n\n  @media (prefers-reduced-motion: reduce) {.float.svelte-zd540h, .spin.svelte-zd540h, .chip.svelte-zd540h, .slidein.svelte-zd540h, .ping.svelte-zd540h, .wave.svelte-zd540h, .tile.svelte-zd540h, .flow.svelte-zd540h, .sw.svelte-zd540h, .live.svelte-zd540h, .aurora.svelte-zd540h { animation: none !important;}.tile.svelte-zd540h, .sw.svelte-zd540h, .chip.svelte-zd540h {opacity:1;}\n  }'
 };
 
 function Intro($$anchor, $$props) {
@@ -20221,38 +20782,39 @@ function Intro($$anchor, $$props) {
 
 	const steps = [
 		{
-			icon: '🖼️',
-			title: 'Willkommen bei SKWD Wall',
-			body: 'Dein Wallpaper-Studio: eigene Bilder und Videos sammeln, aus Wallhaven laden, in schönen Ansichten durchstöbern — und die ganze App färbt sich automatisch nach dem aktiven Bild.'
+			kicker: 'Willkommen',
+			title: 'SKWD Wall',
+			body: 'Sammle, gestalte und erlebe deine Hintergründe neu. SKWD Wall macht aus deinem Startbildschirm eine Bühne – kuratiert von dir, abgestimmt bis auf die Farbe.'
 		},
 
 		{
-			icon: '👆',
-			title: 'Das Menü: die Swipe-Leiste',
-			body: 'Wisch mit dem Finger vom Rand herein (oder tippe den Rand an) — die schräge Leiste fährt aus. Darüber erreichst du Hinzufügen (＋), Sortieren, Favoriten, Zufall, Suche, Farbe und Hell/Dunkel. Sie fährt von selbst wieder ein.'
+			kicker: 'Steuerung',
+			title: 'Alles in einer Wischgeste',
+			body: 'Zieh vom Bildschirmrand nach innen – die Leiste gleitet herein. Hinzufügen, Sortieren, Favoriten, Farbe und Hell/Dunkel sind immer einen Wisch entfernt und verschwinden von selbst wieder.'
 		},
 
 		{
-			icon: '➕',
-			title: 'Wallpaper hinzufügen',
-			body: 'Über ＋ in der Leiste: eigene Bilder/Videos hochladen, bei Wallhaven suchen, oder einen ganzen Ordner einbinden (am PC & Handy). Nichts wird kopiert — Ordnerbilder bleiben, wo sie sind.'
+			kicker: 'Deine Motive',
+			title: 'Alle Quellen, eine Galerie',
+			body: 'Eigene Fotos und Videos, Millionen Motive aus Wallhaven oder ein ganzer Ordner deines Geräts – alles an einem Ort. Ordner werden verknüpft, nicht kopiert.'
 		},
 
 		{
-			icon: '🎨',
-			title: 'Ansichten & Farben',
-			body: 'Sieben Ansichtsmodi (Wall, Waben, Slices, Depth, Sandy, Fächer, Collection) — umschaltbar in den Einstellungen → Ansicht. Tippe ein Bild an, um es zu aktivieren; die App-Farben passen sich an (Material You).'
+			kicker: 'Ansicht & Farbe',
+			title: 'Sieben Ansichten, ein Gespür für Farbe',
+			body: 'Blättere durch wandfüllende Raster, Waben und Fächer. Das aktive Bild färbt die ganze App automatisch – ein Design, das sich mit deinem Hintergrund wandelt.'
 		},
 
 		{
-			icon: '📱',
-			title: 'Aufs Handy bringen',
-			body: 'Unter Einstellungen → Geräte aktivierst du den System-Hintergrund und das Live-Wallpaper — dein gewähltes Bild (oder eine rotierende Auswahl) landet direkt auf dem Homescreen.'
+			kicker: 'Startbildschirm',
+			title: 'Direkt aufs Handy',
+			body: 'Setz dein Motiv als System-Hintergrund oder als animiertes Live-Wallpaper – mit sanften Übergängen und automatischem Wechsel, auch wenn die App geschlossen ist.'
 		}
 	];
 
 	let i = state(0);
 	let last = user_derived(() => get(i) === steps.length - 1);
+	const pad = (n) => String(n + 1).padStart(2, '0');
 
 	function next() {
 		if (get(last)) $$props.onDone(); else set(i, get(i) + 1);
@@ -20262,45 +20824,162 @@ function Intro($$anchor, $$props) {
 		if (get(i) > 0) set(i, get(i) - 1);
 	}
 
-	var div = root_1();
-	var div_1 = child(div);
-	var button = child(div_1);
-	var div_2 = sibling(button, 2);
-	var text = only_child(div_2, true);
-	var h2 = sibling(div_2, 2);
-	var text_1 = only_child(h2, true);
-	var p = sibling(h2, 2);
-	var text_2 = only_child(p, true);
-	var div_3 = sibling(p, 2);
+	var fragment = root_12();
+	var div = sibling(first_child(fragment), 2);
+	var button = sibling(child(div), 4);
+	var div_1 = sibling(button, 2);
+	var node = child(div_1);
 
-	each(div_3, 21, () => steps, index, ($$anchor, _, n) => {
-		var span = root();
+	key(node, () => get(i), ($$anchor) => {
+		var div_2 = root_8();
+		var node_1 = child(div_2);
+
+		{
+			var consequent = ($$anchor) => {
+				var svg = root();
+
+				append($$anchor, svg);
+			};
+
+			var consequent_1 = ($$anchor) => {
+				var svg_1 = root_1();
+
+				append($$anchor, svg_1);
+			};
+
+			var consequent_2 = ($$anchor) => {
+				var svg_2 = root_3();
+				var g = child(svg_2);
+				var node_2 = sibling(child(g));
+
+				each(node_2, 16, () => [0, 1, 2, 3], index, ($$anchor, k) => {
+					var rect = root_2();
+
+					template_effect(
+						($0) => {
+							set_attribute(rect, 'x', 158 + k % 2 * 34);
+							set_attribute(rect, 'y', $0);
+							set_style(rect, `animation-delay:${k * 120}ms`);
+						},
+						[() => 78 + Math.floor(k / 2) * 34]
+					);
+
+					append($$anchor, rect);
+				});
+				append($$anchor, svg_2);
+			};
+
+			var consequent_3 = ($$anchor) => {
+				var svg_3 = root_5();
+				var g_1 = sibling(child(svg_3));
+
+				each(g_1, 20, () => [0, 1, 2, 3, 4], index, ($$anchor, k) => {
+					var circle = root_4();
+
+					template_effect(() => {
+						set_attribute(circle, 'cx', 96 + k * 17);
+						set_class(circle, 0, `sw s${k ?? ''}`, 'svelte-zd540h');
+						set_style(circle, `animation-delay:${k * 120}ms`);
+					});
+
+					append($$anchor, circle);
+				});
+				append($$anchor, svg_3);
+			};
+
+			var alternate = ($$anchor) => {
+				var svg_4 = root_7();
+				var g_2 = child(svg_4);
+				var node_3 = sibling(child(g_2), 3);
+
+				each(node_3, 16, () => [0, 1, 2, 3, 4, 5, 6, 7], index, ($$anchor, k) => {
+					var rect_1 = root_6();
+
+					template_effect(
+						($0) => {
+							set_attribute(rect_1, 'x', 110 + k % 4 * 12);
+							set_attribute(rect_1, 'y', $0);
+						},
+						[() => 44 + Math.floor(k / 4) * 12]
+					);
+
+					append($$anchor, rect_1);
+				});
+				append($$anchor, svg_4);
+			};
+
+			if_block(node_1, ($$render) => {
+				if (get(i) === 0) $$render(consequent); else if (get(i) === 1) $$render(consequent_1, 1); else if (get(i) === 2) $$render(consequent_2, 2); else if (get(i) === 3) $$render(consequent_3, 3); else $$render(alternate, -1);
+			});
+		}
+		transition(1, div_2, () => fade, () => ({ duration: 420 }));
+		append($$anchor, div_2);
+	});
+
+	var div_3 = sibling(div_1, 2);
+	var node_4 = child(div_3);
+
+	key(node_4, () => get(i), ($$anchor) => {
+		var div_4 = root_9();
+		var span = child(div_4);
+		var text = only_child(span);
+		var h1 = sibling(span, 2);
+		var text_1 = only_child(h1, true);
+		var p = sibling(h1, 2);
+		var text_2 = only_child(p, true);
+
+		template_effect(
+			($0) => {
+				set_text(text, `${$0 ?? ''} · ${steps[get(i)].kicker ?? ''}`);
+				set_text(text_1, steps[get(i)].title);
+				set_text(text_2, steps[get(i)].body);
+			},
+			[() => pad(get(i))]
+		);
+
+		transition(1, div_4, () => fly, () => ({ y: 16, duration: 420, easing: cubicOut }));
+		append($$anchor, div_4);
+	});
+
+	var div_5 = sibling(div_3, 2);
+	var div_6 = child(div_5);
+
+	each(div_6, 21, () => steps, index, ($$anchor, _, n) => {
+		var button_1 = root_10();
 		let classes;
 
-		template_effect(() => classes = set_class(span, 1, 'dot svelte-zd540h', null, classes, { on: n === get(i) }));
-		append($$anchor, span);
+		set_attribute(button_1, 'aria-label', `Schritt ${n + 1}`);
+		template_effect(() => classes = set_class(button_1, 1, 'dot-btn svelte-zd540h', null, classes, { on: n === get(i) }));
+		delegated('click', button_1, () => set(i, n, true));
+		append($$anchor, button_1);
 	});
 
-	var div_4 = sibling(div_3, 2);
-	var button_1 = child(div_4);
-	var button_2 = sibling(button_1, 2);
-	var text_3 = only_child(button_2, true);
+	var div_7 = sibling(div_6, 2);
+	var node_5 = child(div_7);
 
-	template_effect(() => {
-		set_text(text, steps[get(i)].icon);
-		set_text(text_1, steps[get(i)].title);
-		set_text(text_2, steps[get(i)].body);
-		button_1.disabled = get(i) === 0;
-		set_text(text_3, get(last) ? "Los geht's" : 'Weiter');
-	});
+	{
+		var consequent_4 = ($$anchor) => {
+			var button_2 = root_11();
+
+			delegated('click', button_2, back);
+			append($$anchor, button_2);
+		};
+
+		if_block(node_5, ($$render) => {
+			if (get(i) > 0) $$render(consequent_4);
+		});
+	}
+
+	var button_3 = sibling(node_5, 2);
+	var text_3 = only_child(button_3, true);
+	template_effect(() => set_text(text_3, get(last) ? 'Loslegen' : 'Weiter'));
 
 	delegated('click', button, function (...$$args) {
 		$$props.onDone?.apply(this, $$args);
 	});
 
-	delegated('click', button_1, back);
-	delegated('click', button_2, next);
-	append($$anchor, div);
+	delegated('click', button_3, next);
+	append($$anchor, fragment);
 	pop();
 }
 
@@ -20346,7 +21025,7 @@ class PickerView extends View {
         manager: this.manager
       }
     });
-    if (this.app.config.get("skwd-wall", "introSeen") !== true) {
+    if (this.app.platform.isMobile && this.app.config.get("skwd-wall", "introSeen") !== true) {
       this.intro = mount(Intro, {
         target: this.containerEl,
         props: {
