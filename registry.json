@@ -7,8 +7,14 @@
       "author": "Sojus",
       "version": "0.1.0",
       "type": "gui",
-      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/9a61bf8de242bb3ebf83dae377cecf8f1c51871e/welcome/main.js",
+      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/26fdf2adb969f99811fc2751438c7f3dd05ffc76/welcome/main.js",
       "versions": [
+        {
+          "label": "0.1.0+26fdf2a",
+          "version": "0.1.0",
+          "built": "26fdf2a",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/26fdf2adb969f99811fc2751438c7f3dd05ffc76/welcome/main.js"
+        },
         {
           "label": "0.1.0+9a61bf8",
           "version": "0.1.0",
@@ -36,8 +42,14 @@
       "author": "Sojus",
       "version": "0.1.0",
       "type": "theme",
-      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/9a61bf8de242bb3ebf83dae377cecf8f1c51871e/theme/main.js",
+      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/26fdf2adb969f99811fc2751438c7f3dd05ffc76/theme/main.js",
       "versions": [
+        {
+          "label": "0.1.0+26fdf2a",
+          "version": "0.1.0",
+          "built": "26fdf2a",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/26fdf2adb969f99811fc2751438c7f3dd05ffc76/theme/main.js"
+        },
         {
           "label": "0.1.0+9a61bf8",
           "version": "0.1.0",
@@ -87,8 +99,14 @@
           "text": "Sieben Ansichtsmodi aus dem SKWD-Original, automatisches Theme aus dem aktiven Bild, Übergänge (inkl. GPU-Shader), Live-Wallpaper (nativ), Ordner-Einbindung und Papierkorb."
         }
       ],
-      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/9a61bf8de242bb3ebf83dae377cecf8f1c51871e/skwd-wall/main.js",
+      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/26fdf2adb969f99811fc2751438c7f3dd05ffc76/skwd-wall/main.js",
       "versions": [
+        {
+          "label": "0.1.0+26fdf2a",
+          "version": "0.1.0",
+          "built": "26fdf2a",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/26fdf2adb969f99811fc2751438c7f3dd05ffc76/skwd-wall/main.js"
+        },
         {
           "label": "0.1.0+9a61bf8",
           "version": "0.1.0",
