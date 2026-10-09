@@ -7,7 +7,15 @@
       "author": "Sojus",
       "version": "0.1.0",
       "type": "gui",
-      "main": "welcome/main.js"
+      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/96f0117d59f3e4181d7376437395b6c93155e950/welcome/main.js",
+      "versions": [
+        {
+          "label": "0.1.0+96f0117",
+          "version": "0.1.0",
+          "built": "96f0117",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/96f0117d59f3e4181d7376437395b6c93155e950/welcome/main.js"
+        }
+      ]
     },
     {
       "id": "theme",
@@ -16,7 +24,15 @@
       "author": "Sojus",
       "version": "0.1.0",
       "type": "theme",
-      "main": "theme/main.js"
+      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/96f0117d59f3e4181d7376437395b6c93155e950/theme/main.js",
+      "versions": [
+        {
+          "label": "0.1.0+96f0117",
+          "version": "0.1.0",
+          "built": "96f0117",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/96f0117d59f3e4181d7376437395b6c93155e950/theme/main.js"
+        }
+      ]
     },
     {
       "id": "skwd-wall",
@@ -35,7 +51,15 @@
         "wallpaper",
         "live-wallpaper"
       ],
-      "main": "skwd-wall/main.js"
+      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/96f0117d59f3e4181d7376437395b6c93155e950/skwd-wall/main.js",
+      "versions": [
+        {
+          "label": "0.1.0+96f0117",
+          "version": "0.1.0",
+          "built": "96f0117",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/96f0117d59f3e4181d7376437395b6c93155e950/skwd-wall/main.js"
+        }
+      ]
     }
   ]
 }
