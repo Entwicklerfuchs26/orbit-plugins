@@ -7851,6 +7851,9 @@ async function getImage(id) {
 async function deleteImage(id) {
   await tx("readwrite", (s) => s.delete(id));
 }
+async function clearAllImages() {
+  await tx("readwrite", (s) => s.clear());
+}
 async function imageUrl(id) {
   const blob = await getImage(id);
   return blob ? URL.createObjectURL(blob) : null;
@@ -14995,6 +14998,21 @@ class WallpaperManager {
     this.stopScheduler();
     for (const url of Object.values(this.urls.get())) URL.revokeObjectURL(url);
   }
+  /**
+   * Wipe ALL plugin data: uploaded image blobs (IndexedDB) + the whole state
+   * (library, collections, folder sources, settings) back to defaults. Used by
+   * the "Daten löschen" action in the Plugins area.
+   */
+  async clearAllData() {
+    for (const url of Object.values(this.urls.get())) URL.revokeObjectURL(url);
+    this.urls.set({});
+    await clearAllImages();
+    this.state.set({ ...DEFAULT_STATE });
+    this.persist();
+    this.lastLiveSig = null;
+    this.applyActive();
+    this.pushLive();
+  }
   /** Apply the wallpaper fit mode as CSS vars read by the #app-wallpaper layer. */
   applyFill() {
     const root = document.documentElement.style;
@@ -15141,7 +15159,10 @@ class WallpaperManager {
     this.resolving.add(id);
     try {
       const url = item.folderId ? await this.folders?.thumbUrl(item.folderId, item.fileName ?? item.name, item.kind ?? "image") ?? null : await imageUrl(item.id);
-      if (url) this.urls.update((m) => ({ ...m, [id]: url }));
+      if (url) {
+        this.urls.update((m) => ({ ...m, [id]: url }));
+        if (id === this.state.get().activeId) this.applyActive();
+      }
     } finally {
       this.resolving.delete(id);
     }
@@ -21098,6 +21119,22 @@ class WallpaperPlugin extends Plugin {
       id: "open",
       name: "SKWD Wall öffnen",
       callback: () => this.app.workspace.openView(VIEW_ID)
+    });
+    this.addCommand({
+      id: "show-intro",
+      name: "Einführung anzeigen",
+      callback: () => {
+        this.app.config.set("skwd-wall", "introSeen", false);
+        this.app.workspace.closeView(VIEW_ID);
+        this.app.workspace.openView(VIEW_ID);
+      }
+    });
+    this.addCommand({
+      id: "clear-data",
+      name: "Daten löschen",
+      callback: () => {
+        void this.manager.clearAllData();
+      }
     });
     let settingsComponent = null;
     this.addSettingTab({
