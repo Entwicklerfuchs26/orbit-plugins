@@ -1,9 +1,0 @@
-{
-  "id": "theme",
-  "name": "Design",
-  "version": "0.1.0",
-  "description": "Theme-Sets: Farbe, Hell/Dunkel, Wallpaper, Schrift, Dichte, Animationen. Palette aus einer Farbe oder einem Wallpaper (Material You).",
-  "author": "Sojus",
-  "main": "main.js",
-  "type": "theme"
-}

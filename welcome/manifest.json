@@ -1,9 +1,0 @@
-{
-  "id": "welcome",
-  "name": "Willkommen",
-  "version": "0.1.0",
-  "description": "Demo-Plugin — beweist, dass der Kern Plugins lädt, Views öffnet und Commands registriert.",
-  "author": "Sojus",
-  "main": "main.js",
-  "type": "gui"
-}
