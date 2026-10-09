@@ -21439,7 +21439,11 @@ class PickerView extends View {
   }
   /** Mount the full-screen intro/setup overlay (idempotent). */
   showIntro() {
-    if (this.intro || !this.containerEl) return;
+    if (this.intro) return;
+    if (!this.containerEl) {
+      requestAnimationFrame(() => this.showIntro());
+      return;
+    }
     this.intro = mount(Intro, {
       target: this.containerEl,
       props: {
