@@ -15451,8 +15451,8 @@ function useStore(store) {
 	};
 }
 
-var root$4 = from_svg(`<path></path>`);
-var root_1$4 = from_svg(`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"></svg>`);
+var root$5 = from_svg(`<path></path>`);
+var root_1$5 = from_svg(`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"></svg>`);
 
 function Icon($$anchor, $$props) {
 	push($$props, true);
@@ -15496,10 +15496,10 @@ function Icon($$anchor, $$props) {
 	};
 
 	let d = user_derived(() => paths[$$props.name] ?? 'M12 12h.01');
-	var svg = root_1$4();
+	var svg = root_1$5();
 
 	each(svg, 21, () => get(d).split(' M').map((p, i) => i === 0 ? p : 'M' + p), index, ($$anchor, segment) => {
-		var path = root$4();
+		var path = root$5();
 
 		template_effect(() => set_attribute(path, 'd', get(segment)));
 		append($$anchor, path);
@@ -15571,8 +15571,8 @@ function rgbToHsl(r, g, b) {
   return { h, s, l };
 }
 
-var root$3 = from_html(`<div class="subhead svelte-eje18g"> </div>`);
-var root_1$3 = from_html(`<span class="desc svelte-eje18g"> </span>`);
+var root$4 = from_html(`<div class="subhead svelte-eje18g"> </div>`);
+var root_1$4 = from_html(`<span class="desc svelte-eje18g"> </span>`);
 var root_2$3 = from_html(`<div class="field row svelte-eje18g"><div class="meta svelte-eje18g"><span class="label svelte-eje18g"> </span><!></div> <button type="button" role="switch"><span class="knob svelte-eje18g"></span></button></div>`);
 var root_3$3 = from_html(`· <span class="inline-desc svelte-eje18g"> </span>`, 1);
 var root_4$3 = from_html(`<div class="field svelte-eje18g"><span class="label svelte-eje18g"> <!> <span class="val svelte-eje18g"> </span></span> <div class="slider svelte-eje18g" role="slider" tabindex="0"><div class="slider-track svelte-eje18g"><div class="slider-fill svelte-eje18g"></div></div> <div class="slider-thumb svelte-eje18g"></div></div></div>`);
@@ -15588,14 +15588,14 @@ var root_13$2 = from_html(`<h3 class="svelte-eje18g"> </h3>`);
 var root_14$2 = from_html(`<!> <!>`, 1);
 var root_15$2 = from_html(`<div class="settings svelte-eje18g"><!> <!></div>`);
 
-const $$css$3 = {
+const $$css$4 = {
 	hash: 'svelte-eje18g',
 	code: '.settings.svelte-eje18g {display:flex;flex-direction:column;gap:var(--space-4);}.cat-tabs.svelte-eje18g {position:sticky;top:0;z-index:5;display:flex;gap:6px;flex-wrap:wrap;padding-bottom:var(--space-2);margin:calc(-1 * var(--space-2)) 0 0;background:linear-gradient(var(--bg-elevated, var(--bg)) 80%, transparent);}.cat-tab.svelte-eje18g {padding:6px 14px;background:var(--bg);border:1px solid var(--border);border-radius:999px;color:var(--text-muted);font-size:0.85rem;white-space:nowrap;}.cat-tab.on.svelte-eje18g {background:var(--color-primary);color:#fff;border-color:transparent;font-weight:600;}h3.svelte-eje18g {margin:var(--space-2) 0 0;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-faint);}h3.svelte-eje18g:first-child {margin-top:0;}.subhead.svelte-eje18g {font-size:0.74rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-faint);margin-top:var(--space-1);}.field.svelte-eje18g {display:flex;flex-direction:column;gap:var(--space-2);}.field.row.svelte-eje18g {flex-direction:row;align-items:center;justify-content:space-between;gap:var(--space-3);}.meta.svelte-eje18g {display:flex;flex-direction:column;gap:2px;min-width:0;}.label.svelte-eje18g {font-size:0.9rem;color:var(--text-muted);}.desc.svelte-eje18g, .inline-desc.svelte-eje18g {font-size:0.78rem;color:var(--text-faint);line-height:1.4;}.val.svelte-eje18g {color:var(--text-faint);font-variant-numeric:tabular-nums;}\n  /* Custom slider: pan-y → vertical drags scroll the list; only horizontal\n     drags / deliberate taps move the value. Prevents accidental nudges. */.slider.svelte-eje18g {position:relative;width:100%;height:34px;display:flex;align-items:center;touch-action:pan-y;cursor:pointer;}.slider-track.svelte-eje18g {width:100%;height:6px;border-radius:999px;background:var(--bg-elevated);box-shadow:inset 0 0 0 1px var(--border);overflow:hidden;}.slider-fill.svelte-eje18g {height:100%;background:var(--color-primary);border-radius:999px;}.slider-thumb.svelte-eje18g {position:absolute;top:50%;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.4);transform:translate(-50%, -50%);pointer-events:none;}.seg.svelte-eje18g {display:flex;gap:4px;flex-wrap:wrap;background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-md);padding:3px;}.seg.svelte-eje18g button:where(.svelte-eje18g) {flex:1;padding:var(--space-2) var(--space-3);background:transparent;border:none;border-radius:var(--radius-sm);color:var(--text-muted);font-size:0.82rem;white-space:nowrap;}.seg.svelte-eje18g button.on:where(.svelte-eje18g) {background:var(--color-primary);color:#fff;}select.svelte-eje18g, .text.svelte-eje18g {padding:var(--space-2) var(--space-3);background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-md);color:var(--text);font-size:0.85rem;}select.svelte-eje18g {max-width:55%;}input[type=\'color\'].svelte-eje18g {width:44px;height:34px;padding:0;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-elevated);}.action.svelte-eje18g {padding:var(--space-2) var(--space-4);background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-md);color:var(--text);font-size:0.85rem;white-space:nowrap;}.toggle.svelte-eje18g {flex:0 0 auto;width:46px;height:28px;padding:0;border:none;border-radius:999px;background:var(--bg-elevated);box-shadow:inset 0 0 0 1px var(--border);transition:background 0.18s ease;}.toggle.on.svelte-eje18g {background:var(--color-primary);box-shadow:inset 0 0 0 1px transparent;}.knob.svelte-eje18g {display:block;width:22px;height:22px;margin:3px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.35);transform:translateX(0);transition:transform 0.18s cubic-bezier(0.4,0,0.2,1);}.toggle.on.svelte-eje18g .knob:where(.svelte-eje18g) {transform:translateX(18px);}'
 };
 
 function SettingsView($$anchor, $$props) {
 	push($$props, true);
-	append_styles($$anchor, $$css$3);
+	append_styles($$anchor, $$css$4);
 
 	const /** Optional bespoke rows: map a def.customId to a snippet. */
 	// Distinct categories (in order) among visible sections → tab bar.
@@ -15614,7 +15614,7 @@ function SettingsView($$anchor, $$props) {
 
 		{
 			var consequent = ($$anchor) => {
-				var div = root$3();
+				var div = root$4();
 				var text = only_child(div, true);
 
 				template_effect(() => set_text(text, def().label));
@@ -15651,7 +15651,7 @@ function SettingsView($$anchor, $$props) {
 
 				{
 					var consequent_3 = ($$anchor) => {
-						var span_1 = root_1$3();
+						var span_1 = root_1$4();
 						var text_2 = only_child(span_1, true);
 
 						template_effect(() => set_text(text_2, def().desc));
@@ -15773,7 +15773,7 @@ function SettingsView($$anchor, $$props) {
 
 				{
 					var consequent_8 = ($$anchor) => {
-						var span_7 = root_1$3();
+						var span_7 = root_1$4();
 						var text_9 = only_child(span_7, true);
 
 						template_effect(() => set_text(text_9, def().desc));
@@ -15833,7 +15833,7 @@ function SettingsView($$anchor, $$props) {
 
 				{
 					var consequent_10 = ($$anchor) => {
-						var span_9 = root_1$3();
+						var span_9 = root_1$4();
 						var text_12 = only_child(span_9, true);
 
 						template_effect(() => set_text(text_12, def().desc));
@@ -15887,7 +15887,7 @@ function SettingsView($$anchor, $$props) {
 
 				{
 					var consequent_13 = ($$anchor) => {
-						var span_12 = root_1$3();
+						var span_12 = root_1$4();
 						var text_15 = only_child(span_12, true);
 
 						template_effect(() => set_text(text_15, def().desc));
@@ -16122,22 +16122,22 @@ delegate([
 	'input'
 ]);
 
-var root$2 = from_html(`<button></button>`);
-var root_1$2 = from_html(`<button> </button>`);
+var root$3 = from_html(`<button></button>`);
+var root_1$3 = from_html(`<button> </button>`);
 var root_2$2 = from_html(`<div class="ip-tags svelte-o97s3m"></div>`);
 var root_3$2 = from_html(`<div class="ip-empty svelte-o97s3m">Kein Bild passt zu den Filtern.</div>`);
 var root_4$2 = from_html(`<button class="ip-tile svelte-o97s3m"><span class="ip-name svelte-o97s3m"> </span></button>`);
 var root_5$2 = from_html(`<div class="ip-grid svelte-o97s3m"></div>`);
 var root_6$2 = from_html(`<div class="ip-overlay svelte-o97s3m" role="presentation"><div class="ip-sheet svelte-o97s3m" role="dialog" tabindex="-1"><div class="ip-head svelte-o97s3m"><span> </span> <button class="ip-close svelte-o97s3m" aria-label="Schließen">×</button></div> <input class="ip-search svelte-o97s3m" placeholder="Name oder Tag…" spellcheck="false"/> <div class="ip-filters svelte-o97s3m"><button>★ Favoriten</button> <!></div> <!> <!></div></div>`);
 
-const $$css$2 = {
+const $$css$3 = {
 	hash: 'svelte-o97s3m',
 	code: '.ip-overlay.svelte-o97s3m {position:fixed;inset:0;z-index:80;background:rgba(0, 0, 0, 0.55);display:flex;align-items:center;justify-content:center;padding:var(--space-4);}.ip-sheet.svelte-o97s3m {width:min(560px, 96%);max-height:88%;overflow-y:auto;background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:var(--space-4);display:flex;flex-direction:column;gap:var(--space-3);}.ip-head.svelte-o97s3m {display:flex;align-items:center;justify-content:space-between;font-weight:600;}.ip-close.svelte-o97s3m {background:transparent;border:none;color:var(--text-muted);font-size:1.3rem;line-height:1;}.ip-search.svelte-o97s3m {padding:var(--space-3);background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);color:var(--text);font-size:0.95rem;outline:none;}.ip-filters.svelte-o97s3m {display:flex;flex-wrap:wrap;align-items:center;gap:6px;}.ip-tags.svelte-o97s3m {display:flex;flex-wrap:wrap;gap:6px;}.ip-chip.svelte-o97s3m {padding:5px 12px;background:var(--bg);border:1px solid var(--border);border-radius:999px;color:var(--text-muted);font-size:0.82rem;white-space:nowrap;}.ip-chip.sm.svelte-o97s3m {padding:4px 10px;font-size:0.78rem;}.ip-chip.on.svelte-o97s3m {background:var(--color-primary);color:#fff;border-color:transparent;}.ip-swatch.svelte-o97s3m {width:24px;height:24px;border-radius:50%;border:2px solid transparent;background:var(--sw);padding:0;}.ip-swatch.on.svelte-o97s3m {border-color:var(--text);box-shadow:0 0 0 2px var(--color-primary);}.ip-grid.svelte-o97s3m {display:grid;grid-template-columns:repeat(auto-fill, minmax(96px, 1fr));gap:8px;}.ip-tile.svelte-o97s3m {position:relative;aspect-ratio:3 / 4;border:1px solid var(--border);border-radius:var(--radius-md);background-size:cover;background-position:center;background-color:var(--color-surface-variant);overflow:hidden;padding:0;cursor:pointer;}.ip-name.svelte-o97s3m {position:absolute;left:0;right:0;bottom:0;padding:12px 6px 5px;font-size:0.68rem;color:#fff;text-align:left;background:linear-gradient(transparent, rgba(0, 0, 0, 0.7));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.ip-empty.svelte-o97s3m {padding:var(--space-5);text-align:center;color:var(--text-muted);font-size:0.9rem;}'
 };
 
 function ImagePicker($$anchor, $$props) {
 	push($$props, true);
-	append_styles($$anchor, $$css$2);
+	append_styles($$anchor, $$css$3);
 
 	let title = prop($$props, 'title', 3, 'Bild wählen');
 	const wpState = useStore($$props.manager.state);
@@ -16200,7 +16200,7 @@ function ImagePicker($$anchor, $$props) {
 	var node = sibling(button_1, 2);
 
 	each(node, 17, () => COLOR_FAMILIES, (c) => c.key, ($$anchor, c) => {
-		var button_2 = root$2();
+		var button_2 = root$3();
 		let classes_1;
 
 		template_effect(() => {
@@ -16221,7 +16221,7 @@ function ImagePicker($$anchor, $$props) {
 			var div_4 = root_2$2();
 
 			each(div_4, 20, () => get(allTags), (t) => t, ($$anchor, t) => {
-				var button_3 = root_1$2();
+				var button_3 = root_1$3();
 				let classes_2;
 				var text_1 = only_child(button_3, true);
 
@@ -16317,8 +16317,8 @@ const pathsNote = ($$anchor) => {
 	append($$anchor, p_6);
 };
 
-var root$1 = from_html(`<p class="hint ok svelte-j0aff2">✓ „SKWD Wall" ist als Live-Wallpaper aktiv.</p>`);
-var root_1$1 = from_html(`<p class="hint warn svelte-j0aff2">⚠ Nicht aktiv (Neuinstallation setzt das zurück). Unten neu auswählen.</p>`);
+var root$2 = from_html(`<p class="hint ok svelte-j0aff2">✓ „SKWD Wall" ist als Live-Wallpaper aktiv.</p>`);
+var root_1$2 = from_html(`<p class="hint warn svelte-j0aff2">⚠ Nicht aktiv (Neuinstallation setzt das zurück). Unten neu auswählen.</p>`);
 var root_2$1 = from_html(`<!> <button class="btn primary svelte-j0aff2">Als Handy-Hintergrund aktivieren…</button>`, 1);
 var root_3$1 = from_html(`<button class="preset-x svelte-j0aff2" aria-label="Preset löschen">×</button>`);
 var root_4$1 = from_html(`<span class="preset svelte-j0aff2"><button> </button> <!></span>`);
@@ -16350,14 +16350,14 @@ var root_29$1 = from_html(`<p class="hint svelte-j0aff2">Zeig auf einen echten O
 var root_30$1 = from_html(`<p class="hint svelte-j0aff2">Direkter Ordner-Zugriff geht in diesem Browser nicht. Am PC (Chrome/Edge) kannst du Ordner direkt einbinden; auf dem Handy kommt der native Ordner-Zugriff (SAF) als eigener Block. Bis dahin: <strong>Hochladen</strong> nutzen.</p>`);
 var root_31$1 = from_html(`<!>     <!>`, 1);
 
-const $$css$1 = {
+const $$css$2 = {
 	hash: 'svelte-j0aff2',
 	code: '.hint.svelte-j0aff2 {margin:0;font-size:0.78rem;color:var(--text-faint);line-height:1.4;}.ok.svelte-j0aff2 {color:#46a758;}.warn.svelte-j0aff2 {color:#f5a524;}.chips.svelte-j0aff2 {display:flex;gap:6px;flex-wrap:wrap;align-items:center;}.chip.svelte-j0aff2 {padding:var(--space-2) var(--space-3);background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-md);color:var(--text-muted);font-size:0.82rem;}.chip.on.svelte-j0aff2 {background:var(--color-primary);color:#fff;border-color:transparent;}.preset.svelte-j0aff2 {display:inline-flex;align-items:stretch;border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;}.preset-apply.svelte-j0aff2 {padding:var(--space-2) var(--space-3);background:var(--bg-elevated);border:none;color:var(--text);font-size:0.82rem;}.preset-apply.empty.svelte-j0aff2 {color:var(--text-faint);border-style:dashed;}.preset-x.svelte-j0aff2 {padding:0 8px;background:var(--bg-elevated);border:none;border-left:1px solid var(--border);color:var(--text-muted);}.btn.svelte-j0aff2 {padding:var(--space-2) var(--space-4);background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-md);color:var(--text);font-size:0.85rem;white-space:nowrap;}.btn.primary.svelte-j0aff2 {background:var(--color-primary);border:none;color:#fff;font-weight:600;align-self:flex-start;}.btn.sm.svelte-j0aff2 {padding:4px 8px;font-size:0.78rem;}.btn.danger.svelte-j0aff2 {color:#e5484d;}.btn.svelte-j0aff2:disabled {opacity:0.5;}.folder-list.svelte-j0aff2 {display:flex;flex-direction:column;gap:var(--space-2);margin-top:var(--space-2);}.folder-row.svelte-j0aff2 {display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-3);background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-md);}.folder-meta.svelte-j0aff2 {display:flex;flex-direction:column;min-width:0;flex:1;}.folder-name.svelte-j0aff2 {font-size:0.88rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.folder-sub.svelte-j0aff2 {font-size:0.74rem;color:var(--text-faint);}.row-inputs.svelte-j0aff2 {display:flex;gap:var(--space-2);}.ti.svelte-j0aff2 {flex:1;min-width:0;padding:var(--space-2) var(--space-3);background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-md);color:var(--text);font-size:0.85rem;}.ta.svelte-j0aff2 {width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);color:var(--text);font-family:var(--font-mono);font-size:0.75rem;padding:var(--space-2);resize:vertical;}.sched.svelte-j0aff2 {display:flex;align-items:center;gap:var(--space-2);flex-wrap:wrap;}.sched.svelte-j0aff2 input[type=\'time\']:where(.svelte-j0aff2), .sched.svelte-j0aff2 select:where(.svelte-j0aff2) {padding:var(--space-2);background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-md);color:var(--text);font-size:0.85rem;}.sched-pick.svelte-j0aff2 {flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding:5px var(--space-2);background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-md);color:var(--text);font-size:0.85rem;text-align:left;}.sched-x.svelte-j0aff2 {width:30px;height:30px;border-radius:var(--radius-md);background:transparent;border:1px solid var(--border);color:var(--text-muted);}.thumb.svelte-j0aff2 {flex:0 0 auto;width:26px;height:26px;border-radius:var(--radius-sm);background-size:cover;background-position:center;background-color:var(--color-surface-variant);}.trash-grid.svelte-j0aff2 {display:grid;grid-template-columns:repeat(auto-fill, minmax(120px, 1fr));gap:var(--space-3);}.trash-item.svelte-j0aff2 {display:flex;flex-direction:column;gap:4px;}.thumb.big.svelte-j0aff2 {width:100%;height:80px;border-radius:var(--radius-md);}.tn.svelte-j0aff2 {font-size:0.75rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.trash-actions.svelte-j0aff2 {display:flex;gap:4px;}'
 };
 
 function WallpaperSettings($$anchor, $$props) {
 	push($$props, true);
-	append_styles($$anchor, $$css$1);
+	append_styles($$anchor, $$css$2);
 
 	const // Native wallpaper/live-wallpaper capabilities are registered together on the
 	// native app, so this flag gates every OS-level device feature below.
@@ -16388,13 +16388,13 @@ function WallpaperSettings($$anchor, $$props) {
 
 		{
 			var consequent = ($$anchor) => {
-				var p_1 = root$1();
+				var p_1 = root$2();
 
 				append($$anchor, p_1);
 			};
 
 			var consequent_1 = ($$anchor) => {
-				var p_2 = root_1$1();
+				var p_2 = root_1$2();
 
 				append($$anchor, p_2);
 			};
@@ -17687,8 +17687,8 @@ async function downloadWallhaven(r) {
   return new File([blob], `wallhaven-${r.id}.${ext}`, { type: blob.type });
 }
 
-var root = from_html(`<video class="tile-video svelte-1lk0sb9" loop="" playsinline="" preload="metadata"></video>`, 2);
-var root_1 = from_html(`<!> <span class="tile-vidbadge svelte-1lk0sb9" aria-hidden="true">▶</span>`, 1);
+var root$1 = from_html(`<video class="tile-video svelte-1lk0sb9" loop="" playsinline="" preload="metadata"></video>`, 2);
+var root_1$1 = from_html(`<!> <span class="tile-vidbadge svelte-1lk0sb9" aria-hidden="true">▶</span>`, 1);
 var root_2 = from_html(`<span class="badge svelte-1lk0sb9"><!></span>`);
 var root_3 = from_html(`<span class="tile-favmark svelte-1lk0sb9"><!></span>`);
 var root_4 = from_html(`<span class="tile-name svelte-1lk0sb9"> </span>`);
@@ -17743,14 +17743,14 @@ var root_52 = from_html(`<button class="coll-add sm svelte-1lk0sb9">＋ Neu</but
 var root_53 = from_html(`<div class="detail-overlay svelte-1lk0sb9" role="presentation"><div role="presentation"><div class="flip-inner svelte-1lk0sb9"><div class="flip-front svelte-1lk0sb9"></div> <div class="flip-back svelte-1lk0sb9"><button><!> <span> </span></button> <div class="tag-field svelte-1lk0sb9"><span class="tf-label svelte-1lk0sb9">Tags</span> <div class="tag-list svelte-1lk0sb9"><!> <!></div> <input class="tag-input svelte-1lk0sb9" placeholder="Tag eingeben + Enter…" spellcheck="false"/></div> <div class="tag-field svelte-1lk0sb9"><span class="tf-label svelte-1lk0sb9">Sammlungen</span> <div class="coll-chiprow svelte-1lk0sb9"><!> <!></div></div> <div class="detail-actions svelte-1lk0sb9"><button class="fx-big svelte-1lk0sb9"><!> Effekt</button> <button class="del-big svelte-1lk0sb9"><!> Löschen</button></div> <button class="done-big wide svelte-1lk0sb9"><!> Fertig</button></div></div></div></div>`);
 var root_54 = from_html(`<div><div class="gallery-scroll svelte-1lk0sb9"><!> <!></div> <!> <div class="rail-zone svelte-1lk0sb9" role="toolbar" tabindex="0" aria-label="Werkzeugleiste"><!> <aside></aside></div> <!> <!> <!> <!> <!> <!> <!></div>`);
 
-const $$css = {
+const $$css$1 = {
 	hash: 'svelte-1lk0sb9',
 	code: '.picker.svelte-1lk0sb9 {position:relative;height:100%;width:100%;overflow:hidden;}.gallery-scroll.svelte-1lk0sb9 {height:100%;overflow-y:auto;overflow-x:hidden;padding:var(--space-5) var(--space-4);}.picker.pinned[data-side=\'right\'].svelte-1lk0sb9 .gallery-scroll:where(.svelte-1lk0sb9) {padding-right:232px;}.picker.pinned[data-side=\'left\'].svelte-1lk0sb9 .gallery-scroll:where(.svelte-1lk0sb9) {padding-left:232px;}\n\n  /* ---- Wall (uniform grid) ---- */.gallery.svelte-1lk0sb9 {display:grid;gap:var(--space-3);}[data-mode=\'wall\'].svelte-1lk0sb9 .gallery:where(.svelte-1lk0sb9) {grid-template-columns:var(--wall-grid, repeat(auto-fill, minmax(var(--tile-size, 130px), 1fr)));}[data-mode=\'wall\'].svelte-1lk0sb9 .tile:where(.svelte-1lk0sb9) {aspect-ratio:3 / 4;}\n\n  /* ---- Centred stages (Slices/Depth/Sandy/Hand/Collection) ----\n     The active item is the camera centre; tiles are absolutely placed by their\n     distance to it and glide into place via CSS transitions on re-select. */[data-mode=\'slices\'].svelte-1lk0sb9 .gallery-scroll:where(.svelte-1lk0sb9),\n  [data-mode=\'depth\'].svelte-1lk0sb9 .gallery-scroll:where(.svelte-1lk0sb9),\n  [data-mode=\'sandy\'].svelte-1lk0sb9 .gallery-scroll:where(.svelte-1lk0sb9),\n  [data-mode=\'hand\'].svelte-1lk0sb9 .gallery-scroll:where(.svelte-1lk0sb9),\n  [data-mode=\'collection\'].svelte-1lk0sb9 .gallery-scroll:where(.svelte-1lk0sb9) {overflow:hidden;padding:0;}\n  /* Own stacking context at z-index 0 → inner tiles can never cover the rail (25).\n     touch-action:none → vertical drags are handled as browse-flipping, not scroll. */.stage.svelte-1lk0sb9 {position:relative;width:100%;height:100%;z-index:0;touch-action:none;}.stage.hand.svelte-1lk0sb9, .stage.collection.svelte-1lk0sb9 {perspective:1400px;}.stage.svelte-1lk0sb9 .tile:where(.svelte-1lk0sb9) {position:absolute;transition:left 0.36s cubic-bezier(0.22,0.61,0.36,1), top 0.36s cubic-bezier(0.22,0.61,0.36,1),\n      width 0.36s cubic-bezier(0.22,0.61,0.36,1), height 0.36s cubic-bezier(0.22,0.61,0.36,1),\n      transform 0.36s cubic-bezier(0.22,0.61,0.36,1), opacity 0.3s ease;will-change:left, top, transform, opacity;}\n\n  /* Slices — wide filmstrip bands stacked vertically; active expands tall */.tile.slice.svelte-1lk0sb9 {border-radius:6px;box-shadow:0 8px 22px rgba(0,0,0,0.4);}.tile.slice.active.svelte-1lk0sb9 {box-shadow:0 14px 34px rgba(0,0,0,0.55);}\n\n  /* Depth — log stack, soft shadow grows toward the front */.tile.depthcard.svelte-1lk0sb9 {border-radius:var(--tile-radius, var(--radius-md));box-shadow:0 10px 26px rgba(0,0,0,0.4);}.tile.depthcard.active.svelte-1lk0sb9 {box-shadow:0 20px 44px rgba(0,0,0,0.6);}\n\n  /* Geometric (honeycomb) */.hexwrap.svelte-1lk0sb9 {position:relative;margin:0 auto;}.tile.hex.svelte-1lk0sb9 {position:absolute;clip-path:polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);border-radius:0;border:none;}.tile.hex.active.svelte-1lk0sb9 {outline:none;box-shadow:inset 0 0 0 4px var(--color-primary);}\n\n  /* Sandy — big hero up top + thumbnail band along the bottom */.tile.sandy-hero.svelte-1lk0sb9 {transform:translate(-50%, -50%);border-radius:var(--tile-radius, var(--radius-md));box-shadow:0 18px 50px rgba(0,0,0,0.55);z-index:1;}.tile.sandy-thumb.svelte-1lk0sb9 {border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,0.4);}\n\n  /* Hand — card fan, centred on the active card */.tile.fan.svelte-1lk0sb9 {width:128px;height:200px;transform-origin:center;border-radius:10px;box-shadow:0 10px 26px rgba(0,0,0,0.45);}.tile.fan.active.svelte-1lk0sb9 {box-shadow:0 18px 40px rgba(0,0,0,0.6);}\n\n  /* Collection — vertical tilted deck; active card flips upright to the front */.tile.stack.svelte-1lk0sb9 {transform-origin:center;border-radius:var(--tile-radius, var(--radius-md));box-shadow:0 14px 34px rgba(0,0,0,0.5);backface-visibility:hidden;}.tile.stack.active.svelte-1lk0sb9 {box-shadow:0 24px 60px rgba(0,0,0,0.6);}\n\n  /* ---- Tiles base ---- */.tile.svelte-1lk0sb9 {position:relative;border:1px solid rgba(255,255,255,0.12);border-radius:var(--tile-radius, var(--radius-md));background-size:cover;background-position:center;background-color:var(--color-surface-variant);cursor:pointer;overflow:hidden;padding:0;transition:transform var(--transition), box-shadow var(--transition);user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation;}.tile.svelte-1lk0sb9:hover {box-shadow:0 6px 20px rgba(0,0,0,0.4);}.tile.active.svelte-1lk0sb9 {outline:3px solid var(--color-primary);outline-offset:-3px;}.tile-video.svelte-1lk0sb9 {position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;}.tile-vidbadge.svelte-1lk0sb9 {position:absolute;top:6px;left:6px;z-index:2;width:22px;height:22px;display:grid;place-items:center;border-radius:50%;font-size:0.6rem;background:rgba(0,0,0,0.55);color:#fff;padding-left:2px;}.badge.svelte-1lk0sb9 {position:absolute;top:6px;left:6px;background:var(--color-primary);color:#fff;border-radius:50%;width:24px;height:24px;display:grid;place-items:center;}.tile-favmark.svelte-1lk0sb9 {position:absolute;top:6px;right:6px;color:#ff5d8f;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.6));display:grid;place-items:center;}[data-mode=\'slices\'].svelte-1lk0sb9 .tile-name:where(.svelte-1lk0sb9) {max-width:60%;}.tile-name.svelte-1lk0sb9 {position:absolute;left:0;right:0;bottom:0;padding:14px 8px 6px;font-size:0.72rem;color:#fff;text-align:left;background:linear-gradient(transparent, rgba(0,0,0,0.7));white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}\n\n  /* ---- Empty ---- */.empty.svelte-1lk0sb9 {height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:var(--space-2);color:var(--text-muted);}.empty.svelte-1lk0sb9 h2:where(.svelte-1lk0sb9) {color:var(--text);margin:0;}.upload-cta.svelte-1lk0sb9 {margin-top:var(--space-3);display:inline-flex;align-items:center;gap:var(--space-2);padding:var(--space-3) var(--space-5);background:var(--color-primary);color:#fff;border-radius:var(--radius-md);font-weight:600;cursor:pointer;}.empty-or.svelte-1lk0sb9 {margin:var(--space-2) 0 0;font-size:0.78rem;color:var(--text-faint);}.empty-cta.svelte-1lk0sb9 {display:inline-flex;align-items:center;gap:var(--space-2);padding:var(--space-3) var(--space-5);background:var(--bg-elevated);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-md);font-weight:600;cursor:pointer;}\n\n  /* ---- Vertical swipe-select rail (SKWD-style, skewed parallelogram) ---- */.rail-zone.svelte-1lk0sb9 {position:absolute;top:0;bottom:0;width:60px;z-index:25;touch-action:none;}.rail-zone[data-side=\'right\'].svelte-1lk0sb9 {right:0;}.rail-zone[data-side=\'left\'].svelte-1lk0sb9 {left:0;}.rail.svelte-1lk0sb9 {position:absolute;top:50%;display:flex;flex-direction:column;gap:5px;padding:8px 7px;background:color-mix(in srgb, var(--color-surface) 80%, transparent);backdrop-filter:blur(16px);transition:transform var(--transition), opacity var(--transition);opacity:0;pointer-events:none;}.rail-zone[data-side=\'right\'].svelte-1lk0sb9 .rail:where(.svelte-1lk0sb9) {right:3px;transform:translate(100%, -50%) skewY(-12deg);}.rail-zone[data-side=\'left\'].svelte-1lk0sb9 .rail:where(.svelte-1lk0sb9) {left:3px;transform:translate(-100%, -50%) skewY(-12deg);}.rail.shown.svelte-1lk0sb9 {opacity:1;pointer-events:auto;}.rail-zone[data-side=\'right\'].svelte-1lk0sb9 .rail.shown:where(.svelte-1lk0sb9) {transform:translate(0, -50%) skewY(-12deg);}.rail-zone[data-side=\'left\'].svelte-1lk0sb9 .rail.shown:where(.svelte-1lk0sb9) {transform:translate(0, -50%) skewY(-12deg);}.rail-item.svelte-1lk0sb9 {width:48px;height:40px;border-radius:2px;position:relative;display:grid;place-items:center;color:var(--text-muted);transition:background var(--transition), transform var(--transition), color var(--transition);}\n  /* counter-skew the glyph so icons stay upright inside the slanted bar */.rail-item.svelte-1lk0sb9 > svg {transform:skewY(12deg);}.rail-item.on.svelte-1lk0sb9 {background:color-mix(in srgb, var(--color-primary) 35%, transparent);color:var(--text);}.rail-item.open.svelte-1lk0sb9 {background:color-mix(in srgb, var(--color-primary) 20%, transparent);}.rail-item.hi.svelte-1lk0sb9 {background:var(--color-primary);color:#fff;transform:scale(1.18);z-index:2;}.rail-flag.svelte-1lk0sb9 {position:absolute;top:50%;transform:translateY(-50%) skewY(12deg);white-space:nowrap;background:var(--color-primary);color:#fff;padding:5px 12px;border-radius:2px;font-size:0.9rem;font-weight:700;box-shadow:var(--shadow);}.rail-zone[data-side=\'right\'].svelte-1lk0sb9 .rail-flag:where(.svelte-1lk0sb9) {right:58px;}.rail-zone[data-side=\'left\'].svelte-1lk0sb9 .rail-flag:where(.svelte-1lk0sb9) {left:58px;}.sub-backdrop.svelte-1lk0sb9 {position:absolute;inset:0;z-index:24;}\n\n  /* ---- Sub-rail flyout (color = rainbow, sort = labels), also a parallelogram ---- */.subrail.svelte-1lk0sb9 {position:absolute;top:50%;z-index:27;display:flex;flex-direction:column;gap:4px;padding:10px 7px;background:color-mix(in srgb, var(--color-surface) 88%, transparent);backdrop-filter:blur(16px);box-shadow:var(--shadow);}.subrail[data-side=\'right\'].svelte-1lk0sb9 {right:64px;transform:translateY(-50%) skewY(-12deg);}.subrail[data-side=\'left\'].svelte-1lk0sb9 {left:64px;transform:translateY(-50%) skewY(-12deg);}\n  /* colour flyout: no bar background — the colour slices float freely */.subrail.color.svelte-1lk0sb9 {gap:3px;padding:0;background:transparent;backdrop-filter:none;box-shadow:none;}.subrail.color.svelte-1lk0sb9 .sub-item:where(.svelte-1lk0sb9) {box-shadow:0 2px 8px rgba(0, 0, 0, 0.35);}.sub-item.svelte-1lk0sb9 {display:flex;align-items:center;justify-content:center;min-width:130px;padding:8px 12px;border-radius:2px;color:var(--text-muted);}.sub-item.svelte-1lk0sb9 > * {transform:skewY(12deg);}.sub-label.svelte-1lk0sb9 {font-size:0.85rem;white-space:nowrap;}\n  /* colour items: full-colour parallelogram slices, no label — a rainbow strip */.sub-item.color.svelte-1lk0sb9 {min-width:52px;width:52px;height:24px;padding:0;border-radius:0;background:var(--sw);}.sub-item.color.on.svelte-1lk0sb9 {box-shadow:inset 0 0 0 3px #fff, inset 0 0 0 5px rgba(0, 0, 0, 0.4);}.sub-item:not(.color).on.svelte-1lk0sb9 {background:color-mix(in srgb, var(--color-primary) 24%, transparent);color:var(--text);}.sub-item.hi.svelte-1lk0sb9 {transform:scale(1.14);z-index:3;}.sub-item.color.hi.svelte-1lk0sb9 {box-shadow:inset 0 0 0 3px #fff;}\n\n  /* ---- Sub-panels (search / color / sort / modes) ---- */.panel-backdrop.svelte-1lk0sb9 {position:absolute;inset:0;z-index:28;background:rgba(0, 0, 0, 0.25);}.side-panel.svelte-1lk0sb9 {position:absolute;z-index:29;top:50%;transform:translateY(-50%);width:min(260px, 72vw);max-height:80%;overflow-y:auto;background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:var(--space-4);display:flex;flex-direction:column;gap:var(--space-3);}.side-panel[data-side=\'right\'].svelte-1lk0sb9 {right:68px;}.side-panel[data-side=\'left\'].svelte-1lk0sb9 {left:68px;}\n  /* Docked (alwaysSearchBar): compact top bar, no backdrop, gallery stays tappable. */.side-panel.docked[data-side=\'right\'].svelte-1lk0sb9,\n  .side-panel.docked[data-side=\'left\'].svelte-1lk0sb9 {top:12px;left:50%;right:auto;transform:translateX(-50%);width:min(86%, 420px);max-height:46%;}.sp-head.svelte-1lk0sb9 {display:flex;align-items:center;gap:8px;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-faint);}.sp-off.svelte-1lk0sb9 {margin-left:auto;width:26px;height:26px;display:grid;place-items:center;border:1px solid var(--border);border-radius:999px;background:var(--bg);color:var(--text-muted);font-size:1.1rem;line-height:1;}.sp-input.svelte-1lk0sb9 {padding:var(--space-3);background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);color:var(--text);font-size:0.95rem;outline:none;}.sp-taglabel.svelte-1lk0sb9 {font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-faint);}.sp-tags.svelte-1lk0sb9 {display:flex;flex-wrap:wrap;gap:6px;}.sp-tag.svelte-1lk0sb9 {padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:999px;color:var(--text-muted);font-size:0.8rem;white-space:nowrap;}.sp-tag.on.svelte-1lk0sb9 {background:var(--color-primary);color:#fff;border-color:transparent;}.sp-clear.svelte-1lk0sb9 {padding:var(--space-2);background:transparent;border:1px solid var(--border);border-radius:var(--radius-md);color:var(--text-muted);font-size:0.82rem;}\n\n  /* ---- Collections bar ---- */.coll-bar.svelte-1lk0sb9 {position:sticky;top:0;z-index:10;display:flex;gap:6px;flex-wrap:wrap;padding:4px 2px 10px;margin-bottom:4px;background:linear-gradient(var(--view-bg, var(--bg-elevated)) 70%, transparent);}.coll-chip.svelte-1lk0sb9 {display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:999px;color:var(--text-muted);font-size:0.82rem;white-space:nowrap;}.coll-chip.on.svelte-1lk0sb9 {background:var(--color-primary);color:#fff;border-color:transparent;}.coll-chip.sm.svelte-1lk0sb9 {padding:4px 10px;font-size:0.78rem;}.coll-count.svelte-1lk0sb9 {font-size:0.7rem;opacity:0.7;}.coll-add.svelte-1lk0sb9 {width:30px;height:30px;border-radius:50%;border:1px dashed var(--border);background:transparent;color:var(--text-muted);font-size:1rem;line-height:1;}.coll-add.sm.svelte-1lk0sb9 {width:auto;height:auto;border-radius:999px;padding:4px 10px;font-size:0.78rem;}.coll-new.svelte-1lk0sb9 {padding:4px 10px;background:var(--bg);border:1px solid var(--color-primary);border-radius:999px;color:var(--text);font-size:0.8rem;outline:none;width:120px;}.coll-chiprow.svelte-1lk0sb9 {display:flex;flex-wrap:wrap;gap:6px;}\n\n  /* ---- Fullscreen settings window ---- */.settings-full.svelte-1lk0sb9 {position:absolute;inset:0;z-index:46;background:var(--bg);display:flex;flex-direction:column;}\n  /* Shell already pads for the top safe-area; this overlay sits below the tab bar,\n     so use a tight top padding (no second safe-area inset) to reclaim space. */.settings-head.svelte-1lk0sb9 {display:flex;align-items:center;justify-content:space-between;padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--border);font-weight:700;font-size:1.05rem;}.settings-body.svelte-1lk0sb9 {flex:1;overflow-y:auto;padding:var(--space-4);max-width:640px;margin:0 auto;width:100%;}\n\n  /* ---- Add overlay (upload + Wallhaven) ---- */.add-tabs.svelte-1lk0sb9 {display:flex;gap:var(--space-2);padding:var(--space-3) var(--space-4) 0;max-width:640px;margin:0 auto;width:100%;}.add-tabs.svelte-1lk0sb9 button:where(.svelte-1lk0sb9) {flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:var(--space-3);background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-md);color:var(--text-muted);font-size:0.9rem;}.add-tabs.svelte-1lk0sb9 button.on:where(.svelte-1lk0sb9) {background:var(--color-primary);color:#fff;border-color:transparent;}.add-upload.svelte-1lk0sb9 {display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--space-3);min-height:180px;border:2px dashed var(--border);border-radius:var(--radius-lg);color:var(--text-muted);cursor:pointer;}.wh-search.svelte-1lk0sb9 {display:flex;gap:var(--space-2);margin-bottom:var(--space-3);}.wh-search.svelte-1lk0sb9 input:where(.svelte-1lk0sb9) {flex:1;padding:var(--space-3);background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-md);color:var(--text);font-size:0.95rem;outline:none;}.wh-search.svelte-1lk0sb9 button:where(.svelte-1lk0sb9) {padding:0 var(--space-4);background:var(--color-primary);color:#fff;border:none;border-radius:var(--radius-md);}.wh-filter-btn.svelte-1lk0sb9 {background:var(--bg-elevated) !important;border:1px solid var(--border) !important;color:var(--text-muted) !important;}.wh-filter-btn.on.svelte-1lk0sb9 {background:var(--color-primary) !important;color:#fff !important;border-color:transparent !important;}.wh-error.svelte-1lk0sb9 {color:#e5484d;font-size:0.85rem;}.wh-info.svelte-1lk0sb9 {color:var(--text-faint);font-size:0.9rem;text-align:center;padding:var(--space-4);}.wh-head.svelte-1lk0sb9 {max-width:640px;margin:0 auto;width:100%;padding:var(--space-3) var(--space-4) var(--space-2);display:flex;flex-direction:column;gap:var(--space-2);}.wh-filters.svelte-1lk0sb9 {display:flex;flex-wrap:wrap;gap:6px;align-items:center;}.wh-chip.svelte-1lk0sb9 {padding:5px 12px;background:var(--bg-elevated);border:1px solid var(--border);color:var(--text-muted);font-size:0.8rem;border-radius:2px;transform:skewX(-11deg);}.wh-chip.svelte-1lk0sb9 > * {display:inline-block;transform:skewX(11deg);}.wh-chip.on.svelte-1lk0sb9 {background:var(--color-primary);color:#fff;border-color:transparent;}.wh-sep.svelte-1lk0sb9 {width:1px;align-self:stretch;background:var(--border);margin:0 4px;}.wh-scroll.svelte-1lk0sb9 {flex:1;overflow-y:auto;padding:var(--space-2) var(--space-4) var(--space-5);max-width:640px;margin:0 auto;width:100%;}.wh-grid.svelte-1lk0sb9 {display:grid;grid-template-columns:repeat(auto-fill, minmax(130px, 1fr));gap:var(--space-2);}.wh-tile.svelte-1lk0sb9 {aspect-ratio:16 / 10;border-radius:var(--radius-md);border:1px solid var(--border);background-size:cover;background-position:center;position:relative;cursor:pointer;padding:0;}.wh-res.svelte-1lk0sb9 {position:absolute;right:5px;bottom:5px;background:rgba(0,0,0,0.6);color:#fff;font-size:0.65rem;padding:2px 6px;border-radius:4px;}\n\n  /* Wallhaven fullscreen preview */.wh-preview.svelte-1lk0sb9 {position:absolute;inset:0;z-index:70;background:#000;display:flex;flex-direction:column;}.wh-preview-img.svelte-1lk0sb9 {flex:1;background-size:contain;background-position:center;background-repeat:no-repeat;}.wh-preview-meta.svelte-1lk0sb9 {color:#fff;font-size:0.85rem;opacity:0.8;}.icon-btn.svelte-1lk0sb9 {background:transparent;border:none;color:var(--text-muted);padding:6px;border-radius:var(--radius-sm);}.icon-btn.svelte-1lk0sb9:hover {background:var(--bg-hover);color:var(--text);}\n\n  /* ---- Fullscreen system-wallpaper preview ---- */.syswp.svelte-1lk0sb9 {position:absolute;inset:0;z-index:50;background-color:#000;background-size:cover;background-position:center;display:flex;flex-direction:column;justify-content:space-between;}.syswp-top.svelte-1lk0sb9 {display:flex;align-items:flex-start;justify-content:flex-start;padding:max(var(--space-4), env(safe-area-inset-top)) var(--space-4) var(--space-4);background:linear-gradient(rgba(0, 0, 0, 0.5), transparent);}.syswp-x.svelte-1lk0sb9 {background:rgba(0, 0, 0, 0.4);border:none;color:#fff;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;backdrop-filter:blur(6px);}.syswp-bottom.svelte-1lk0sb9 {display:flex;flex-direction:column;align-items:center;gap:var(--space-3);padding:var(--space-5) var(--space-4) max(var(--space-5), env(safe-area-inset-bottom));background:linear-gradient(transparent, rgba(0, 0, 0, 0.65));}.syswp-checks.svelte-1lk0sb9 {display:flex;gap:var(--space-2);flex-wrap:wrap;justify-content:center;}.syswp-chip.svelte-1lk0sb9 {display:flex;align-items:center;gap:8px;padding:var(--space-2) var(--space-4);background:rgba(255, 255, 255, 0.15);border:1px solid rgba(255, 255, 255, 0.3);color:#fff;font-size:0.9rem;border-radius:999px;backdrop-filter:blur(6px);}.syswp-chip.on.svelte-1lk0sb9 {background:var(--color-primary);border-color:transparent;font-weight:600;}.syswp-msg.svelte-1lk0sb9 {color:#fff;font-size:0.9rem;text-shadow:0 1px 3px rgba(0, 0, 0, 0.6);}.syswp-set.svelte-1lk0sb9 {width:min(100%, 360px);padding:var(--space-4);background:var(--color-primary);color:#fff;border:none;border-radius:var(--radius-lg);font-size:1.05rem;font-weight:700;}.syswp-set.svelte-1lk0sb9:disabled {opacity:0.6;}\n\n  /* ---- Long-press flip-card detail ---- */.detail-overlay.svelte-1lk0sb9 {position:absolute;inset:0;z-index:60;background:rgba(0, 0, 0, 0.72);backdrop-filter:blur(4px);display:grid;place-items:center;padding:var(--space-5);\n    animation: svelte-1lk0sb9-detail-in 160ms ease;}\n  @keyframes svelte-1lk0sb9-detail-in { from { opacity: 0; } to { opacity: 1; } }.flip-card.svelte-1lk0sb9 {width:min(340px, 82%);aspect-ratio:3 / 4;perspective:1400px;}.flip-inner.svelte-1lk0sb9 {position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform 520ms cubic-bezier(0.4, 0, 0.2, 1);}.flip-card.flipped.svelte-1lk0sb9 .flip-inner:where(.svelte-1lk0sb9) {transform:rotateY(180deg);}.flip-front.svelte-1lk0sb9, .flip-back.svelte-1lk0sb9 {position:absolute;inset:0;border-radius:var(--radius-lg);backface-visibility:hidden;-webkit-backface-visibility:hidden;box-shadow:0 20px 60px rgba(0, 0, 0, 0.5);}.flip-front.svelte-1lk0sb9 {background-size:cover;background-position:center;background-color:var(--color-surface-variant);}.flip-back.svelte-1lk0sb9 {transform:rotateY(180deg);background:var(--bg-elevated);border:1px solid var(--border);padding:var(--space-5);display:flex;flex-direction:column;gap:var(--space-4);justify-content:center;}.fav-big.svelte-1lk0sb9 {display:flex;flex-direction:column;align-items:center;gap:6px;padding:var(--space-4);background:var(--bg-hover);border:1px solid var(--border);border-radius:var(--radius-md);color:var(--text-muted);font-size:0.85rem;}.fav-big.on.svelte-1lk0sb9 {background:color-mix(in srgb, #ff5d8f 20%, transparent);color:#ff5d8f;border-color:#ff5d8f66;}.tag-field.svelte-1lk0sb9 {display:flex;flex-direction:column;gap:6px;}.tf-label.svelte-1lk0sb9 {font-size:0.8rem;color:var(--text-muted);}.tag-list.svelte-1lk0sb9 {display:flex;flex-wrap:wrap;gap:5px;min-height:8px;}.tag-chip.svelte-1lk0sb9 {display:inline-flex;align-items:center;gap:4px;background:color-mix(in srgb, var(--color-primary) 22%, transparent);color:var(--text);border-radius:999px;padding:3px 6px 3px 10px;font-size:0.8rem;}.tag-chip.svelte-1lk0sb9 button:where(.svelte-1lk0sb9) {background:transparent;border:none;color:inherit;font-size:1.1em;line-height:1;padding:0 2px;cursor:pointer;}.tag-empty.svelte-1lk0sb9 {font-size:0.8rem;color:var(--text-faint);}.tag-input.svelte-1lk0sb9 {padding:var(--space-3);background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);color:var(--text);font-size:0.95rem;}.detail-actions.svelte-1lk0sb9 {display:flex;gap:var(--space-2);}.detail-actions.svelte-1lk0sb9 button:where(.svelte-1lk0sb9) {flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:var(--space-3);border-radius:var(--radius-md);font-size:0.9rem;font-weight:600;border:none;}.del-big.svelte-1lk0sb9 {background:color-mix(in srgb, #e5484d 18%, transparent);color:#e5484d;}.done-big.svelte-1lk0sb9 {background:var(--color-primary);color:#fff;}.fx-big.svelte-1lk0sb9 {background:var(--bg-hover);color:var(--text);}.done-big.wide.svelte-1lk0sb9 {width:100%;display:flex;align-items:center;justify-content:center;gap:6px;padding:var(--space-3);border-radius:var(--radius-md);font-weight:600;border:none;}.fx-chips.svelte-1lk0sb9 {display:flex;gap:6px;overflow-x:auto;max-width:100%;padding-bottom:2px;}.fx-chip.svelte-1lk0sb9 {flex:0 0 auto;padding:var(--space-2) var(--space-4);background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;font-size:0.85rem;border-radius:999px;backdrop-filter:blur(6px);}.fx-chip.on.svelte-1lk0sb9 {background:var(--color-primary);border-color:transparent;font-weight:600;}\n\n  @media (max-width: 640px) {.picker.pinned[data-side=\'right\'].svelte-1lk0sb9 .gallery-scroll:where(.svelte-1lk0sb9) {padding-right:var(--space-4);}.picker.pinned[data-side=\'left\'].svelte-1lk0sb9 .gallery-scroll:where(.svelte-1lk0sb9) {padding-left:var(--space-4);}[data-mode=\'wall\'].svelte-1lk0sb9 .gallery:where(.svelte-1lk0sb9) {grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));}\n  }'
 };
 
 function Picker($$anchor, $$props) {
 	push($$props, true);
-	append_styles($$anchor, $$css);
+	append_styles($$anchor, $$css$1);
 
 	const // System-wallpaper capability present only inside the native app.
 	// Full resolution for the real wallpaper (the gallery shows thumbnails).
@@ -17829,12 +17829,12 @@ function Picker($$anchor, $$props) {
 
 		{
 			var consequent_1 = ($$anchor) => {
-				var fragment_1 = root_1();
+				var fragment_1 = root_1$1();
 				var node_2 = first_child(fragment_1);
 
 				{
 					var consequent = ($$anchor) => {
-						var video = root();
+						var video = root$1();
 
 						video.muted = true;
 						template_effect(() => set_attribute(video, 'src', urls.value[item().id] + '#t=0.1'));
@@ -20207,6 +20207,105 @@ delegate([
 	'pointerup'
 ]);
 
+var root = from_html(`<span></span>`);
+var root_1 = from_html(`<div class="intro-overlay svelte-zd540h"><div class="intro-card svelte-zd540h" role="dialog" aria-modal="true" aria-label="Einführung SKWD Wall"><button class="skip svelte-zd540h">Überspringen</button> <div class="emoji svelte-zd540h"> </div> <h2 class="svelte-zd540h"> </h2> <p class="svelte-zd540h"> </p> <div class="dots svelte-zd540h"></div> <div class="nav svelte-zd540h"><button class="ghost svelte-zd540h">Zurück</button> <button class="go svelte-zd540h"> </button></div></div></div>`);
+
+const $$css = {
+	hash: 'svelte-zd540h',
+	code: '.intro-overlay.svelte-zd540h {position:absolute;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:var(--space-4, 16px);background:color-mix(in srgb, var(--bg, #111) 72%, transparent);backdrop-filter:blur(6px);}.intro-card.svelte-zd540h {position:relative;width:min(440px, 100%);background:var(--bg-elevated, #1b1b1b);border:1px solid var(--border, #333);border-radius:var(--radius-lg, 16px);box-shadow:var(--shadow, 0 20px 60px rgba(0, 0, 0, 0.5));padding:var(--space-5, 28px);text-align:center;}.skip.svelte-zd540h {position:absolute;top:var(--space-3, 12px);right:var(--space-3, 12px);background:transparent;border:none;color:var(--text-faint, #888);font-size:0.8rem;cursor:pointer;}.skip.svelte-zd540h:hover {color:var(--text, #fff);}.emoji.svelte-zd540h {font-size:2.6rem;line-height:1;margin:var(--space-2, 8px) 0 var(--space-3, 12px);}h2.svelte-zd540h {margin:0 0 var(--space-3, 12px);font-size:1.3rem;color:var(--text, #fff);}p.svelte-zd540h {margin:0;color:var(--text-muted, #bbb);line-height:1.6;min-height:5.5em;}.dots.svelte-zd540h {display:flex;justify-content:center;gap:7px;margin:var(--space-4, 20px) 0;}.dot.svelte-zd540h {width:7px;height:7px;border-radius:50%;background:var(--bg-active, #444);transition:background 0.2s, width 0.2s;}.dot.on.svelte-zd540h {background:var(--accent, #6aa0ff);width:20px;border-radius:4px;}.nav.svelte-zd540h {display:flex;gap:var(--space-2, 8px);justify-content:space-between;}.ghost.svelte-zd540h, .go.svelte-zd540h {flex:1;padding:var(--space-3, 12px) var(--space-4, 16px);border-radius:var(--radius-md, 10px);font-size:0.95rem;font-weight:600;cursor:pointer;}.ghost.svelte-zd540h {background:transparent;border:1px solid var(--border, #333);color:var(--text-muted, #bbb);}.ghost.svelte-zd540h:disabled {opacity:0.35;cursor:default;}.go.svelte-zd540h {background:var(--accent, #6aa0ff);color:var(--accent-text, #fff);border:none;}'
+};
+
+function Intro($$anchor, $$props) {
+	push($$props, true);
+	append_styles($$anchor, $$css);
+
+	const steps = [
+		{
+			icon: '🖼️',
+			title: 'Willkommen bei SKWD Wall',
+			body: 'Dein Wallpaper-Studio: eigene Bilder und Videos sammeln, aus Wallhaven laden, in schönen Ansichten durchstöbern — und die ganze App färbt sich automatisch nach dem aktiven Bild.'
+		},
+
+		{
+			icon: '👆',
+			title: 'Das Menü: die Swipe-Leiste',
+			body: 'Wisch mit dem Finger vom Rand herein (oder tippe den Rand an) — die schräge Leiste fährt aus. Darüber erreichst du Hinzufügen (＋), Sortieren, Favoriten, Zufall, Suche, Farbe und Hell/Dunkel. Sie fährt von selbst wieder ein.'
+		},
+
+		{
+			icon: '➕',
+			title: 'Wallpaper hinzufügen',
+			body: 'Über ＋ in der Leiste: eigene Bilder/Videos hochladen, bei Wallhaven suchen, oder einen ganzen Ordner einbinden (am PC & Handy). Nichts wird kopiert — Ordnerbilder bleiben, wo sie sind.'
+		},
+
+		{
+			icon: '🎨',
+			title: 'Ansichten & Farben',
+			body: 'Sieben Ansichtsmodi (Wall, Waben, Slices, Depth, Sandy, Fächer, Collection) — umschaltbar in den Einstellungen → Ansicht. Tippe ein Bild an, um es zu aktivieren; die App-Farben passen sich an (Material You).'
+		},
+
+		{
+			icon: '📱',
+			title: 'Aufs Handy bringen',
+			body: 'Unter Einstellungen → Geräte aktivierst du den System-Hintergrund und das Live-Wallpaper — dein gewähltes Bild (oder eine rotierende Auswahl) landet direkt auf dem Homescreen.'
+		}
+	];
+
+	let i = state(0);
+	let last = user_derived(() => get(i) === steps.length - 1);
+
+	function next() {
+		if (get(last)) $$props.onDone(); else set(i, get(i) + 1);
+	}
+
+	function back() {
+		if (get(i) > 0) set(i, get(i) - 1);
+	}
+
+	var div = root_1();
+	var div_1 = child(div);
+	var button = child(div_1);
+	var div_2 = sibling(button, 2);
+	var text = only_child(div_2, true);
+	var h2 = sibling(div_2, 2);
+	var text_1 = only_child(h2, true);
+	var p = sibling(h2, 2);
+	var text_2 = only_child(p, true);
+	var div_3 = sibling(p, 2);
+
+	each(div_3, 21, () => steps, index, ($$anchor, _, n) => {
+		var span = root();
+		let classes;
+
+		template_effect(() => classes = set_class(span, 1, 'dot svelte-zd540h', null, classes, { on: n === get(i) }));
+		append($$anchor, span);
+	});
+
+	var div_4 = sibling(div_3, 2);
+	var button_1 = child(div_4);
+	var button_2 = sibling(button_1, 2);
+	var text_3 = only_child(button_2, true);
+
+	template_effect(() => {
+		set_text(text, steps[get(i)].icon);
+		set_text(text_1, steps[get(i)].title);
+		set_text(text_2, steps[get(i)].body);
+		button_1.disabled = get(i) === 0;
+		set_text(text_3, get(last) ? "Los geht's" : 'Weiter');
+	});
+
+	delegated('click', button, function (...$$args) {
+		$$props.onDone?.apply(this, $$args);
+	});
+
+	delegated('click', button_1, back);
+	delegated('click', button_2, next);
+	append($$anchor, div);
+	pop();
+}
+
+delegate(['click']);
+
 const manifest = {
   id: "skwd-wall",
   name: "SKWD Wall",
@@ -20229,6 +20328,7 @@ class PickerView extends View {
     this.manager = manager;
   }
   component = null;
+  intro = null;
   getViewType() {
     return VIEW_ID;
   }
@@ -20246,8 +20346,27 @@ class PickerView extends View {
         manager: this.manager
       }
     });
+    if (this.app.config.get("skwd-wall", "introSeen") !== true) {
+      this.intro = mount(Intro, {
+        target: this.containerEl,
+        props: {
+          app: this.app,
+          onDone: () => {
+            this.app.config.set("skwd-wall", "introSeen", true);
+            if (this.intro) {
+              unmount(this.intro);
+              this.intro = null;
+            }
+          }
+        }
+      });
+    }
   }
   async onClose() {
+    if (this.intro) {
+      unmount(this.intro);
+      this.intro = null;
+    }
     if (this.component) {
       unmount(this.component);
       this.component = null;
