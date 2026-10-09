@@ -15,5 +15,17 @@
     "folders",
     "wallpaper",
     "live-wallpaper"
+  ],
+  "news": [
+    {
+      "version": "0.1.0",
+      "date": "2026-10-09",
+      "text": "Neuer interaktiver Einrichtungsprozess: Ansicht & Übergänge direkt wählen, Handy-Funktionen per Schalter (standardmäßig aus). Schärferer App-Hintergrund und Hintergrund sofort beim Start gesetzt."
+    },
+    {
+      "version": "0.1.0",
+      "date": "2026-10-08",
+      "text": "Sieben Ansichtsmodi aus dem SKWD-Original, automatisches Theme aus dem aktiven Bild, Übergänge (inkl. GPU-Shader), Live-Wallpaper (nativ), Ordner-Einbindung und Papierkorb."
+    }
   ]
 }

@@ -4645,6 +4645,8 @@ function from_namespace(content, flags, ns = 'svg') {
 	 * create an additional comment node to act as `effect.nodes.start`
 	 */
 	var has_start = !content.startsWith('<!>');
+
+	var is_fragment = (flags & TEMPLATE_FRAGMENT) !== 0;
 	var wrapped = `<${ns}>${has_start ? content : '<!>' + content}</${ns}>`;
 
 	/** @type {Element | DocumentFragment} */
@@ -4656,14 +4658,24 @@ function from_namespace(content, flags, ns = 'svg') {
 			var fragment = /** @type {DocumentFragment} */ (create_fragment_from_html(wrapped));
 			var root = /** @type {Element} */ (get_first_child(fragment));
 
-			{
+			if (is_fragment) {
+				node = document.createDocumentFragment();
+				while (get_first_child(root)) {
+					node.appendChild(/** @type {TemplateNode} */ (get_first_child(root)));
+				}
+			} else {
 				node = /** @type {Element} */ (get_first_child(root));
 			}
 		}
 
 		var clone = /** @type {TemplateNode} */ (node.cloneNode(true));
 
-		{
+		if (is_fragment) {
+			var start = /** @type {TemplateNode} */ (get_first_child(clone));
+			var end = /** @type {TemplateNode} */ (clone.lastChild);
+
+			assign_nodes(start, end);
+		} else {
 			assign_nodes(clone, clone);
 		}
 
@@ -6949,10 +6961,6 @@ const whitespace = [...' \t\n\r\f\u00a0\u000b\ufeff'];
 function to_class(value, hash, directives) {
 	var classname = value == null ? '' : '' + value;
 
-	if (hash) {
-		classname = classname ? classname + ' ' + hash : hash;
-	}
-
 	if (directives) {
 		for (var key of Object.keys(directives)) {
 			if (directives[key]) {
@@ -7015,10 +7023,8 @@ function set_class(dom, is_html, value, hash, prev_classes, next_classes) {
 			// and there no hash/directives :
 			if (next_class_name == null) {
 				dom.removeAttribute('class');
-			} else if (is_html) {
-				dom.className = next_class_name;
 			} else {
-				dom.setAttribute('class', next_class_name);
+				dom.className = next_class_name;
 			}
 		}
 
@@ -16821,13 +16827,13 @@ function ImagePicker($$anchor, $$props) {
 delegate(['click']);
 
 const aiNote = ($$anchor) => {
-	var p_5 = root_22$1();
+	var p_5 = root_22$2();
 
 	append($$anchor, p_5);
 };
 
 const pathsNote = ($$anchor) => {
-	var p_6 = root_23$1();
+	var p_6 = root_23$2();
 
 	append($$anchor, p_6);
 };
@@ -16854,15 +16860,15 @@ var root_18$2 = from_html(`<!> <button class="btn svelte-j0aff2">＋ Regel hinzu
 var root_19$2 = from_html(`<p class="hint svelte-j0aff2">Papierkorb ist leer.</p>`);
 var root_20$2 = from_html(`<div class="trash-item svelte-j0aff2"><span class="thumb big svelte-j0aff2"></span> <span class="tn svelte-j0aff2"> </span> <div class="trash-actions svelte-j0aff2"><button class="btn sm svelte-j0aff2">Wiederherstellen</button> <button class="btn sm danger svelte-j0aff2">Löschen</button></div></div>`);
 var root_21$2 = from_html(`<div class="trash-grid svelte-j0aff2"></div> <button class="btn danger svelte-j0aff2">Papierkorb leeren</button>`, 1);
-var root_22$1 = from_html(`<p class="hint svelte-j0aff2">Nur die Verbindung — das eigentliche KI-Tagging (für Anime am besten ein WD14-/DeepDanbooru-Tagger) kommt als eigener Block.</p>`);
-var root_23$1 = from_html(`<p class="hint svelte-j0aff2">Leer = App-Speicher (Standard). Native Gerät-Pfade (Android-Ordner direkt beschreiben) kommen als nativer Block; die Pfade werden schon gemerkt.</p>`);
-var root_24$1 = from_html(`<p class="hint ok svelte-j0aff2"> </p>`);
-var root_25$1 = from_html(`<button class="btn svelte-j0aff2">Verbinden</button>`);
-var root_26$1 = from_html(`<div class="folder-row svelte-j0aff2"><div class="folder-meta svelte-j0aff2"><span class="folder-name svelte-j0aff2"> </span> <span class="folder-sub svelte-j0aff2"> <!></span></div> <!> <button class="btn danger svelte-j0aff2">Entfernen</button></div>`);
-var root_27$1 = from_html(`<p class="hint warn svelte-j0aff2">Nach einem Neustart muss der Ordner-Zugriff einmal neu bestätigt werden („Verbinden").</p>`);
-var root_28$1 = from_html(`<div class="folder-list svelte-j0aff2"></div> <!>`, 1);
-var root_29$1 = from_html(`<p class="hint svelte-j0aff2">Zeig auf einen echten Ordner — die Bilder/Videos erscheinen in der Galerie, <strong>ohne hochzuladen</strong> (Dateien bleiben im Ordner).</p> <div class="chips svelte-j0aff2"><button class="btn svelte-j0aff2">＋ Bilder-Ordner</button> <button class="btn svelte-j0aff2">＋ Video-Ordner</button></div> <!> <!>`, 1);
-var root_30$1 = from_html(`<p class="hint svelte-j0aff2">Direkter Ordner-Zugriff geht in diesem Browser nicht. Am PC (Chrome/Edge) kannst du Ordner direkt einbinden; auf dem Handy kommt der native Ordner-Zugriff (SAF) als eigener Block. Bis dahin: <strong>Hochladen</strong> nutzen.</p>`);
+var root_22$2 = from_html(`<p class="hint svelte-j0aff2">Nur die Verbindung — das eigentliche KI-Tagging (für Anime am besten ein WD14-/DeepDanbooru-Tagger) kommt als eigener Block.</p>`);
+var root_23$2 = from_html(`<p class="hint svelte-j0aff2">Leer = App-Speicher (Standard). Native Gerät-Pfade (Android-Ordner direkt beschreiben) kommen als nativer Block; die Pfade werden schon gemerkt.</p>`);
+var root_24$2 = from_html(`<p class="hint ok svelte-j0aff2"> </p>`);
+var root_25$2 = from_html(`<button class="btn svelte-j0aff2">Verbinden</button>`);
+var root_26$2 = from_html(`<div class="folder-row svelte-j0aff2"><div class="folder-meta svelte-j0aff2"><span class="folder-name svelte-j0aff2"> </span> <span class="folder-sub svelte-j0aff2"> <!></span></div> <!> <button class="btn danger svelte-j0aff2">Entfernen</button></div>`);
+var root_27$2 = from_html(`<p class="hint warn svelte-j0aff2">Nach einem Neustart muss der Ordner-Zugriff einmal neu bestätigt werden („Verbinden").</p>`);
+var root_28$2 = from_html(`<div class="folder-list svelte-j0aff2"></div> <!>`, 1);
+var root_29$2 = from_html(`<p class="hint svelte-j0aff2">Zeig auf einen echten Ordner — die Bilder/Videos erscheinen in der Galerie, <strong>ohne hochzuladen</strong> (Dateien bleiben im Ordner).</p> <div class="chips svelte-j0aff2"><button class="btn svelte-j0aff2">＋ Bilder-Ordner</button> <button class="btn svelte-j0aff2">＋ Video-Ordner</button></div> <!> <!>`, 1);
+var root_30$2 = from_html(`<p class="hint svelte-j0aff2">Direkter Ordner-Zugriff geht in diesem Browser nicht. Am PC (Chrome/Edge) kannst du Ordner direkt einbinden; auf dem Handy kommt der native Ordner-Zugriff (SAF) als eigener Block. Bis dahin: <strong>Hochladen</strong> nutzen.</p>`);
 var root_31$1 = from_html(`<!>     <!>`, 1);
 
 const $$css$2 = {
@@ -17267,7 +17273,7 @@ function WallpaperSettings($$anchor, $$props) {
 
 		{
 			var consequent_16 = ($$anchor) => {
-				var fragment_8 = root_29$1();
+				var fragment_8 = root_29$2();
 				var div_9 = sibling(first_child(fragment_8), 2);
 				var button_17 = child(div_9);
 				var button_18 = sibling(button_17, 2);
@@ -17276,7 +17282,7 @@ function WallpaperSettings($$anchor, $$props) {
 
 				{
 					var consequent_11 = ($$anchor) => {
-						var p_7 = root_24$1();
+						var p_7 = root_24$2();
 						var text_7 = only_child(p_7, true);
 
 						template_effect(() => set_text(text_7, get(folderMsg)));
@@ -17292,11 +17298,11 @@ function WallpaperSettings($$anchor, $$props) {
 
 				{
 					var consequent_15 = ($$anchor) => {
-						var fragment_9 = root_28$1();
+						var fragment_9 = root_28$2();
 						var div_10 = first_child(fragment_9);
 
 						each(div_10, 21, () => get(s).folders, (f) => f.id, ($$anchor, f) => {
-							var div_11 = root_26$1();
+							var div_11 = root_26$2();
 							var div_12 = child(div_11);
 							var span_5 = child(div_12);
 							var text_8 = only_child(span_5, true);
@@ -17320,7 +17326,7 @@ function WallpaperSettings($$anchor, $$props) {
 
 							{
 								var consequent_13 = ($$anchor) => {
-									var button_19 = root_25$1();
+									var button_19 = root_25$2();
 
 									template_effect(() => button_19.disabled = get(folderBusy));
 									delegated('click', button_19, reconnectFolders);
@@ -17348,7 +17354,7 @@ function WallpaperSettings($$anchor, $$props) {
 
 						{
 							var consequent_14 = ($$anchor) => {
-								var p_8 = root_27$1();
+								var p_8 = root_27$2();
 
 								append($$anchor, p_8);
 							};
@@ -17379,7 +17385,7 @@ function WallpaperSettings($$anchor, $$props) {
 			};
 
 			var alternate_2 = ($$anchor) => {
-				var p_9 = root_30$1();
+				var p_9 = root_30$2();
 
 				append($$anchor, p_9);
 			};
@@ -18249,15 +18255,15 @@ var root_18$1 = from_html(`<button></button>`);
 var root_19$1 = from_html(`<div class="stage sandy svelte-1lk0sb9" role="presentation"><button><!></button> <!></div>`);
 var root_20$1 = from_html(`<div class="stage hand svelte-1lk0sb9" role="presentation"></div>`);
 var root_21$1 = from_html(`<div class="stage collection svelte-1lk0sb9" role="presentation"></div>`);
-var root_22 = from_html(`<div class="gallery svelte-1lk0sb9"></div>`);
-var root_23 = from_html(`<div class="sub-backdrop svelte-1lk0sb9" role="presentation"></div>`);
-var root_24 = from_html(`<span class="sub-label svelte-1lk0sb9"> </span>`);
-var root_25 = from_html(`<div><!></div>`);
-var root_26 = from_html(`<aside></aside>`);
-var root_27 = from_html(`<span class="rail-flag svelte-1lk0sb9"> </span>`);
-var root_28 = from_html(`<div><!> <!></div>`);
-var root_29 = from_html(`<div class="panel-backdrop svelte-1lk0sb9" role="presentation"></div>`);
-var root_30 = from_html(`<button class="sp-off svelte-1lk0sb9" title="Suchleiste ausblenden" aria-label="Suchleiste ausblenden">×</button>`);
+var root_22$1 = from_html(`<div class="gallery svelte-1lk0sb9"></div>`);
+var root_23$1 = from_html(`<div class="sub-backdrop svelte-1lk0sb9" role="presentation"></div>`);
+var root_24$1 = from_html(`<span class="sub-label svelte-1lk0sb9"> </span>`);
+var root_25$1 = from_html(`<div><!></div>`);
+var root_26$1 = from_html(`<aside></aside>`);
+var root_27$1 = from_html(`<span class="rail-flag svelte-1lk0sb9"> </span>`);
+var root_28$1 = from_html(`<div><!> <!></div>`);
+var root_29$1 = from_html(`<div class="panel-backdrop svelte-1lk0sb9" role="presentation"></div>`);
+var root_30$1 = from_html(`<button class="sp-off svelte-1lk0sb9" title="Suchleiste ausblenden" aria-label="Suchleiste ausblenden">×</button>`);
 var root_31 = from_html(`<button> </button>`);
 var root_32 = from_html(`<div class="sp-taglabel svelte-1lk0sb9">Nach Tags filtern</div> <div class="sp-tags svelte-1lk0sb9"></div>`, 1);
 var root_33 = from_html(`<button class="sp-clear svelte-1lk0sb9">Filter zurücksetzen</button>`);
@@ -19867,7 +19873,7 @@ function Picker($$anchor, $$props) {
 		};
 
 		var alternate_1 = ($$anchor) => {
-			var div_12 = root_22();
+			var div_12 = root_22$1();
 
 			each(div_12, 21, () => get(items), (item) => item.id, ($$anchor, item) => {
 				var button_13 = root_14$1();
@@ -19905,7 +19911,7 @@ function Picker($$anchor, $$props) {
 
 	{
 		var consequent_17 = ($$anchor) => {
-			var div_13 = root_23();
+			var div_13 = root_23$1();
 
 			delegated('pointerdown', div_13, closeSub);
 			append($$anchor, div_13);
@@ -19921,17 +19927,17 @@ function Picker($$anchor, $$props) {
 
 	{
 		var consequent_19 = ($$anchor) => {
-			var aside = root_26();
+			var aside = root_26$1();
 			let classes_11;
 
 			each(aside, 21, () => get(subItems), (s) => s.id, ($$anchor, s) => {
-				var div_15 = root_25();
+				var div_15 = root_25$1();
 				let classes_12;
 				var node_26 = child(div_15);
 
 				{
 					var consequent_18 = ($$anchor) => {
-						var span_5 = root_24();
+						var span_5 = root_24$1();
 						var text_3 = only_child(span_5, true);
 
 						template_effect(() => set_text(text_3, get(s).label));
@@ -19975,7 +19981,7 @@ function Picker($$anchor, $$props) {
 	let classes_13;
 
 	each(aside_1, 21, () => get(railItems), (it) => it.id, ($$anchor, it) => {
-		var div_16 = root_28();
+		var div_16 = root_28$1();
 		let classes_14;
 		var node_27 = child(div_16);
 
@@ -19994,7 +20000,7 @@ function Picker($$anchor, $$props) {
 
 		{
 			var consequent_20 = ($$anchor) => {
-				var span_6 = root_27();
+				var span_6 = root_27$1();
 				var text_4 = only_child(span_6, true);
 
 				template_effect(() => set_text(text_4, get(it).label));
@@ -20028,7 +20034,7 @@ function Picker($$anchor, $$props) {
 
 			{
 				var consequent_21 = ($$anchor) => {
-					var div_17 = root_29();
+					var div_17 = root_29$1();
 
 					delegated('click', div_17, closePanel);
 					append($$anchor, div_17);
@@ -20050,7 +20056,7 @@ function Picker($$anchor, $$props) {
 
 			{
 				var consequent_22 = ($$anchor) => {
-					var button_14 = root_30();
+					var button_14 = root_30$1();
 
 					delegated('click', button_14, () => $$props.manager.setField('alwaysSearchBar', false));
 					append($$anchor, button_14);
@@ -20833,27 +20839,36 @@ var root_1 = from_svg(`<svg viewBox="0 0 260 210" class="il svelte-zd540h"><g cl
 var root_2 = from_svg(`<svg viewBox="0 0 260 210" class="il svelte-zd540h"><rect x="60" y="30" width="140" height="150" rx="18" class="phone svelte-zd540h"></rect><rect x="68" y="38" width="124" height="134" rx="12" fill="url(#skwdGradSoft)" class="svelte-zd540h"></rect><g class="slidein svelte-zd540h"><path d="M150 60 L182 66 L182 150 L150 156 Z" class="rail svelte-zd540h"></path><circle cx="166" cy="84" r="5" class="dot accent svelte-zd540h"></circle><circle cx="166" cy="105" r="5" class="dot light svelte-zd540h"></circle><circle cx="166" cy="126" r="5" class="dot light svelte-zd540h"></circle></g><circle cx="150" cy="105" r="12" class="touch svelte-zd540h"></circle><circle cx="150" cy="105" r="12" class="touch ping svelte-zd540h"></circle></svg>`);
 var root_3 = from_svg(`<rect width="28" height="28" rx="6" fill="url(#skwdGrad)" class="tile svelte-zd540h"></rect>`);
 var root_4 = from_svg(`<svg viewBox="0 0 260 210" class="il svelte-zd540h"><g class="float svelte-zd540h"><rect x="150" y="70" width="80" height="80" rx="12" class="phone svelte-zd540h"></rect><!></g><g class="chips svelte-zd540h"><g class="chip svelte-zd540h" style="animation-delay:0ms"><circle cx="46" cy="58" r="18" class="src svelte-zd540h"></circle><path d="M46 51 L46 65 M40 57 L46 51 L52 57" class="ico svelte-zd540h"></path></g><g class="chip svelte-zd540h" style="animation-delay:200ms"><circle cx="46" cy="105" r="18" class="src svelte-zd540h"></circle><path d="M39 107 a7 7 0 0 1 14 0 h2 a5 5 0 0 1 0 10 h-18 a5 5 0 0 1 0 -10 z" class="ico fill svelte-zd540h"></path></g><g class="chip svelte-zd540h" style="animation-delay:400ms"><circle cx="46" cy="152" r="18" class="src svelte-zd540h"></circle><path d="M38 148 h6 l2 -3 h8 v14 h-16 z" class="ico fill svelte-zd540h"></path></g></g><path d="M64 58 C110 58 120 105 150 100" class="flow svelte-zd540h"></path><path d="M64 105 C110 105 120 105 150 110" class="flow svelte-zd540h" style="animation-delay:600ms"></path><path d="M64 152 C110 152 120 110 150 120" class="flow svelte-zd540h" style="animation-delay:1200ms"></path></svg>`);
-var root_5 = from_svg(`<circle cy="176" r="7"></circle>`);
-var root_6 = from_svg(`<svg viewBox="0 0 260 210" class="il svelte-zd540h"><g class="float svelte-zd540h"><rect x="92" y="54" width="76" height="104" rx="12" class="card c3 svelte-zd540h" fill="url(#skwdGradSoft)"></rect><rect x="92" y="54" width="76" height="104" rx="12" class="card c2 svelte-zd540h" fill="url(#skwdGrad)"></rect><rect x="92" y="54" width="76" height="104" rx="12" class="card c1 phone svelte-zd540h"></rect><rect x="100" y="62" width="60" height="70" rx="8" fill="url(#skwdGrad)" class="svelte-zd540h"></rect></g><g class="swatches svelte-zd540h"></g></svg>`);
-var root_7 = from_svg(`<svg viewBox="0 0 260 210" class="il svelte-zd540h"><rect x="48" y="55" width="100" height="100" rx="14" fill="url(#skwdGradSoft)" class="xf a svelte-zd540h"></rect><rect x="112" y="55" width="100" height="100" rx="14" fill="url(#skwdGrad)" class="xf b svelte-zd540h"></rect><g class="float svelte-zd540h"><path d="M126 105 h18 m-6 -6 l6 6 l-6 6" class="arrow svelte-zd540h"></path></g></svg>`);
-var root_8 = from_svg(`<rect width="9" height="9" rx="2.5" class="appdot svelte-zd540h"></rect>`);
-var root_9 = from_svg(`<svg viewBox="0 0 260 210" class="il svelte-zd540h"><g class="float svelte-zd540h"><rect x="100" y="20" width="60" height="170" rx="15" class="phone svelte-zd540h"></rect><clipPath id="mClip" class="svelte-zd540h"><rect x="106" y="26" width="48" height="158" rx="10" class="svelte-zd540h"></rect></clipPath><g clip-path="url(#mClip)" class="svelte-zd540h"><rect x="106" y="26" width="48" height="158" fill="url(#skwdGradSoft)" class="svelte-zd540h"></rect><path class="wave svelte-zd540h" d="M96 110 q14 -14 28 0 t28 0 t28 0 t28 0 V190 H96 Z" fill="url(#skwdGrad)" opacity="0.9"></path></g><!></g><circle cx="186" cy="150" r="14"></circle></svg>`);
-var root_10 = from_svg(`<svg viewBox="0 0 260 210" class="il svelte-zd540h"><g class="spin svelte-zd540h" style="transform-origin:130px 105px"><ellipse cx="130" cy="105" rx="80" ry="80" class="ring svelte-zd540h"></ellipse></g><circle cx="130" cy="105" r="46" fill="url(#skwdGrad)" class="float svelte-zd540h"></circle><path d="M110 106 l14 14 l26 -30" class="check svelte-zd540h"></path></svg>`);
-var root_11 = from_html(`<div class="art svelte-zd540h"><!></div>`);
-var root_12 = from_html(`<button> </button>`);
-var root_13 = from_html(`<div class="chips-grid svelte-zd540h"></div>`);
-var root_14 = from_html(`<option class="svelte-zd540h"> </option>`);
-var root_15 = from_html(`<select class="sel-input svelte-zd540h"></select>`);
-var root_16 = from_html(`<div class="toggles svelte-zd540h"><button><span class="t-text svelte-zd540h"><span class="t-title svelte-zd540h">Zufällige Übergänge</span> <span class="t-desc svelte-zd540h">Bei jedem Wechsel ein anderer Effekt – immer für Abwechslung.</span></span> <span class="sw svelte-zd540h" aria-hidden="true"><span class="knob svelte-zd540h"></span></span></button> <!></div>`);
-var root_17 = from_html(`<div class="toggles svelte-zd540h"><button><span class="t-text svelte-zd540h"><span class="t-title svelte-zd540h">Hintergrund aufs Handy setzen</span> <span class="t-desc svelte-zd540h">Dein Motiv als System-Hintergrund (Start- & Sperrbildschirm).</span></span> <span class="sw svelte-zd540h" aria-hidden="true"><span class="knob svelte-zd540h"></span></span></button> <button><span class="t-text svelte-zd540h"><span class="t-title svelte-zd540h">Live-Wallpaper (animiert)</span> <span class="t-desc svelte-zd540h">Sanfte Übergänge & automatischer Wechsel direkt am Homescreen.</span></span> <span class="sw svelte-zd540h" aria-hidden="true"><span class="knob svelte-zd540h"></span></span></button></div>`);
-var root_18 = from_html(`<div class="svelte-zd540h"><span class="kicker svelte-zd540h"> </span> <h1 class="svelte-zd540h"> </h1> <p class="svelte-zd540h"> </p> <!> <!> <!></div>`);
-var root_19 = from_html(`<button></button>`);
-var root_20 = from_html(`<button class="ghost svelte-zd540h">Zurück</button>`);
-var root_21 = from_html(`<svg class="defs svelte-zd540h" aria-hidden="true" focusable="false"><defs class="svelte-zd540h"><linearGradient id="skwdGrad" x1="0" y1="0" x2="1" y2="1" class="svelte-zd540h"><stop offset="0" class="g0 svelte-zd540h"></stop><stop offset="1" class="g1 svelte-zd540h"></stop></linearGradient><linearGradient id="skwdGradSoft" x1="0" y1="0" x2="0" y2="1" class="svelte-zd540h"><stop offset="0" class="gs0 svelte-zd540h"></stop><stop offset="1" class="gs1 svelte-zd540h"></stop></linearGradient></defs></svg> <div class="intro svelte-zd540h"><div class="aurora a1 svelte-zd540h"></div> <div class="aurora a2 svelte-zd540h"></div> <!> <div class="stage svelte-zd540h"><!></div> <div class="copy svelte-zd540h"><!></div> <div class="footer svelte-zd540h"><div class="dots svelte-zd540h"></div> <div class="actions svelte-zd540h"><!> <button class="go svelte-zd540h"> </button></div></div></div>`, 1);
+var root_5 = from_svg(`<rect width="17" height="25" rx="3" fill="url(#skwdGrad)" class="svelte-zd540h"></rect>`);
+var root_6 = from_svg(`<polygon fill="url(#skwdGrad)" stroke="color-mix(in srgb, var(--bg) 60%, transparent)" stroke-width="1.5" class="svelte-zd540h"></polygon>`);
+var root_7 = from_svg(`<rect x="100" y="38" width="60" height="12" rx="3" fill="url(#skwdGrad)" opacity="0.55" class="svelte-zd540h"></rect><rect x="100" y="54" width="60" height="16" rx="3" fill="url(#skwdGrad)" opacity="0.75" class="svelte-zd540h"></rect><rect x="100" y="76" width="60" height="58" rx="6" fill="url(#skwdGrad)" class="svelte-zd540h"></rect><rect x="100" y="140" width="60" height="16" rx="3" fill="url(#skwdGrad)" opacity="0.75" class="svelte-zd540h"></rect><rect x="100" y="160" width="60" height="12" rx="3" fill="url(#skwdGrad)" opacity="0.55" class="svelte-zd540h"></rect>`, 1);
+var root_8 = from_svg(`<rect x="118" y="34" width="24" height="18" rx="3" fill="url(#skwdGrad)" opacity="0.4" class="svelte-zd540h"></rect><rect x="112" y="56" width="36" height="26" rx="4" fill="url(#skwdGrad)" opacity="0.65" class="svelte-zd540h"></rect><rect x="102" y="86" width="56" height="44" rx="6" fill="url(#skwdGrad)" class="svelte-zd540h"></rect><rect x="112" y="134" width="36" height="26" rx="4" fill="url(#skwdGrad)" opacity="0.65" class="svelte-zd540h"></rect><rect x="118" y="164" width="24" height="16" rx="3" fill="url(#skwdGrad)" opacity="0.4" class="svelte-zd540h"></rect>`, 1);
+var root_9 = from_svg(`<rect x="146" width="14" height="28" rx="3" fill="url(#skwdGrad)" opacity="0.7" class="svelte-zd540h"></rect>`);
+var root_10 = from_svg(`<rect x="100" y="40" width="42" height="130" rx="6" fill="url(#skwdGrad)" class="svelte-zd540h"></rect><!>`, 1);
+var root_11 = from_svg(`<rect x="120" y="70" width="20" height="60" rx="5" fill="url(#skwdGrad)" class="svelte-zd540h"></rect>`);
+var root_12 = from_svg(`<rect x="108" width="44" height="78" rx="6" fill="url(#skwdGrad)" class="svelte-zd540h"></rect>`);
+var root_13 = from_svg(`<g class="svelte-zd540h"><!></g>`);
+var root_14 = from_svg(`<svg viewBox="0 0 260 210" class="il svelte-zd540h"><g class="float svelte-zd540h"><rect x="90" y="20" width="80" height="170" rx="16" class="phone svelte-zd540h"></rect><clipPath id="vClip" class="svelte-zd540h"><rect x="96" y="26" width="68" height="158" rx="10" class="svelte-zd540h"></rect></clipPath><g clip-path="url(#vClip)" class="svelte-zd540h"><rect x="96" y="26" width="68" height="158" fill="url(#skwdGradSoft)" class="svelte-zd540h"></rect><!></g></g></svg>`);
+var root_15 = from_svg(`<svg viewBox="0 0 260 210" class="il svelte-zd540h"><rect x="48" y="55" width="100" height="100" rx="14" fill="url(#skwdGradSoft)" class="xf a svelte-zd540h"></rect><rect x="112" y="55" width="100" height="100" rx="14" fill="url(#skwdGrad)" class="xf b svelte-zd540h"></rect><g class="float svelte-zd540h"><path d="M126 105 h18 m-6 -6 l6 6 l-6 6" class="arrow svelte-zd540h"></path></g></svg>`);
+var root_16 = from_svg(`<rect width="9" height="9" rx="2.5" class="appdot svelte-zd540h"></rect>`);
+var root_17 = from_svg(`<svg viewBox="0 0 260 210" class="il svelte-zd540h"><g class="spin svelte-zd540h" style="transform-origin:130px 105px"><ellipse cx="130" cy="105" rx="78" ry="72" class="ring svelte-zd540h"></ellipse></g><g class="float svelte-zd540h"><rect x="101" y="23" width="58" height="164" rx="16" class="phone svelte-zd540h"></rect><clipPath id="mClip" class="svelte-zd540h"><rect x="107" y="29" width="46" height="152" rx="11" class="svelte-zd540h"></rect></clipPath><g clip-path="url(#mClip)" class="svelte-zd540h"><rect x="107" y="29" width="46" height="152" fill="url(#skwdGradSoft)" class="svelte-zd540h"></rect><path class="wave svelte-zd540h" d="M100 118 q12 -14 24 0 t24 0 t24 0 t24 0 V181 H100 Z" fill="url(#skwdGrad)" opacity="0.92"></path><path class="wave w2 svelte-zd540h" d="M100 132 q12 -12 24 0 t24 0 t24 0 t24 0 V181 H100 Z" fill="url(#skwdGrad)" opacity="0.5"></path></g><rect x="121" y="33" width="18" height="4" rx="2" class="notch svelte-zd540h"></rect><rect x="120" y="173" width="20" height="3" rx="1.5" class="notch svelte-zd540h"></rect><!></g></svg>`);
+var root_18 = from_svg(`<svg viewBox="0 0 260 210" class="il svelte-zd540h"><g class="spin svelte-zd540h" style="transform-origin:130px 105px"><ellipse cx="130" cy="105" rx="80" ry="80" class="ring svelte-zd540h"></ellipse></g><circle cx="130" cy="105" r="46" fill="url(#skwdGrad)" class="float svelte-zd540h"></circle><path d="M110 106 l14 14 l26 -30" class="check svelte-zd540h"></path></svg>`);
+var root_19 = from_html(`<div class="art svelte-zd540h"><!></div>`);
+var root_20 = from_html(`<button> </button>`);
+var root_21 = from_html(`<div class="chips-grid svelte-zd540h"></div>`);
+var root_22 = from_html(`<span class="gpu svelte-zd540h">✦</span>`);
+var root_23 = from_html(`<button> <!></button>`);
+var root_24 = from_html(`<div class="trans-grid svelte-zd540h"></div>`);
+var root_25 = from_html(`<div class="toggles svelte-zd540h"><button><span class="t-text svelte-zd540h"><span class="t-title svelte-zd540h">Zufällige Übergänge</span> <span class="t-desc svelte-zd540h">Bei jedem Wechsel ein anderer Effekt – immer für Abwechslung.</span></span> <span class="sw svelte-zd540h" aria-hidden="true"><span class="knob svelte-zd540h"></span></span></button> <!></div>`);
+var root_26 = from_html(`<div class="toggles svelte-zd540h"><button><span class="t-text svelte-zd540h"><span class="t-title svelte-zd540h">Hintergrund aufs Handy setzen</span> <span class="t-desc svelte-zd540h">Dein Motiv als System-Hintergrund (Start- & Sperrbildschirm).</span></span> <span class="sw svelte-zd540h" aria-hidden="true"><span class="knob svelte-zd540h"></span></span></button> <button><span class="t-text svelte-zd540h"><span class="t-title svelte-zd540h">Live-Wallpaper (animiert)</span> <span class="t-desc svelte-zd540h">Sanfte Übergänge & automatischer Wechsel direkt am Homescreen.</span></span> <span class="sw svelte-zd540h" aria-hidden="true"><span class="knob svelte-zd540h"></span></span></button></div>`);
+var root_27 = from_html(`<div class="svelte-zd540h"><span class="kicker svelte-zd540h"> </span> <h1 class="svelte-zd540h"> </h1> <p class="svelte-zd540h"> </p> <!> <!> <!></div>`);
+var root_28 = from_html(`<button></button>`);
+var root_29 = from_html(`<button class="ghost svelte-zd540h">Zurück</button>`);
+var root_30 = from_html(`<svg class="defs svelte-zd540h" aria-hidden="true" focusable="false"><defs class="svelte-zd540h"><linearGradient id="skwdGrad" x1="0" y1="0" x2="1" y2="1" class="svelte-zd540h"><stop offset="0" class="g0 svelte-zd540h"></stop><stop offset="1" class="g1 svelte-zd540h"></stop></linearGradient><linearGradient id="skwdGradSoft" x1="0" y1="0" x2="0" y2="1" class="svelte-zd540h"><stop offset="0" class="gs0 svelte-zd540h"></stop><stop offset="1" class="gs1 svelte-zd540h"></stop></linearGradient></defs></svg> <div class="intro svelte-zd540h"><div class="aurora a1 svelte-zd540h"></div> <div class="aurora a2 svelte-zd540h"></div> <!> <div class="stage svelte-zd540h"><!></div> <div class="copy svelte-zd540h"><!></div> <div class="footer svelte-zd540h"><div class="dots svelte-zd540h"></div> <div class="actions svelte-zd540h"><!> <button class="go svelte-zd540h"> </button></div></div></div>`, 1);
 
 const $$css = {
 	hash: 'svelte-zd540h',
-	code: '.defs.svelte-zd540h {position:absolute;width:0;height:0;}.g0.svelte-zd540h {stop-color:var(--accent, #6aa0ff);}.g1.svelte-zd540h {stop-color:color-mix(in srgb, var(--accent, #6aa0ff) 55%, #b06cf0);}.gs0.svelte-zd540h {stop-color:color-mix(in srgb, var(--accent, #6aa0ff) 45%, transparent);}.gs1.svelte-zd540h {stop-color:color-mix(in srgb, var(--accent, #6aa0ff) 12%, transparent);}.intro.svelte-zd540h {position:fixed;inset:0;z-index:80;display:flex;flex-direction:column;overflow:hidden;color:var(--text, #fff);background:radial-gradient(130% 80% at 50% -10%, color-mix(in srgb, var(--accent, #6aa0ff) 22%, transparent), transparent 60%),\n      var(--bg, #0e0f13);padding:calc(env(safe-area-inset-top) + 20px) 24px calc(env(safe-area-inset-bottom) + 24px);}.aurora.svelte-zd540h {position:absolute;border-radius:50%;filter:blur(60px);opacity:0.5;pointer-events:none;}.a1.svelte-zd540h {width:320px;height:320px;top:-80px;right:-120px;background:radial-gradient(circle, color-mix(in srgb, var(--accent, #6aa0ff) 60%, transparent), transparent 70%); animation: svelte-zd540h-drift1 14s ease-in-out infinite;}.a2.svelte-zd540h {width:300px;height:300px;bottom:-100px;left:-120px;background:radial-gradient(circle, color-mix(in srgb, #b06cf0 55%, transparent), transparent 70%); animation: svelte-zd540h-drift2 18s ease-in-out infinite;}\n  @keyframes svelte-zd540h-drift1 { 50% { transform: translate(-30px, 40px) scale(1.1); } }\n  @keyframes svelte-zd540h-drift2 { 50% { transform: translate(40px, -30px) scale(1.08); } }.skip.svelte-zd540h {position:absolute;top:calc(env(safe-area-inset-top) + 16px);right:20px;z-index:2;background:color-mix(in srgb, var(--text, #fff) 8%, transparent);border:none;color:var(--text-muted, #c7c9d1);font-size:0.82rem;padding:7px 14px;border-radius:999px;backdrop-filter:blur(6px);cursor:pointer;}.skip.svelte-zd540h:active {transform:scale(0.96);}.stage.svelte-zd540h {flex:1;display:grid;place-items:center;position:relative;min-height:0;}.art.svelte-zd540h {grid-area:1 / 1;}.il.svelte-zd540h {width:min(66vw, 260px);height:auto;overflow:visible;}.copy.svelte-zd540h {position:relative;text-align:center;padding:4px 4px 10px;}.kicker.svelte-zd540h {display:inline-block;font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent, #6aa0ff);font-weight:700;margin-bottom:10px;}h1.svelte-zd540h {margin:0 0 12px;font-size:clamp(1.4rem, 6.5vw, 1.9rem);line-height:1.12;letter-spacing:-0.02em;font-weight:800;}p.svelte-zd540h {margin:0 auto;max-width:30rem;color:var(--text-muted, #c7c9d1);line-height:1.55;font-size:0.95rem;}.chips-grid.svelte-zd540h {display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:18px auto 0;max-width:30rem;}.chip-opt.svelte-zd540h {background:color-mix(in srgb, var(--text, #fff) 6%, transparent);border:1px solid color-mix(in srgb, var(--text, #fff) 12%, transparent);color:var(--text, #fff);border-radius:999px;padding:9px 16px;font-size:0.9rem;font-weight:600;cursor:pointer;transition:background 0.18s, border-color 0.18s, transform 0.1s;}.chip-opt.svelte-zd540h:active {transform:scale(0.96);}.chip-opt.sel.svelte-zd540h {background:var(--accent, #6aa0ff);color:#fff;border-color:transparent;}.sel-input.svelte-zd540h {width:100%;margin-top:2px;background:color-mix(in srgb, var(--text, #fff) 6%, transparent);border:1px solid color-mix(in srgb, var(--text, #fff) 14%, transparent);color:var(--text, #fff);border-radius:14px;padding:13px 14px;font-size:0.95rem;}.toggles.svelte-zd540h {display:flex;flex-direction:column;gap:10px;margin:18px auto 0;max-width:30rem;text-align:left;}.toggle.svelte-zd540h {display:flex;align-items:center;gap:14px;background:color-mix(in srgb, var(--text, #fff) 6%, transparent);border:1px solid color-mix(in srgb, var(--text, #fff) 12%, transparent);border-radius:16px;padding:14px 16px;cursor:pointer;transition:border-color 0.2s, background 0.2s;}.toggle.on.svelte-zd540h {border-color:color-mix(in srgb, var(--accent, #6aa0ff) 60%, transparent);background:color-mix(in srgb, var(--accent, #6aa0ff) 12%, transparent);}.toggle.disabled.svelte-zd540h {opacity:0.45;cursor:default;}.t-text.svelte-zd540h {flex:1;display:flex;flex-direction:column;gap:3px;min-width:0;}.t-title.svelte-zd540h {font-weight:700;font-size:0.95rem;}.t-desc.svelte-zd540h {font-size:0.8rem;color:var(--text-muted, #c7c9d1);line-height:1.4;}.sw.svelte-zd540h {flex-shrink:0;width:46px;height:28px;border-radius:999px;background:color-mix(in srgb, var(--text, #fff) 20%, transparent);position:relative;transition:background 0.2s;}.toggle.on.svelte-zd540h .sw:where(.svelte-zd540h) {background:var(--accent, #6aa0ff);}.knob.svelte-zd540h {position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform 0.22s cubic-bezier(.2,.8,.2,1);}.toggle.on.svelte-zd540h .knob:where(.svelte-zd540h) {transform:translateX(18px);}.footer.svelte-zd540h {position:relative;z-index:2;}.dots.svelte-zd540h {display:flex;justify-content:center;gap:8px;margin:18px 0 20px;}.dot-btn.svelte-zd540h {width:7px;height:7px;padding:0;border:none;border-radius:999px;background:color-mix(in srgb, var(--text, #fff) 22%, transparent);transition:width 0.3s cubic-bezier(.2,.8,.2,1), background 0.3s;cursor:pointer;}.dot-btn.on.svelte-zd540h {width:24px;background:var(--accent, #6aa0ff);}.actions.svelte-zd540h {display:flex;gap:10px;}.ghost.svelte-zd540h, .go.svelte-zd540h {height:52px;border-radius:15px;font-size:1rem;font-weight:700;cursor:pointer;transition:transform 0.12s, filter 0.2s;}.ghost.svelte-zd540h {flex:0 0 auto;padding:0 22px;background:color-mix(in srgb, var(--text, #fff) 9%, transparent);border:1px solid color-mix(in srgb, var(--text, #fff) 14%, transparent);color:var(--text, #fff);}.go.svelte-zd540h {flex:1;border:none;color:#fff;background:linear-gradient(135deg, var(--accent, #6aa0ff), color-mix(in srgb, var(--accent, #6aa0ff) 55%, #b06cf0));box-shadow:0 10px 30px color-mix(in srgb, var(--accent, #6aa0ff) 40%, transparent);}.go.svelte-zd540h:active, .ghost.svelte-zd540h:active {transform:scale(0.98);}.phone.svelte-zd540h {fill:color-mix(in srgb, var(--text, #fff) 7%, transparent);stroke:color-mix(in srgb, var(--text, #fff) 20%, transparent);stroke-width:2;}.ring.svelte-zd540h {fill:none;stroke:color-mix(in srgb, var(--text, #fff) 16%, transparent);stroke-width:1.5;stroke-dasharray:2 7;stroke-linecap:round;}.dot.svelte-zd540h {fill:color-mix(in srgb, var(--text, #fff) 40%, transparent);}.dot.accent.svelte-zd540h {fill:var(--accent, #6aa0ff);}.dot.light.svelte-zd540h {fill:color-mix(in srgb, var(--text, #fff) 55%, transparent);}.gloss.svelte-zd540h {fill:color-mix(in srgb, #fff 30%, transparent);}.bar.svelte-zd540h {fill:color-mix(in srgb, #fff 55%, transparent);}.rail.svelte-zd540h {fill:color-mix(in srgb, var(--accent, #6aa0ff) 85%, #000);}.touch.svelte-zd540h {fill:none;stroke:#fff;stroke-width:2;opacity:0.9;}.src.svelte-zd540h {fill:color-mix(in srgb, var(--text, #fff) 10%, transparent);stroke:color-mix(in srgb, var(--text, #fff) 22%, transparent);stroke-width:1.5;}.ico.svelte-zd540h {fill:none;stroke:var(--accent, #6aa0ff);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}.ico.fill.svelte-zd540h {fill:var(--accent, #6aa0ff);stroke:none;}.tile.svelte-zd540h {opacity:0; animation: svelte-zd540h-pop 0.5s cubic-bezier(.2,.9,.3,1.3) forwards;}.flow.svelte-zd540h {fill:none;stroke:var(--accent, #6aa0ff);stroke-width:2;stroke-dasharray:5 9;stroke-linecap:round;opacity:0.8; animation: svelte-zd540h-dashmove 1.1s linear infinite;}.card.svelte-zd540h {stroke:color-mix(in srgb, var(--text, #fff) 16%, transparent);stroke-width:1.5;}.c1.svelte-zd540h {transform:rotate(-9deg);transform-origin:130px 106px;}.c2.svelte-zd540h {transform:rotate(3deg);transform-origin:130px 106px;opacity:0.85;}.c3.svelte-zd540h {transform:rotate(13deg);transform-origin:130px 106px;opacity:0.6;}.swatches.svelte-zd540h .s0:where(.svelte-zd540h) {fill:var(--accent, #6aa0ff);}.swatches.svelte-zd540h .s1:where(.svelte-zd540h) {fill:color-mix(in srgb, var(--accent, #6aa0ff) 60%, #b06cf0);}.swatches.svelte-zd540h .s2:where(.svelte-zd540h) {fill:#e9a23b;}.swatches.svelte-zd540h .s3:where(.svelte-zd540h) {fill:#4bb58b;}.swatches.svelte-zd540h .s4:where(.svelte-zd540h) {fill:color-mix(in srgb, var(--text, #fff) 70%, transparent);}.swatches.svelte-zd540h circle:where(.svelte-zd540h) {stroke:color-mix(in srgb, var(--text, #fff) 14%, transparent);stroke-width:1;opacity:0; animation: svelte-zd540h-pop 0.5s cubic-bezier(.2,.9,.3,1.3) forwards;}.appdot.svelte-zd540h {fill:color-mix(in srgb, #fff 45%, transparent);}.switch-knob.svelte-zd540h {fill:color-mix(in srgb, var(--text, #fff) 35%, transparent);transition:fill 0.25s;}.switch-knob.on.svelte-zd540h {fill:var(--accent, #6aa0ff); animation: svelte-zd540h-livepulse 1.8s ease-in-out infinite;}.check.svelte-zd540h {fill:none;stroke:#fff;stroke-width:7;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:70;stroke-dashoffset:70; animation: svelte-zd540h-draw 0.6s 0.2s cubic-bezier(.2,.8,.2,1) forwards;}.xf.svelte-zd540h {stroke:color-mix(in srgb, var(--text, #fff) 16%, transparent);stroke-width:1.5;}.xf.a.svelte-zd540h { animation: svelte-zd540h-xfa 3s ease-in-out infinite;}.xf.b.svelte-zd540h { animation: svelte-zd540h-xfb 3s ease-in-out infinite;}.arrow.svelte-zd540h {fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;}\n  @keyframes svelte-zd540h-xfa { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }\n  @keyframes svelte-zd540h-xfb { 0%,100% { opacity: 0.25; } 50% { opacity: 1; } }.float.svelte-zd540h { animation: svelte-zd540h-floaty 5s ease-in-out infinite;transform-origin:center;}.spin.svelte-zd540h { animation: svelte-zd540h-spin 22s linear infinite;}.chip.svelte-zd540h {opacity:0; animation: svelte-zd540h-pop 0.5s cubic-bezier(.2,.9,.3,1.3) forwards;}.slidein.svelte-zd540h { animation: svelte-zd540h-slidein 0.7s cubic-bezier(.2,.8,.2,1) both;}.ping.svelte-zd540h { animation: svelte-zd540h-ping 1.8s ease-out infinite;transform-origin:150px 105px;}.wave.svelte-zd540h { animation: svelte-zd540h-waveshift 3.5s ease-in-out infinite;}\n\n  @keyframes svelte-zd540h-floaty { 50% { transform: translateY(-8px); } }\n  @keyframes svelte-zd540h-spin { to { transform: rotate(360deg); } }\n  @keyframes svelte-zd540h-pop { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }\n  @keyframes svelte-zd540h-dashmove { to { stroke-dashoffset: -28; } }\n  @keyframes svelte-zd540h-slidein { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: translateX(0); } }\n  @keyframes svelte-zd540h-ping { 0% { transform: scale(1); opacity: 0.7; } 80%, 100% { transform: scale(2.4); opacity: 0; } }\n  @keyframes svelte-zd540h-livepulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }\n  @keyframes svelte-zd540h-waveshift { 50% { transform: translateX(-12px) translateY(-3px); } }\n  @keyframes svelte-zd540h-draw { to { stroke-dashoffset: 0; } }\n\n  @media (prefers-reduced-motion: reduce) {.float.svelte-zd540h, .spin.svelte-zd540h, .chip.svelte-zd540h, .slidein.svelte-zd540h, .ping.svelte-zd540h, .wave.svelte-zd540h, .tile.svelte-zd540h, .flow.svelte-zd540h, .switch-knob.svelte-zd540h, .aurora.svelte-zd540h, .swatches.svelte-zd540h circle:where(.svelte-zd540h), .check.svelte-zd540h, .xf.svelte-zd540h { animation: none !important;}.xf.b.svelte-zd540h {opacity:1;}.tile.svelte-zd540h, .chip.svelte-zd540h, .swatches.svelte-zd540h circle:where(.svelte-zd540h) {opacity:1;}.check.svelte-zd540h {stroke-dashoffset:0;}\n  }'
+	code: '.defs.svelte-zd540h {position:absolute;width:0;height:0;}.g0.svelte-zd540h {stop-color:var(--accent, #6aa0ff);}.g1.svelte-zd540h {stop-color:color-mix(in srgb, var(--accent, #6aa0ff) 55%, #b06cf0);}.gs0.svelte-zd540h {stop-color:color-mix(in srgb, var(--accent, #6aa0ff) 45%, transparent);}.gs1.svelte-zd540h {stop-color:color-mix(in srgb, var(--accent, #6aa0ff) 12%, transparent);}.intro.svelte-zd540h {position:fixed;inset:0;z-index:80;display:flex;flex-direction:column;overflow:hidden;color:var(--text, #fff);background:radial-gradient(130% 80% at 50% -10%, color-mix(in srgb, var(--accent, #6aa0ff) 22%, transparent), transparent 60%),\n      var(--bg, #0e0f13);padding:calc(env(safe-area-inset-top) + 20px) 24px calc(env(safe-area-inset-bottom) + 24px);}.aurora.svelte-zd540h {position:absolute;border-radius:50%;filter:blur(60px);opacity:0.5;pointer-events:none;}.a1.svelte-zd540h {width:320px;height:320px;top:-80px;right:-120px;background:radial-gradient(circle, color-mix(in srgb, var(--accent, #6aa0ff) 60%, transparent), transparent 70%); animation: svelte-zd540h-drift1 14s ease-in-out infinite;}.a2.svelte-zd540h {width:300px;height:300px;bottom:-100px;left:-120px;background:radial-gradient(circle, color-mix(in srgb, #b06cf0 55%, transparent), transparent 70%); animation: svelte-zd540h-drift2 18s ease-in-out infinite;}\n  @keyframes svelte-zd540h-drift1 { 50% { transform: translate(-30px, 40px) scale(1.1); } }\n  @keyframes svelte-zd540h-drift2 { 50% { transform: translate(40px, -30px) scale(1.08); } }.skip.svelte-zd540h {position:absolute;top:calc(env(safe-area-inset-top) + 16px);right:20px;z-index:2;background:color-mix(in srgb, var(--text, #fff) 8%, transparent);border:none;color:var(--text-muted, #c7c9d1);font-size:0.82rem;padding:7px 14px;border-radius:999px;backdrop-filter:blur(6px);cursor:pointer;}.skip.svelte-zd540h:active {transform:scale(0.96);}.stage.svelte-zd540h {flex:1;display:grid;place-items:center;position:relative;min-height:0;}.art.svelte-zd540h {grid-area:1 / 1;}.il.svelte-zd540h {width:min(66vw, 260px);height:auto;overflow:visible;}.copy.svelte-zd540h {position:relative;text-align:center;padding:4px 4px 10px;}.kicker.svelte-zd540h {display:inline-block;font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent, #6aa0ff);font-weight:700;margin-bottom:10px;}h1.svelte-zd540h {margin:0 0 12px;font-size:clamp(1.4rem, 6.5vw, 1.9rem);line-height:1.12;letter-spacing:-0.02em;font-weight:800;}p.svelte-zd540h {margin:0 auto;max-width:30rem;color:var(--text-muted, #c7c9d1);line-height:1.55;font-size:0.95rem;}.chips-grid.svelte-zd540h {display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:18px auto 0;max-width:30rem;}.chip-opt.svelte-zd540h {background:color-mix(in srgb, var(--text, #fff) 6%, transparent);border:1px solid color-mix(in srgb, var(--text, #fff) 12%, transparent);color:var(--text, #fff);border-radius:999px;padding:9px 16px;font-size:0.9rem;font-weight:600;cursor:pointer;transition:background 0.18s, border-color 0.18s, transform 0.1s;}.chip-opt.svelte-zd540h:active {transform:scale(0.96);}.chip-opt.sel.svelte-zd540h {background:var(--accent, #6aa0ff);color:#fff;border-color:transparent;}.chip-opt.sm.svelte-zd540h {padding:7px 12px;font-size:0.82rem;}.gpu.svelte-zd540h {margin-left:4px;opacity:0.8;font-size:0.75em;}.trans-grid.svelte-zd540h {display:flex;flex-wrap:wrap;justify-content:center;gap:7px;max-width:30rem;max-height:136px;overflow-y:auto;padding:2px;-webkit-overflow-scrolling:touch;}.toggles.svelte-zd540h {display:flex;flex-direction:column;gap:10px;margin:18px auto 0;max-width:30rem;text-align:left;}.toggle.svelte-zd540h {display:flex;align-items:center;gap:14px;background:color-mix(in srgb, var(--text, #fff) 6%, transparent);border:1px solid color-mix(in srgb, var(--text, #fff) 12%, transparent);border-radius:16px;padding:14px 16px;cursor:pointer;transition:border-color 0.2s, background 0.2s;}.toggle.on.svelte-zd540h {border-color:color-mix(in srgb, var(--accent, #6aa0ff) 60%, transparent);background:color-mix(in srgb, var(--accent, #6aa0ff) 12%, transparent);}.toggle.disabled.svelte-zd540h {opacity:0.45;cursor:default;}.t-text.svelte-zd540h {flex:1;display:flex;flex-direction:column;gap:3px;min-width:0;}.t-title.svelte-zd540h {font-weight:700;font-size:0.95rem;}.t-desc.svelte-zd540h {font-size:0.8rem;color:var(--text-muted, #c7c9d1);line-height:1.4;}.sw.svelte-zd540h {flex-shrink:0;width:46px;height:28px;border-radius:999px;background:color-mix(in srgb, var(--text, #fff) 20%, transparent);position:relative;transition:background 0.2s;}.toggle.on.svelte-zd540h .sw:where(.svelte-zd540h) {background:var(--accent, #6aa0ff);}.knob.svelte-zd540h {position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform 0.22s cubic-bezier(.2,.8,.2,1);}.toggle.on.svelte-zd540h .knob:where(.svelte-zd540h) {transform:translateX(18px);}.footer.svelte-zd540h {position:relative;z-index:2;}.dots.svelte-zd540h {display:flex;justify-content:center;gap:8px;margin:18px 0 20px;}.dot-btn.svelte-zd540h {width:7px;height:7px;padding:0;border:none;border-radius:999px;background:color-mix(in srgb, var(--text, #fff) 22%, transparent);transition:width 0.3s cubic-bezier(.2,.8,.2,1), background 0.3s;cursor:pointer;}.dot-btn.on.svelte-zd540h {width:24px;background:var(--accent, #6aa0ff);}.actions.svelte-zd540h {display:flex;gap:10px;}.ghost.svelte-zd540h, .go.svelte-zd540h {height:52px;border-radius:15px;font-size:1rem;font-weight:700;cursor:pointer;transition:transform 0.12s, filter 0.2s;}.ghost.svelte-zd540h {flex:0 0 auto;padding:0 22px;background:color-mix(in srgb, var(--text, #fff) 9%, transparent);border:1px solid color-mix(in srgb, var(--text, #fff) 14%, transparent);color:var(--text, #fff);}.go.svelte-zd540h {flex:1;border:none;color:#fff;background:linear-gradient(135deg, var(--accent, #6aa0ff), color-mix(in srgb, var(--accent, #6aa0ff) 55%, #b06cf0));box-shadow:0 10px 30px color-mix(in srgb, var(--accent, #6aa0ff) 40%, transparent);}.go.svelte-zd540h:active, .ghost.svelte-zd540h:active {transform:scale(0.98);}.phone.svelte-zd540h {fill:color-mix(in srgb, var(--text, #fff) 7%, transparent);stroke:color-mix(in srgb, var(--text, #fff) 20%, transparent);stroke-width:2;}.ring.svelte-zd540h {fill:none;stroke:color-mix(in srgb, var(--text, #fff) 16%, transparent);stroke-width:1.5;stroke-dasharray:2 7;stroke-linecap:round;}.dot.svelte-zd540h {fill:color-mix(in srgb, var(--text, #fff) 40%, transparent);}.dot.accent.svelte-zd540h {fill:var(--accent, #6aa0ff);}.dot.light.svelte-zd540h {fill:color-mix(in srgb, var(--text, #fff) 55%, transparent);}.gloss.svelte-zd540h {fill:color-mix(in srgb, #fff 30%, transparent);}.bar.svelte-zd540h {fill:color-mix(in srgb, #fff 55%, transparent);}.rail.svelte-zd540h {fill:color-mix(in srgb, var(--accent, #6aa0ff) 85%, #000);}.touch.svelte-zd540h {fill:none;stroke:#fff;stroke-width:2;opacity:0.9;}.src.svelte-zd540h {fill:color-mix(in srgb, var(--text, #fff) 10%, transparent);stroke:color-mix(in srgb, var(--text, #fff) 22%, transparent);stroke-width:1.5;}.ico.svelte-zd540h {fill:none;stroke:var(--accent, #6aa0ff);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}.ico.fill.svelte-zd540h {fill:var(--accent, #6aa0ff);stroke:none;}.tile.svelte-zd540h {opacity:0; animation: svelte-zd540h-pop 0.5s cubic-bezier(.2,.9,.3,1.3) forwards;}.flow.svelte-zd540h {fill:none;stroke:var(--accent, #6aa0ff);stroke-width:2;stroke-dasharray:5 9;stroke-linecap:round;opacity:0.8; animation: svelte-zd540h-dashmove 1.1s linear infinite;}.appdot.svelte-zd540h {fill:color-mix(in srgb, #fff 45%, transparent);}.notch.svelte-zd540h {fill:color-mix(in srgb, var(--text, #fff) 30%, transparent);}.check.svelte-zd540h {fill:none;stroke:#fff;stroke-width:7;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:70;stroke-dashoffset:70; animation: svelte-zd540h-draw 0.6s 0.2s cubic-bezier(.2,.8,.2,1) forwards;}.xf.svelte-zd540h {stroke:color-mix(in srgb, var(--text, #fff) 16%, transparent);stroke-width:1.5;}.xf.a.svelte-zd540h { animation: svelte-zd540h-xfa 3s ease-in-out infinite;}.xf.b.svelte-zd540h { animation: svelte-zd540h-xfb 3s ease-in-out infinite;}.arrow.svelte-zd540h {fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;}\n  @keyframes svelte-zd540h-xfa { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }\n  @keyframes svelte-zd540h-xfb { 0%,100% { opacity: 0.25; } 50% { opacity: 1; } }.float.svelte-zd540h { animation: svelte-zd540h-floaty 5s ease-in-out infinite;transform-origin:center;}.spin.svelte-zd540h { animation: svelte-zd540h-spin 22s linear infinite;}.chip.svelte-zd540h {opacity:0; animation: svelte-zd540h-pop 0.5s cubic-bezier(.2,.9,.3,1.3) forwards;}.slidein.svelte-zd540h { animation: svelte-zd540h-slidein 0.7s cubic-bezier(.2,.8,.2,1) both;}.ping.svelte-zd540h { animation: svelte-zd540h-ping 1.8s ease-out infinite;transform-origin:150px 105px;}.wave.svelte-zd540h { animation: svelte-zd540h-waveshift 3.5s ease-in-out infinite;}\n\n  @keyframes svelte-zd540h-floaty { 50% { transform: translateY(-8px); } }\n  @keyframes svelte-zd540h-spin { to { transform: rotate(360deg); } }\n  @keyframes svelte-zd540h-pop { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }\n  @keyframes svelte-zd540h-dashmove { to { stroke-dashoffset: -28; } }\n  @keyframes svelte-zd540h-slidein { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: translateX(0); } }\n  @keyframes svelte-zd540h-ping { 0% { transform: scale(1); opacity: 0.7; } 80%, 100% { transform: scale(2.4); opacity: 0; } }\n  @keyframes svelte-zd540h-livepulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }\n  @keyframes svelte-zd540h-waveshift { 50% { transform: translateX(-12px) translateY(-3px); } }\n  @keyframes svelte-zd540h-draw { to { stroke-dashoffset: 0; } }\n\n  @media (prefers-reduced-motion: reduce) {.float.svelte-zd540h, .spin.svelte-zd540h, .chip.svelte-zd540h, .slidein.svelte-zd540h, .ping.svelte-zd540h, .wave.svelte-zd540h, .tile.svelte-zd540h, .flow.svelte-zd540h, .aurora.svelte-zd540h, .check.svelte-zd540h, .xf.svelte-zd540h { animation: none !important;}.xf.b.svelte-zd540h {opacity:1;}.tile.svelte-zd540h, .chip.svelte-zd540h {opacity:1;}.check.svelte-zd540h {stroke-dashoffset:0;}\n  }'
 };
 
 function Intro($$anchor, $$props) {
@@ -20954,6 +20969,13 @@ function Intro($$anchor, $$props) {
 		$$props.manager.setLiveWallpaper(on);
 	}
 
+	// Pointy-top hexagon points for the "geometric" preview.
+	function hex(cx, cy, r) {
+		const w = r * 0.866;
+
+		return `${cx},${cy - r} ${cx + w},${cy - r / 2} ${cx + w},${cy + r / 2} ${cx},${cy + r} ${cx - w},${cy + r / 2} ${cx - w},${cy - r / 2}`;
+	}
+
 	function next() {
 		if (get(last)) $$props.onDone(); else set(i, get(i) + 1);
 	}
@@ -20962,7 +20984,7 @@ function Intro($$anchor, $$props) {
 		if (get(i) > 0) set(i, get(i) - 1);
 	}
 
-	var fragment = root_21();
+	var fragment = root_30();
 	var div = sibling(first_child(fragment), 2);
 	var node = sibling(child(div), 4);
 
@@ -20986,7 +21008,7 @@ function Intro($$anchor, $$props) {
 	var node_1 = child(div_1);
 
 	key(node_1, () => get(i), ($$anchor) => {
-		var div_2 = root_11();
+		var div_2 = root_19();
 		var node_2 = child(div_2);
 
 		{
@@ -21024,62 +21046,175 @@ function Intro($$anchor, $$props) {
 				append($$anchor, svg_2);
 			};
 
-			var consequent_4 = ($$anchor) => {
-				var svg_3 = root_6();
-				var g_1 = sibling(child(svg_3));
+			var consequent_10 = ($$anchor) => {
+				var svg_3 = root_14();
+				var g_1 = child(svg_3);
+				var g_2 = sibling(child(g_1), 2);
+				var node_4 = sibling(child(g_2));
 
-				each(g_1, 20, () => [0, 1, 2, 3, 4], index, ($$anchor, k) => {
-					var circle = root_5();
+				key(node_4, () => get(viewMode), ($$anchor) => {
+					var g_3 = root_13();
+					var node_5 = child(g_3);
 
-					template_effect(() => {
-						set_attribute(circle, 'cx', 96 + k * 17);
-						set_class(circle, 0, `swatch s${k ?? ''}`, 'svelte-zd540h');
-						set_style(circle, `animation-delay:${k * 120}ms`);
-					});
+					{
+						var consequent_4 = ($$anchor) => {
+							var fragment_1 = comment();
+							var node_6 = first_child(fragment_1);
 
-					append($$anchor, circle);
+							each(node_6, 16, () => [0, 1, 2], index, ($$anchor, c) => {
+								var fragment_2 = comment();
+								var node_7 = first_child(fragment_2);
+
+								each(node_7, 16, () => [0, 1, 2, 3, 4], index, ($$anchor, r) => {
+									var rect_1 = root_5();
+
+									template_effect(() => {
+										set_attribute(rect_1, 'x', 100 + c * 21);
+										set_attribute(rect_1, 'y', 31 + r * 30);
+									});
+
+									append($$anchor, rect_1);
+								});
+
+								append($$anchor, fragment_2);
+							});
+
+							append($$anchor, fragment_1);
+						};
+
+						var consequent_5 = ($$anchor) => {
+							var fragment_3 = comment();
+							var node_8 = first_child(fragment_3);
+
+							each(
+								node_8,
+								16,
+								() => [
+									[116, 44],
+									[144, 44],
+									[130, 68],
+									[116, 92],
+									[144, 92],
+									[130, 116],
+									[116, 140],
+									[144, 140],
+									[130, 164]
+								],
+								index,
+								($$anchor, $$item) => {
+									var $$array = user_derived(() => to_array($$item, 2));
+									let cx = () => get($$array)[0];
+									let cy = () => get($$array)[1];
+									var polygon = root_6();
+
+									template_effect(($0) => set_attribute(polygon, 'points', $0), [() => hex(cx(), cy(), 13)]);
+									append($$anchor, polygon);
+								}
+							);
+
+							append($$anchor, fragment_3);
+						};
+
+						var consequent_6 = ($$anchor) => {
+							var fragment_4 = root_7();
+							append($$anchor, fragment_4);
+						};
+
+						var consequent_7 = ($$anchor) => {
+							var fragment_5 = root_8();
+							append($$anchor, fragment_5);
+						};
+
+						var consequent_8 = ($$anchor) => {
+							var fragment_6 = root_10();
+							var node_9 = sibling(first_child(fragment_6));
+
+							each(node_9, 16, () => [0, 1, 2, 3], index, ($$anchor, r) => {
+								var rect_2 = root_9();
+
+								template_effect(() => set_attribute(rect_2, 'y', 40 + r * 34));
+								append($$anchor, rect_2);
+							});
+
+							append($$anchor, fragment_6);
+						};
+
+						var consequent_9 = ($$anchor) => {
+							var fragment_7 = comment();
+							var node_10 = first_child(fragment_7);
+
+							each(node_10, 16, () => [-28, -14, 0, 14, 28], index, ($$anchor, a, k) => {
+								var rect_3 = root_11();
+
+								set_attribute(rect_3, 'opacity', k === 2 ? 1 : 0.6);
+								template_effect(() => set_attribute(rect_3, 'transform', `rotate(${a} 130 130)`));
+								append($$anchor, rect_3);
+							});
+
+							append($$anchor, fragment_7);
+						};
+
+						var alternate = ($$anchor) => {
+							var fragment_8 = comment();
+							var node_11 = first_child(fragment_8);
+
+							each(node_11, 16, () => [10, 5, 0], index, ($$anchor, a, k) => {
+								var rect_4 = root_12();
+
+								set_attribute(rect_4, 'y', 60 + k * 6);
+								set_attribute(rect_4, 'opacity', 0.55 + k * 0.22);
+								template_effect(() => set_attribute(rect_4, 'transform', `rotate(${a} 130 100)`));
+								append($$anchor, rect_4);
+							});
+
+							append($$anchor, fragment_8);
+						};
+
+						if_block(node_5, ($$render) => {
+							if (get(viewMode) === 'wall') $$render(consequent_4); else if (get(viewMode) === 'geometric') $$render(consequent_5, 1); else if (get(viewMode) === 'slices') $$render(consequent_6, 2); else if (get(viewMode) === 'depth') $$render(consequent_7, 3); else if (get(viewMode) === 'sandy') $$render(consequent_8, 4); else if (get(viewMode) === 'hand') $$render(consequent_9, 5); else $$render(alternate, -1);
+						});
+					}
+					transition(1, g_3, () => fade, () => ({ duration: 260 }));
+					append($$anchor, g_3);
 				});
 				append($$anchor, svg_3);
 			};
 
-			var consequent_5 = ($$anchor) => {
-				var svg_4 = root_7();
+			var consequent_11 = ($$anchor) => {
+				var svg_4 = root_15();
 
 				append($$anchor, svg_4);
 			};
 
-			var consequent_6 = ($$anchor) => {
-				var svg_5 = root_9();
-				var g_2 = child(svg_5);
-				var node_4 = sibling(child(g_2), 3);
+			var consequent_12 = ($$anchor) => {
+				var svg_5 = root_17();
+				var g_4 = sibling(child(svg_5));
+				var node_12 = sibling(child(g_4), 5);
 
-				each(node_4, 16, () => [0, 1, 2, 3, 4, 5], index, ($$anchor, k) => {
-					var rect_1 = root_8();
+				each(node_12, 16, () => [0, 1, 2, 3, 4, 5], index, ($$anchor, k) => {
+					var rect_5 = root_16();
 
 					template_effect(
 						($0) => {
-							set_attribute(rect_1, 'x', 112 + k % 3 * 13);
-							set_attribute(rect_1, 'y', $0);
+							set_attribute(rect_5, 'x', 114 + k % 3 * 13);
+							set_attribute(rect_5, 'y', $0);
 						},
-						[() => 34 + Math.floor(k / 3) * 13]
+						[() => 46 + Math.floor(k / 3) * 13]
 					);
 
-					append($$anchor, rect_1);
+					append($$anchor, rect_5);
 				});
-
-				var circle_1 = sibling(g_2);
-				template_effect(() => set_class(circle_1, 0, `switch-knob ${get(mobileOn) ? 'on' : ''}`, 'svelte-zd540h'));
 				append($$anchor, svg_5);
 			};
 
-			var alternate = ($$anchor) => {
-				var svg_6 = root_10();
+			var alternate_1 = ($$anchor) => {
+				var svg_6 = root_18();
 
 				append($$anchor, svg_6);
 			};
 
 			if_block(node_2, ($$render) => {
-				if (get(i) === 0) $$render(consequent_1); else if (get(i) === 1) $$render(consequent_2, 1); else if (get(i) === 2) $$render(consequent_3, 2); else if (get(step).kind === 'view') $$render(consequent_4, 3); else if (get(step).kind === 'transition') $$render(consequent_5, 4); else if (get(step).kind === 'mobile') $$render(consequent_6, 5); else $$render(alternate, -1);
+				if (get(i) === 0) $$render(consequent_1); else if (get(i) === 1) $$render(consequent_2, 1); else if (get(i) === 2) $$render(consequent_3, 2); else if (get(step).kind === 'view') $$render(consequent_10, 3); else if (get(step).kind === 'transition') $$render(consequent_11, 4); else if (get(step).kind === 'mobile') $$render(consequent_12, 5); else $$render(alternate_1, -1);
 			});
 		}
 		transition(1, div_2, () => fade, () => ({ duration: 420 }));
@@ -21087,24 +21222,24 @@ function Intro($$anchor, $$props) {
 	});
 
 	var div_3 = sibling(div_1, 2);
-	var node_5 = child(div_3);
+	var node_13 = child(div_3);
 
-	key(node_5, () => get(i), ($$anchor) => {
-		var div_4 = root_18();
+	key(node_13, () => get(i), ($$anchor) => {
+		var div_4 = root_27();
 		var span = child(div_4);
 		var text = only_child(span);
 		var h1 = sibling(span, 2);
 		var text_1 = only_child(h1, true);
 		var p = sibling(h1, 2);
 		var text_2 = only_child(p, true);
-		var node_6 = sibling(p, 2);
+		var node_14 = sibling(p, 2);
 
 		{
-			var consequent_7 = ($$anchor) => {
-				var div_5 = root_13();
+			var consequent_13 = ($$anchor) => {
+				var div_5 = root_21();
 
 				each(div_5, 21, () => VIEW_MODES, (v) => v.value, ($$anchor, v) => {
-					var button_1 = root_12();
+					var button_1 = root_20();
 					let classes;
 					var text_3 = only_child(button_1, true);
 
@@ -21119,59 +21254,55 @@ function Intro($$anchor, $$props) {
 				append($$anchor, div_5);
 			};
 
-			if_block(node_6, ($$render) => {
-				if (get(step).kind === 'view') $$render(consequent_7);
+			if_block(node_14, ($$render) => {
+				if (get(step).kind === 'view') $$render(consequent_13);
 			});
 		}
 
-		var node_7 = sibling(node_6, 2);
+		var node_15 = sibling(node_14, 2);
 
 		{
-			var consequent_9 = ($$anchor) => {
-				var div_6 = root_16();
+			var consequent_16 = ($$anchor) => {
+				var div_6 = root_25();
 				var button_2 = child(div_6);
 				let classes_1;
-				var node_8 = sibling(button_2, 2);
+				var node_16 = sibling(button_2, 2);
 
 				{
-					var consequent_8 = ($$anchor) => {
-						var select = root_15();
+					var consequent_15 = ($$anchor) => {
+						var div_7 = root_24();
 
-						each(select, 21, () => TRANSITIONS, (t) => t.value, ($$anchor, t) => {
-							var option = root_14();
-							var text_4 = only_child(option);
-							var option_value = {};
+						each(div_7, 21, () => TRANSITIONS, (t) => t.value, ($$anchor, t) => {
+							var button_3 = root_23();
+							let classes_2;
+							var text_4 = child(button_3);
+							var node_17 = sibling(text_4);
+
+							{
+								var consequent_14 = ($$anchor) => {
+									var span_1 = root_22();
+
+									append($$anchor, span_1);
+								};
+
+								if_block(node_17, ($$render) => {
+									if (get(t).gpu) $$render(consequent_14);
+								});
+							}
 
 							template_effect(() => {
-								set_text(text_4, `${get(t).label ?? ''}${get(t).gpu ? ' ✦' : ''}`);
-
-								if (option_value !== (option_value = get(t).value)) {
-									option.value = (option.__value = option_value) ?? '';
-								}
+								classes_2 = set_class(button_3, 1, 'chip-opt sm svelte-zd540h', null, classes_2, { sel: get(transitionType) === get(t).value });
+								set_text(text_4, get(t).label);
 							});
 
-							append($$anchor, option);
+							delegated('click', button_3, () => setTransition(get(t).value));
+							append($$anchor, button_3);
 						});
-
-						var select_value;
-
-						init_select(select);
-
-						template_effect(() => {
-							if (select_value !== (select_value = get(transitionType))) {
-								(
-									select.value = (select.__value = select_value) ?? '',
-									select_option(select, select_value)
-								);
-							}
-						});
-
-						delegated('change', select, (e) => setTransition(e.currentTarget.value));
-						append($$anchor, select);
+						append($$anchor, div_7);
 					};
 
-					if_block(node_8, ($$render) => {
-						if (!get(randomShader)) $$render(consequent_8);
+					if_block(node_16, ($$render) => {
+						if (!get(randomShader)) $$render(consequent_15);
 					});
 				}
 				template_effect(() => classes_1 = set_class(button_2, 1, 'toggle svelte-zd540h', null, classes_1, { on: get(randomShader) }));
@@ -21179,34 +21310,34 @@ function Intro($$anchor, $$props) {
 				append($$anchor, div_6);
 			};
 
-			if_block(node_7, ($$render) => {
-				if (get(step).kind === 'transition') $$render(consequent_9);
+			if_block(node_15, ($$render) => {
+				if (get(step).kind === 'transition') $$render(consequent_16);
 			});
 		}
 
-		var node_9 = sibling(node_7, 2);
+		var node_18 = sibling(node_15, 2);
 
 		{
-			var consequent_10 = ($$anchor) => {
-				var div_7 = root_17();
-				var button_3 = child(div_7);
-				let classes_2;
-				var button_4 = sibling(button_3, 2);
+			var consequent_17 = ($$anchor) => {
+				var div_8 = root_26();
+				var button_4 = child(div_8);
 				let classes_3;
+				var button_5 = sibling(button_4, 2);
+				let classes_4;
 
 				template_effect(() => {
-					classes_2 = set_class(button_3, 1, 'toggle svelte-zd540h', null, classes_2, { on: get(mobileOn) });
-					classes_3 = set_class(button_4, 1, 'toggle svelte-zd540h', null, classes_3, { on: get(liveOn), disabled: !get(mobileOn) });
-					button_4.disabled = !get(mobileOn);
+					classes_3 = set_class(button_4, 1, 'toggle svelte-zd540h', null, classes_3, { on: get(mobileOn) });
+					classes_4 = set_class(button_5, 1, 'toggle svelte-zd540h', null, classes_4, { on: get(liveOn), disabled: !get(mobileOn) });
+					button_5.disabled = !get(mobileOn);
 				});
 
-				delegated('click', button_3, () => setMobile(!get(mobileOn)));
-				delegated('click', button_4, () => setLive(!get(liveOn)));
-				append($$anchor, div_7);
+				delegated('click', button_4, () => setMobile(!get(mobileOn)));
+				delegated('click', button_5, () => setLive(!get(liveOn)));
+				append($$anchor, div_8);
 			};
 
-			if_block(node_9, ($$render) => {
-				if (get(step).kind === 'mobile') $$render(consequent_10);
+			if_block(node_18, ($$render) => {
+				if (get(step).kind === 'mobile') $$render(consequent_17);
 			});
 		}
 
@@ -21223,44 +21354,44 @@ function Intro($$anchor, $$props) {
 		append($$anchor, div_4);
 	});
 
-	var div_8 = sibling(div_3, 2);
-	var div_9 = child(div_8);
+	var div_9 = sibling(div_3, 2);
+	var div_10 = child(div_9);
 
-	each(div_9, 21, () => steps, index, ($$anchor, _, n) => {
-		var button_5 = root_19();
-		let classes_4;
+	each(div_10, 21, () => steps, index, ($$anchor, _, n) => {
+		var button_6 = root_28();
+		let classes_5;
 
-		set_attribute(button_5, 'aria-label', `Schritt ${n + 1}`);
-		template_effect(() => classes_4 = set_class(button_5, 1, 'dot-btn svelte-zd540h', null, classes_4, { on: n === get(i) }));
-		delegated('click', button_5, () => set(i, n, true));
-		append($$anchor, button_5);
+		set_attribute(button_6, 'aria-label', `Schritt ${n + 1}`);
+		template_effect(() => classes_5 = set_class(button_6, 1, 'dot-btn svelte-zd540h', null, classes_5, { on: n === get(i) }));
+		delegated('click', button_6, () => set(i, n, true));
+		append($$anchor, button_6);
 	});
 
-	var div_10 = sibling(div_9, 2);
-	var node_10 = child(div_10);
+	var div_11 = sibling(div_10, 2);
+	var node_19 = child(div_11);
 
 	{
-		var consequent_11 = ($$anchor) => {
-			var button_6 = root_20();
+		var consequent_18 = ($$anchor) => {
+			var button_7 = root_29();
 
-			delegated('click', button_6, back);
-			append($$anchor, button_6);
+			delegated('click', button_7, back);
+			append($$anchor, button_7);
 		};
 
-		if_block(node_10, ($$render) => {
-			if (get(i) > 0) $$render(consequent_11);
+		if_block(node_19, ($$render) => {
+			if (get(i) > 0) $$render(consequent_18);
 		});
 	}
 
-	var button_7 = sibling(node_10, 2);
-	var text_5 = only_child(button_7, true);
+	var button_8 = sibling(node_19, 2);
+	var text_5 = only_child(button_8, true);
 	template_effect(() => set_text(text_5, get(last) ? 'Loslegen' : 'Weiter'));
-	delegated('click', button_7, next);
+	delegated('click', button_8, next);
 	append($$anchor, fragment);
 	pop();
 }
 
-delegate(['click', 'change']);
+delegate(['click']);
 
 const manifest = {
   id: "skwd-wall",
@@ -21275,7 +21406,19 @@ const manifest = {
   platforms: ["mobile", "desktop", "web"],
   // Powers it uses when present; it degrades gracefully where they're missing
   // (e.g. web can't set the OS wallpaper, a non-Chromium browser has no folders).
-  capabilities: ["folders", "wallpaper", "live-wallpaper"]
+  capabilities: ["folders", "wallpaper", "live-wallpaper"],
+  news: [
+    {
+      version: "0.1.0",
+      date: "2026-10-09",
+      text: "Neuer interaktiver Einrichtungsprozess: Ansicht & Übergänge direkt wählen, Handy-Funktionen per Schalter (standardmäßig aus). Schärferer App-Hintergrund und Hintergrund sofort beim Start gesetzt."
+    },
+    {
+      version: "0.1.0",
+      date: "2026-10-08",
+      text: "Sieben Ansichtsmodi aus dem SKWD-Original, automatisches Theme aus dem aktiven Bild, Übergänge (inkl. GPU-Shader), Live-Wallpaper (nativ), Ordner-Einbindung und Papierkorb."
+    }
+  ]
 };
 const VIEW_ID = "wallpaper-picker";
 class PickerView extends View {
