@@ -1,100 +1,6 @@
 {
   "plugins": [
     {
-      "id": "welcome",
-      "name": "Willkommen",
-      "description": "Demo-Plugin — beweist, dass der Kern Plugins lädt, Views öffnet und Commands registriert.",
-      "author": "Sojus",
-      "version": "0.1.0",
-      "type": "gui",
-      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/830cd83b5d658fb5c4d512655d9299ef412246dc/welcome/main.js",
-      "versions": [
-        {
-          "label": "0.1.0+830cd83",
-          "version": "0.1.0",
-          "built": "830cd83",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/830cd83b5d658fb5c4d512655d9299ef412246dc/welcome/main.js"
-        },
-        {
-          "label": "0.1.0+907d551",
-          "version": "0.1.0",
-          "built": "907d551",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/907d551dd259ee3f7eceff53cbffd257ff19453e/welcome/main.js"
-        },
-        {
-          "label": "0.1.0+26fdf2a",
-          "version": "0.1.0",
-          "built": "26fdf2a",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/26fdf2adb969f99811fc2751438c7f3dd05ffc76/welcome/main.js"
-        },
-        {
-          "label": "0.1.0+9a61bf8",
-          "version": "0.1.0",
-          "built": "9a61bf8",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/9a61bf8de242bb3ebf83dae377cecf8f1c51871e/welcome/main.js"
-        },
-        {
-          "label": "0.1.0+ebb3885",
-          "version": "0.1.0",
-          "built": "ebb3885",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/ebb3885bbe04d302b0314c9626ce59282c85cc73/welcome/main.js"
-        },
-        {
-          "label": "0.1.0+96f0117",
-          "version": "0.1.0",
-          "built": "96f0117",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/96f0117d59f3e4181d7376437395b6c93155e950/welcome/main.js"
-        }
-      ]
-    },
-    {
-      "id": "theme",
-      "name": "Design",
-      "description": "Theme-Sets: Farbe, Hell/Dunkel, Wallpaper, Schrift, Dichte, Animationen. Palette aus einer Farbe oder einem Wallpaper (Material You).",
-      "author": "Sojus",
-      "version": "0.1.0",
-      "type": "theme",
-      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/830cd83b5d658fb5c4d512655d9299ef412246dc/theme/main.js",
-      "versions": [
-        {
-          "label": "0.1.0+830cd83",
-          "version": "0.1.0",
-          "built": "830cd83",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/830cd83b5d658fb5c4d512655d9299ef412246dc/theme/main.js"
-        },
-        {
-          "label": "0.1.0+907d551",
-          "version": "0.1.0",
-          "built": "907d551",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/907d551dd259ee3f7eceff53cbffd257ff19453e/theme/main.js"
-        },
-        {
-          "label": "0.1.0+26fdf2a",
-          "version": "0.1.0",
-          "built": "26fdf2a",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/26fdf2adb969f99811fc2751438c7f3dd05ffc76/theme/main.js"
-        },
-        {
-          "label": "0.1.0+9a61bf8",
-          "version": "0.1.0",
-          "built": "9a61bf8",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/9a61bf8de242bb3ebf83dae377cecf8f1c51871e/theme/main.js"
-        },
-        {
-          "label": "0.1.0+ebb3885",
-          "version": "0.1.0",
-          "built": "ebb3885",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/ebb3885bbe04d302b0314c9626ce59282c85cc73/theme/main.js"
-        },
-        {
-          "label": "0.1.0+96f0117",
-          "version": "0.1.0",
-          "built": "96f0117",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/96f0117d59f3e4181d7376437395b6c93155e950/theme/main.js"
-        }
-      ]
-    },
-    {
       "id": "skwd-wall",
       "name": "SKWD Wall",
       "description": "SKWD-Wall aufs Handy: Wallpaper-Picker (eigene Bilder + Wallhaven), Ansichts-Modi, Farbschema automatisch aus dem Bild, Übergänge, Live-Wallpaper (nativ). Läuft überall.",
@@ -123,8 +29,14 @@
           "text": "Sieben Ansichtsmodi aus dem SKWD-Original, automatisches Theme aus dem aktiven Bild, Übergänge (inkl. GPU-Shader), Live-Wallpaper (nativ), Ordner-Einbindung und Papierkorb."
         }
       ],
-      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/830cd83b5d658fb5c4d512655d9299ef412246dc/skwd-wall/main.js",
+      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/44e5af436640a85732fd2089b81215a20a03d7fd/skwd-wall/main.js",
       "versions": [
+        {
+          "label": "0.1.0+44e5af4",
+          "version": "0.1.0",
+          "built": "44e5af4",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/44e5af436640a85732fd2089b81215a20a03d7fd/skwd-wall/main.js"
+        },
         {
           "label": "0.1.0+830cd83",
           "version": "0.1.0",
