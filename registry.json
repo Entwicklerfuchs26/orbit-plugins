@@ -7,8 +7,14 @@
       "author": "Sojus",
       "version": "0.1.0",
       "type": "gui",
-      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/96f0117d59f3e4181d7376437395b6c93155e950/welcome/main.js",
+      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/ebb3885bbe04d302b0314c9626ce59282c85cc73/welcome/main.js",
       "versions": [
+        {
+          "label": "0.1.0+ebb3885",
+          "version": "0.1.0",
+          "built": "ebb3885",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/ebb3885bbe04d302b0314c9626ce59282c85cc73/welcome/main.js"
+        },
         {
           "label": "0.1.0+96f0117",
           "version": "0.1.0",
@@ -24,8 +30,14 @@
       "author": "Sojus",
       "version": "0.1.0",
       "type": "theme",
-      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/96f0117d59f3e4181d7376437395b6c93155e950/theme/main.js",
+      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/ebb3885bbe04d302b0314c9626ce59282c85cc73/theme/main.js",
       "versions": [
+        {
+          "label": "0.1.0+ebb3885",
+          "version": "0.1.0",
+          "built": "ebb3885",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/ebb3885bbe04d302b0314c9626ce59282c85cc73/theme/main.js"
+        },
         {
           "label": "0.1.0+96f0117",
           "version": "0.1.0",
@@ -51,8 +63,14 @@
         "wallpaper",
         "live-wallpaper"
       ],
-      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/96f0117d59f3e4181d7376437395b6c93155e950/skwd-wall/main.js",
+      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/ebb3885bbe04d302b0314c9626ce59282c85cc73/skwd-wall/main.js",
       "versions": [
+        {
+          "label": "0.1.0+ebb3885",
+          "version": "0.1.0",
+          "built": "ebb3885",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/ebb3885bbe04d302b0314c9626ce59282c85cc73/skwd-wall/main.js"
+        },
         {
           "label": "0.1.0+96f0117",
           "version": "0.1.0",
