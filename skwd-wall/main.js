@@ -16851,6 +16851,8 @@ function WallpaperSettings($$anchor, $$props) {
 	// Speicherort / Pfade
 	// Menü
 	// Papierkorb
+	// Hilfe
+	// Re-open the view so onOpen() shows the intro again.
 	live = ($$anchor) => {
 		var fragment = root_2$2();
 		var node = first_child(fragment);
@@ -18003,6 +18005,29 @@ function WallpaperSettings($$anchor, $$props) {
 					show: () => get(s).trashAutoDelete
 				},
 				{ type: 'custom', customId: 'trash' }
+			]
+		},
+
+		// Hilfe
+		{
+			title: 'Hilfe',
+			category: 'Verhalten',
+			defs: [
+				{
+					type: 'button',
+					label: 'Einführung',
+					desc: 'Die Willkommens-Tour erneut ansehen.',
+					buttonLabel: 'Erneut anzeigen',
+					show: () => get(s).deviceMobile,
+					onClick: () => {
+						$$props.app.config.set('skwd-wall', 'introSeen', false);
+
+						// Re-open the view so onOpen() shows the intro again.
+						$$props.app.workspace.closeView('wallpaper-picker');
+
+						$$props.app.workspace.openView('wallpaper-picker');
+					}
+				}
 			]
 		}
 	]);
