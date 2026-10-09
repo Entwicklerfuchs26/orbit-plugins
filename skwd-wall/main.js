@@ -14964,6 +14964,9 @@ class WallpaperManager {
   state;
   /** id → object URL cache for display, reactive. */
   urls = new Store({});
+  /** id → sharper downscaled preview URL used ONLY for the app background. */
+  bgCache = /* @__PURE__ */ new Map();
+  bgResolving = /* @__PURE__ */ new Set();
   unsubResolved;
   idCounter = 0;
   // Platform powers via the core capability API. Each is undefined where the
@@ -14997,6 +15000,8 @@ class WallpaperManager {
     this.stopRotation();
     this.stopScheduler();
     for (const url of Object.values(this.urls.get())) URL.revokeObjectURL(url);
+    for (const url of this.bgCache.values()) URL.revokeObjectURL(url);
+    this.bgCache.clear();
   }
   /**
    * Wipe ALL plugin data: uploaded image blobs (IndexedDB) + the whole state
@@ -15005,6 +15010,8 @@ class WallpaperManager {
    */
   async clearAllData() {
     for (const url of Object.values(this.urls.get())) URL.revokeObjectURL(url);
+    for (const url of this.bgCache.values()) URL.revokeObjectURL(url);
+    this.bgCache.clear();
     this.urls.set({});
     await clearAllImages();
     this.state.set({ ...DEFAULT_STATE });
@@ -15343,7 +15350,8 @@ class WallpaperManager {
   applyActive() {
     const s = this.state.get();
     const active = this.getActive();
-    const url = active ? this.getUrl(active.id) ?? null : null;
+    if (active && !this.bgCache.has(active.id)) void this.resolveBg(active.id);
+    const url = active ? this.bgCache.get(active.id) ?? this.getUrl(active.id) ?? null : null;
     const type = s.randomShader ? this.randomGpuType() : s.transitionType;
     this.app.theme.setWallpaper({
       url,
@@ -15354,6 +15362,22 @@ class WallpaperManager {
     this.applyTheme();
     this.applyUiScale();
     this.applyVideoAudio();
+  }
+  /** Resolve the sharper background preview for one item, then re-apply if active. */
+  async resolveBg(id) {
+    if (this.bgCache.has(id) || this.bgResolving.has(id)) return;
+    const item = [...this.state.get().items, ...this.state.get().trashedItems].find((it) => it.id === id);
+    if (!item) return;
+    this.bgResolving.add(id);
+    try {
+      const url = item.folderId ? await this.folders?.thumbUrl(item.folderId, item.fileName ?? item.name, item.kind ?? "image", 1600) ?? null : await imageUrl(item.id);
+      if (url) {
+        this.bgCache.set(id, url);
+        if (id === this.state.get().activeId) this.applyActive();
+      }
+    } finally {
+      this.bgResolving.delete(id);
+    }
   }
   /** Regenerate + apply the full theme (chrome tokens + palette roles). */
   applyTheme() {
