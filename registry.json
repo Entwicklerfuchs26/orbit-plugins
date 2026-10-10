@@ -29,8 +29,14 @@
           "text": "Sieben Ansichtsmodi aus dem SKWD-Original, automatisches Theme aus dem aktiven Bild, Übergänge (inkl. GPU-Shader), Live-Wallpaper (nativ), Ordner-Einbindung und Papierkorb."
         }
       ],
-      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/b944ef99e4a4b6276b477b9ad46227ad2b83f78c/skwd-wall/main.js",
+      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/56f4f4c9bfb45a5c0332e0e4291946cb82cb8c98/skwd-wall/main.js",
       "versions": [
+        {
+          "label": "0.1.0+56f4f4c",
+          "version": "0.1.0",
+          "built": "56f4f4c",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/56f4f4c9bfb45a5c0332e0e4291946cb82cb8c98/skwd-wall/main.js"
+        },
         {
           "label": "0.1.0+b944ef9",
           "version": "0.1.0",
@@ -78,6 +84,42 @@
           "version": "0.1.0",
           "built": "96f0117",
           "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/96f0117d59f3e4181d7376437395b6c93155e950/skwd-wall/main.js"
+        }
+      ]
+    },
+    {
+      "id": "orbit-launcher",
+      "name": "Orbit Launcher",
+      "description": "Orbit als Startbildschirm: eine minimalistische, wallpaper-forward Startseite mit Uhr, Datum und Favoriten, einer A–Z-Wellen-Leiste zum Scrubben durch alle Apps, Android-Widgets und vielen Feineinstellungen. Nutzt die nativen launcher-/widget-Capabilities; voll nur in der Android-App.",
+      "author": "Sojus",
+      "version": "0.1.0",
+      "type": "gui",
+      "platforms": [
+        "mobile",
+        "desktop",
+        "web"
+      ],
+      "capabilities": [
+        "launcher",
+        "wallpaper",
+        "appwidgets",
+        "haptics",
+        "orientation"
+      ],
+      "news": [
+        {
+          "version": "0.1.0",
+          "date": "2026-10-11",
+          "text": "Erste Version: wallpaper-forward Startseite mit Uhr, Datum und Favoriten; A–Z-Wellen-Leiste zum Scrubben durch alle Apps; Apps anheften/starten/deinstallieren; Android-Widgets hinzufügen & entfernen; Haptik, Farben/Schrift und Layout fein einstellbar; Orbit als Standard-Startbildschirm festlegbar."
+        }
+      ],
+      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/56f4f4c9bfb45a5c0332e0e4291946cb82cb8c98/orbit-launcher/main.js",
+      "versions": [
+        {
+          "label": "0.1.0+56f4f4c",
+          "version": "0.1.0",
+          "built": "56f4f4c",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/56f4f4c9bfb45a5c0332e0e4291946cb82cb8c98/orbit-launcher/main.js"
         }
       ]
     }
