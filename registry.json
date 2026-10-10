@@ -29,8 +29,14 @@
           "text": "Sieben Ansichtsmodi aus dem SKWD-Original, automatisches Theme aus dem aktiven Bild, Übergänge (inkl. GPU-Shader), Live-Wallpaper (nativ), Ordner-Einbindung und Papierkorb."
         }
       ],
-      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/44e5af436640a85732fd2089b81215a20a03d7fd/skwd-wall/main.js",
+      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/b944ef99e4a4b6276b477b9ad46227ad2b83f78c/skwd-wall/main.js",
       "versions": [
+        {
+          "label": "0.1.0+b944ef9",
+          "version": "0.1.0",
+          "built": "b944ef9",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/b944ef99e4a4b6276b477b9ad46227ad2b83f78c/skwd-wall/main.js"
+        },
         {
           "label": "0.1.0+44e5af4",
           "version": "0.1.0",
