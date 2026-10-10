@@ -15175,10 +15175,49 @@ class WallpaperManager {
       if (url) {
         this.urls.update((m) => ({ ...m, [id]: url }));
         if (id === this.state.get().activeId) this.applyActive();
+        if (item.folderId && !item.accent && (item.kind ?? "image") === "image") {
+          void this.extractAccent(id, url);
+        }
       }
     } finally {
       this.resolving.delete(id);
     }
+  }
+  // Debounced persist so extracting many folder colours doesn't thrash config.
+  persistTimer;
+  persistSoon() {
+    clearTimeout(this.persistTimer);
+    this.persistTimer = setTimeout(() => this.persist(), 800);
+  }
+  /** Derive and store a folder image's dominant colour from its (small) thumbnail,
+   *  so colour filtering + the wallpaper palette work for referenced folder files
+   *  too (they're created without a colour; this fills it in lazily on display). */
+  async extractAccent(id, url) {
+    const accent = await seedFromImage(url);
+    if (!accent) return;
+    this.state.update((s) => ({
+      ...s,
+      items: s.items.map((it) => it.id === id ? { ...it, accent } : it)
+    }));
+    if (id === this.state.get().activeId) this.applyTheme();
+    this.persistSoon();
+  }
+  /** Merge a fresh folder scan into the library: keep existing items (and their
+   *  extracted colours), add new files, drop files that disappeared. */
+  mergeFolderFiles(folderId, files, existing) {
+    const byId = new Map(
+      existing.filter((it) => it.folderId === folderId).map((it) => [it.id, it])
+    );
+    return files.map((f) => {
+      const id = `fi-${folderId}-${f.name}`;
+      return byId.get(id) ?? {
+        id,
+        name: f.name.replace(/\.[^.]+$/, ""),
+        kind: f.kind,
+        folderId,
+        fileName: f.locator
+      };
+    });
   }
   /** A fresh FULL-resolution object URL for applying (system/live wallpaper).
    *  Caller must revokeObjectURL() when done. Null if unavailable. */
@@ -15478,13 +15517,14 @@ class WallpaperManager {
     for (const f of folders) {
       const files = await this.folders?.scan(f.id, f.kind) ?? null;
       const connected = files !== null;
-      if (connected !== f.connected) {
-        changed = true;
-        this.state.update((s) => ({
-          ...s,
-          folders: s.folders.map((x) => x.id === f.id ? { ...x, connected, count: files ? files.length : x.count } : x)
-        }));
-      }
+      this.state.update((s) => ({
+        ...s,
+        folders: s.folders.map(
+          (x) => x.id === f.id ? { ...x, connected, count: files ? files.length : x.count } : x
+        ),
+        items: files ? [...s.items.filter((it) => it.folderId !== f.id), ...this.mergeFolderFiles(f.id, files, s.items)] : s.items
+      }));
+      changed = true;
     }
     if (changed) {
       this.persist();
@@ -15497,22 +15537,16 @@ class WallpaperManager {
     for (const f of folders) {
       const ok = await this.folders?.reconnect(f.id) ?? false;
       let count = f.count;
-      let items = null;
+      let files = null;
       if (ok) {
-        const files = await this.folders?.scan(f.id, f.kind) ?? [];
+        files = await this.folders?.scan(f.id, f.kind) ?? [];
         count = files.length;
-        items = files.map((file) => ({
-          id: `fi-${f.id}-${file.name}`,
-          name: file.name.replace(/\.[^.]+$/, ""),
-          kind: file.kind,
-          folderId: f.id,
-          fileName: file.locator
-        }));
       }
       this.state.update((s) => ({
         ...s,
         folders: s.folders.map((x) => x.id === f.id ? { ...x, connected: ok, count } : x),
-        items: items ? [...s.items.filter((it) => it.folderId !== f.id), ...items] : s.items
+        // Merge (keep existing items + their extracted colours), don't recreate.
+        items: files ? [...s.items.filter((it) => it.folderId !== f.id), ...this.mergeFolderFiles(f.id, files, s.items)] : s.items
       }));
     }
     this.persist();
