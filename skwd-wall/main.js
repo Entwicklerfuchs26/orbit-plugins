@@ -1,8 +1,101 @@
-const O = globalThis.Orbit;
-const Plugin = O.Plugin;
-const View = O.View;
-const Store = O.Store;
-O.MapStore;
+class Store {
+  value;
+  subscribers = /* @__PURE__ */ new Set();
+  constructor(initial) {
+    this.value = initial;
+  }
+  subscribe(fn) {
+    fn(this.value);
+    this.subscribers.add(fn);
+    return () => this.subscribers.delete(fn);
+  }
+  set(value) {
+    if (this.value === value) return;
+    this.value = value;
+    this.notify();
+  }
+  update(fn) {
+    this.set(fn(this.value));
+  }
+  get() {
+    return this.value;
+  }
+  notify() {
+    for (const fn of this.subscribers) {
+      fn(this.value);
+    }
+  }
+}
+
+class View {
+  app;
+  containerEl;
+  /**
+   * When true, the shell renders this view full-bleed and hides its own chrome
+   * (mobile top bar + tabs). Used by the launcher home, which must look like a
+   * clean Android home screen with no Orbit menu — you reach the Orbit app's
+   * chrome by opening Orbit itself, not from the launcher.
+   */
+  chromeless = false;
+  /**
+   * Whether this view may rotate with the device. Default false: the shell locks
+   * portrait while a plugin view is active (a launcher/picker shouldn't rotate).
+   * A view that wants landscape (e.g. a video player) sets this true. Handled
+   * centrally in the shell, so it applies to remote store plugins too.
+   */
+  allowRotation = false;
+  constructor(app) {
+    this.app = app;
+  }
+}
+class Plugin {
+  app;
+  manifest;
+  _navItems = [];
+  _commands = [];
+  _settingTabs = [];
+  _views = /* @__PURE__ */ new Map();
+  constructor(app, manifest) {
+    this.app = app;
+    this.manifest = manifest;
+  }
+  addNavigationItem(item) {
+    this._navItems.push(item);
+    this.app.navigation.register({
+      ...item,
+      pluginId: this.manifest.id,
+      viewId: item.viewId ?? item.id
+    });
+  }
+  addCommand(command) {
+    const prefixed = { ...command, id: `${this.manifest.id}:${command.id}` };
+    this._commands.push(prefixed);
+    this.app.commands.register(prefixed);
+  }
+  addSettingTab(tab) {
+    this._settingTabs.push(tab);
+  }
+  registerView(id, factory) {
+    this._views.set(id, factory);
+    this.app.workspace.registerView(id, factory);
+  }
+  getNavigationItems() {
+    return this._navItems;
+  }
+  getSettingTabs() {
+    return this._settingTabs;
+  }
+  cleanup() {
+    for (const cmd of this._commands) {
+      this.app.commands.unregister(cmd.id);
+    }
+    this.app.navigation.unregisterByPlugin(this.manifest.id);
+    this._navItems = [];
+    this._commands = [];
+    this._settingTabs = [];
+    this._views.clear();
+  }
+}
 
 const DEV = false;
 

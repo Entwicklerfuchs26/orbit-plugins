@@ -1,0 +1,28 @@
+{
+  "id": "orbit-launcher",
+  "name": "Orbit Launcher",
+  "version": "0.1.0",
+  "description": "Orbit als Startbildschirm: eine minimalistische, wallpaper-forward Startseite mit Uhr, Datum und Favoriten, einer A–Z-Wellen-Leiste zum Scrubben durch alle Apps, Android-Widgets und vielen Feineinstellungen. Nutzt die nativen launcher-/widget-Capabilities; voll nur in der Android-App.",
+  "author": "Sojus",
+  "main": "main.js",
+  "type": "gui",
+  "platforms": [
+    "mobile",
+    "desktop",
+    "web"
+  ],
+  "capabilities": [
+    "launcher",
+    "wallpaper",
+    "appwidgets",
+    "haptics",
+    "orientation"
+  ],
+  "news": [
+    {
+      "version": "0.1.0",
+      "date": "2026-10-11",
+      "text": "Erste Version: wallpaper-forward Startseite mit Uhr, Datum und Favoriten; A–Z-Wellen-Leiste zum Scrubben durch alle Apps; Apps anheften/starten/deinstallieren; Android-Widgets hinzufügen & entfernen; Haptik, Farben/Schrift und Layout fein einstellbar; Orbit als Standard-Startbildschirm festlegbar."
+    }
+  ]
+}
