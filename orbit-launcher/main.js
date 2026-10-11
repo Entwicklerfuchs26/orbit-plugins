@@ -7215,6 +7215,17 @@ class LauncherManager {
     const next = favs.includes(packageName) ? favs.filter((p) => p !== packageName) : [...favs, packageName];
     this.app.config.set(NS, FAV_KEY, next);
   }
+  /** Persist a new favourites order (drag-to-reorder in edit mode). */
+  reorderFavorites(pkgs) {
+    this.app.config.set(NS, FAV_KEY, pkgs);
+  }
+  // ---- Widget preview cache (base64 data URLs, keyed by `pkg|cls`) ----------
+  widgetPreviews() {
+    return this.app.config.get(NS, "widgetPreviews") ?? {};
+  }
+  cacheWidgetPreview(key, dataUrl) {
+    this.app.config.set(NS, "widgetPreviews", { ...this.widgetPreviews(), [key]: dataUrl });
+  }
   // ---- Hidden apps ---------------------------------------------------------
   hidden() {
     return this.app.config.get(NS, HIDDEN_KEY) ?? [];
@@ -7803,6 +7814,10 @@ function Home($$anchor, $$props) {
 	let expandedApp = state(null);
 	let widgetAppIcons = state(proxy({}));
 
+	// Widget previews keyed by `pkg|cls` ('' = no preview). Seeded from the
+	// persisted cache so re-opening the picker shows them instantly.
+	let widgetPreviews = state(proxy(manager().widgetPreviews()));
+
 	function awLetter(s) {
 		const raw = (s.trim()[0] ?? '#').toUpperCase();
 		const c = ({ Ä: 'A', Ö: 'O', Ü: 'U' })[raw] ?? raw;
@@ -7849,19 +7864,39 @@ function Home($$anchor, $$props) {
 	async function openWidgetPicker() {
 		if (!appwidgets) return;
 
-		set(providers, await appwidgets.listProviders(), true);
+		// Open immediately; the list fills in as data arrives (the provider list is
+		// now lightweight — no previews — so this is near-instant).
 		set(expandedApp, null);
+
 		set(widgetSearch, '');
 		set(widgetPickerOpen, true);
+		set(providers, await appwidgets.listProviders(), true);
 
-		// Load app icons (cached by the launcher manager).
-		for (const pkg of new Set(get(providers).map((p) => p.pkg))) {
-			if (get(widgetAppIcons)[pkg]) continue;
+		// Load app icons in parallel (cached by the launcher manager).
+		const pkgs = [...new Set(get(providers).map((p) => p.pkg))].filter((p) => !get(widgetAppIcons)[p]);
 
+		await Promise.all(pkgs.map(async (pkg) => {
 			const url = await manager().iconUrl(pkg);
 
 			if (url) set(widgetAppIcons, { ...get(widgetAppIcons), [pkg]: url }, true);
-		}
+		}));
+	}
+
+	/** Fetch previews for one app's widgets on demand (when its row is expanded),
+	 *  all in parallel, and persist them so next time they're instant. */
+	async function loadPreviewsFor(pkg) {
+		if (!appwidgets) return;
+
+		const todo = get(providers).filter((p) => p.pkg === pkg && get(widgetPreviews)[`${p.pkg}|${p.cls}`] === undefined);
+
+		await Promise.all(todo.map(async (w) => {
+			const key = `${w.pkg}|${w.cls}`;
+			const url = await appwidgets.providerPreview(w.pkg, w.cls);
+
+			set(widgetPreviews, { ...get(widgetPreviews), [key]: url ?? '' }, true);
+
+			if (url) manager().cacheWidgetPreview(key, url);
+		}));
 	}
 
 	async function chooseProvider(pkg, cls) {
@@ -9093,7 +9128,7 @@ function Home($$anchor, $$props) {
 									var consequent_23 = ($$anchor) => {
 										var img_2 = root_28();
 
-										template_effect(() => set_attribute(img_2, 'src', get(w).preview));
+										template_effect(() => set_attribute(img_2, 'src', get(widgetPreviews)[`${get(w).pkg}|${get(w).cls}`]));
 										append($$anchor, img_2);
 									};
 
@@ -9104,7 +9139,7 @@ function Home($$anchor, $$props) {
 									};
 
 									if_block(node_41, ($$render) => {
-										if (get(w).preview) $$render(consequent_23); else $$render(alternate_3, -1);
+										if (get(widgetPreviews)[`${get(w).pkg}|${get(w).cls}`]) $$render(consequent_23); else $$render(alternate_3, -1);
 									});
 								}
 
@@ -9127,7 +9162,14 @@ function Home($$anchor, $$props) {
 						set_text(text_13, `${get(a).widgets.length ?? ''} Widget${get(a).widgets.length === 1 ? '' : 's'}`);
 					});
 
-					delegated('click', button_15, () => set(expandedApp, get(expandedApp) === get(a).pkg ? null : get(a).pkg, true));
+					delegated('click', button_15, () => {
+						const next = get(expandedApp) === get(a).pkg ? null : get(a).pkg;
+
+						set(expandedApp, next, true);
+
+						if (next) void loadPreviewsFor(next);
+					});
+
 					append($$anchor, fragment_7);
 				});
 
@@ -9508,7 +9550,7 @@ delegate(['click', 'pointerdown', 'pointermove', 'pointerup', 'input']);
 const manifest = {
   id: "orbit-launcher",
   name: "Orbit Launcher",
-  version: "0.1.0",
+  version: "0.2.0",
   description: "Orbit als Startbildschirm: eine minimalistische, wallpaper-forward Startseite mit Uhr, Datum und Favoriten, einer A–Z-Wellen-Leiste zum Scrubben durch alle Apps, Android-Widgets und vielen Feineinstellungen. Nutzt die nativen launcher-/widget-Capabilities; voll nur in der Android-App.",
   author: "Sojus",
   main: "index.ts",
@@ -9518,6 +9560,11 @@ const manifest = {
   platforms: ["mobile", "desktop", "web"],
   capabilities: ["launcher", "wallpaper", "appwidgets", "haptics", "orientation"],
   news: [
+    {
+      version: "0.2.0",
+      date: "2026-10-11",
+      text: "Android-Widgets rendern jetzt zuverlässig; Widget-Katalog öffnet sofort mit nachladenden, gecachten Vorschauen; ein einheitliches Lange-halten-Menü (Home bearbeiten / Einstellungen / Widget entfernen); kaputte Widgets werden klar markiert statt unsichtbar."
+    },
     {
       version: "0.1.0",
       date: "2026-10-11",
