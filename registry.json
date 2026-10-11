@@ -133,6 +133,48 @@
           "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/56f4f4c9bfb45a5c0332e0e4291946cb82cb8c98/orbit-launcher/main.js"
         }
       ]
+    },
+    {
+      "id": "orbit-launcher",
+      "name": "Orbit Launcher",
+      "description": "Orbit als Startbildschirm: eine minimalistische, wallpaper-forward Startseite mit Uhr, Datum und Favoriten, einer A–Z-Wellen-Leiste zum Scrubben durch alle Apps, Android-Widgets und vielen Feineinstellungen. Nutzt die nativen launcher-/widget-Capabilities; voll nur in der Android-App.",
+      "author": "Sojus",
+      "version": "0.2.0",
+      "type": "gui",
+      "platforms": [
+        "mobile",
+        "desktop",
+        "web"
+      ],
+      "capabilities": [
+        "launcher",
+        "wallpaper",
+        "appwidgets",
+        "haptics",
+        "orientation"
+      ],
+      "news": [
+        {
+          "version": "0.2.0",
+          "date": "2026-10-11",
+          "text": "Android-Widgets rendern jetzt zuverlässig; Widget-Katalog öffnet sofort mit nachladenden, gecachten Vorschauen; ein einheitliches Lange-halten-Menü (Home bearbeiten / Einstellungen / Widget entfernen); kaputte Widgets werden klar markiert statt unsichtbar."
+        },
+        {
+          "version": "0.1.0",
+          "date": "2026-10-11",
+          "text": "Erste Version: wallpaper-forward Startseite mit Uhr, Datum und Favoriten; A–Z-Wellen-Leiste zum Scrubben durch alle Apps; Apps anheften/starten/deinstallieren; Android-Widgets hinzufügen & entfernen; Haptik, Farben/Schrift und Layout fein einstellbar; Orbit als Standard-Startbildschirm festlegbar."
+        }
+      ],
+      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/b9408a3e94f0f07d96e7e204997f78e285b9b04d/test/orbit-launcher/main.js",
+      "channel": "test",
+      "versions": [
+        {
+          "label": "0.2.0+b9408a3",
+          "version": "0.2.0",
+          "built": "b9408a3",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/b9408a3e94f0f07d96e7e204997f78e285b9b04d/test/orbit-launcher/main.js"
+        }
+      ]
     }
   ]
 }
