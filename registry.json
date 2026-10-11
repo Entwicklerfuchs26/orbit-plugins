@@ -165,9 +165,15 @@
           "text": "Erste Version: wallpaper-forward Startseite mit Uhr, Datum und Favoriten; A–Z-Wellen-Leiste zum Scrubben durch alle Apps; Apps anheften/starten/deinstallieren; Android-Widgets hinzufügen & entfernen; Haptik, Farben/Schrift und Layout fein einstellbar; Orbit als Standard-Startbildschirm festlegbar."
         }
       ],
-      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/6f7ece93bf81ed989a577236038b22918209694a/test/orbit-launcher/main.js",
+      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/c4221c8d86cb7492ec1670e7fe49fa47abc5800b/test/orbit-launcher/main.js",
       "channel": "test",
       "versions": [
+        {
+          "label": "0.2.0+c4221c8",
+          "version": "0.2.0",
+          "built": "c4221c8",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/c4221c8d86cb7492ec1670e7fe49fa47abc5800b/test/orbit-launcher/main.js"
+        },
         {
           "label": "0.2.0+6f7ece9",
           "version": "0.2.0",
