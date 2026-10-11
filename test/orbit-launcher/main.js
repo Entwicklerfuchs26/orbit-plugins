@@ -7121,7 +7121,7 @@ function onMount(fn) {
 }
 
 const NS = "orbit-launcher";
-const SELF = "space.sternenhof.wallpaper";
+const SELF_FALLBACK = "space.sternenhof.wallpaper";
 const FAV_KEY = "favorites";
 const HIDDEN_KEY = "hidden";
 const RAIL_KEY = "railAlwaysVisible";
@@ -7153,6 +7153,13 @@ class LauncherManager {
   /** Cached object URLs per package so the same icon isn't decoded twice. */
   iconCache = /* @__PURE__ */ new Map();
   appsCache = null;
+  self = null;
+  /** Resolve (and cache) the running app's own package + label. */
+  async ensureSelf() {
+    if (this.self) return this.self;
+    this.self = await this.cap?.selfApp() ?? { packageName: SELF_FALLBACK, label: "Orbit" };
+    return this.self;
+  }
   /** Whether real launcher powers exist on this platform (Android app only). */
   get hasLauncher() {
     return this.app.capabilities.has("launcher");
@@ -7166,13 +7173,21 @@ class LauncherManager {
   }
   /** Orbit's own package name — used to open the Orbit app instead of launching. */
   get selfPackage() {
-    return SELF;
+    return this.self?.packageName ?? SELF_FALLBACK;
+  }
+  /** The running app's own label ("Orbit" or "Orbit Test"). */
+  get selfLabel() {
+    return this.self?.label ?? "Orbit";
+  }
+  /** True in the side-by-side test build (package …test). */
+  get isTestApp() {
+    return (this.self?.packageName ?? SELF_FALLBACK).endsWith(".test");
   }
   /** System apps plus Orbit itself (so the user can open the Orbit app). */
   async allApps() {
-    const apps = await this.listApps();
-    if (apps.some((a) => a.packageName === SELF)) return apps;
-    return [...apps, { packageName: SELF, label: "Orbit" }];
+    const [apps, self] = [await this.listApps(), await this.ensureSelf()];
+    if (apps.some((a) => a.packageName === self.packageName)) return apps;
+    return [...apps, self];
   }
   /** Launch an app by package name; false if it couldn't be started. */
   async launch(packageName) {
@@ -7663,56 +7678,57 @@ function ColorMenu($$anchor, $$props) {
 
 delegate(['click', 'input']);
 
-var root = from_html(`<div class="time svelte-13s71iz"> </div>`);
-var root_1 = from_html(`<div class="date svelte-13s71iz"> </div>`);
-var root_2 = from_html(`<div class="batt svelte-13s71iz"> </div>`);
-var root_3 = from_html(`<span class="aw-broken-hint svelte-13s71iz"><!> Widget nicht verfügbar · lange halten zum Entfernen</span>`);
-var root_4 = from_html(`<div><!></div>`);
-var root_5 = from_html(`<header><!> <!></header>`);
-var root_6 = from_html(`<div class="split-spacer svelte-13s71iz"></div>`);
-var root_7 = from_html(`<div class="group-label svelte-13s71iz"> </div>`);
-var root_8 = from_html(`<img class="app-icon svelte-13s71iz" alt=""/>`);
-var root_9 = from_html(`<span class="app-icon fallback svelte-13s71iz"> </span>`);
-var root_10 = from_html(`<span class="app-label svelte-13s71iz"> </span>`);
-var root_11 = from_html(`<button class="app svelte-13s71iz"><!> <!></button>`);
-var root_12 = from_html(`<section><!> <!></section>`);
-var root_13 = from_html(`<footer class="foot svelte-13s71iz"><button class="foot-item svelte-13s71iz"><!> Einstellungen</button> <button class="foot-item svelte-13s71iz"><!> Orbit-App öffnen</button></footer>`);
-var root_14 = from_html(`<!> <!>`, 1);
-var root_15 = from_html(`<p class="hint svelte-13s71iz">Apps werden geladen…</p>`);
+var root = from_html(`<div class="test-badge svelte-13s71iz">TEST</div>`);
+var root_1 = from_html(`<div class="time svelte-13s71iz"> </div>`);
+var root_2 = from_html(`<div class="date svelte-13s71iz"> </div>`);
+var root_3 = from_html(`<div class="batt svelte-13s71iz"> </div>`);
+var root_4 = from_html(`<span class="aw-broken-hint svelte-13s71iz"><!> Widget nicht verfügbar · lange halten zum Entfernen</span>`);
+var root_5 = from_html(`<div><!></div>`);
+var root_6 = from_html(`<header><!> <!> <!></header>`);
+var root_7 = from_html(`<div class="split-spacer svelte-13s71iz"></div>`);
+var root_8 = from_html(`<div class="group-label svelte-13s71iz"> </div>`);
+var root_9 = from_html(`<img class="app-icon svelte-13s71iz" alt=""/>`);
+var root_10 = from_html(`<span class="app-icon fallback svelte-13s71iz"> </span>`);
+var root_11 = from_html(`<span class="app-label svelte-13s71iz"> </span>`);
+var root_12 = from_html(`<button class="app svelte-13s71iz"><!> <!></button>`);
+var root_13 = from_html(`<section><!> <!></section>`);
+var root_14 = from_html(`<footer class="foot svelte-13s71iz"><button class="foot-item svelte-13s71iz"><!> Einstellungen</button> <button class="foot-item svelte-13s71iz"><!> Orbit-App öffnen</button></footer>`);
+var root_15 = from_html(`<!> <!>`, 1);
+var root_16 = from_html(`<p class="hint svelte-13s71iz">Apps werden geladen…</p>`);
 
-var root_16 = from_html(`<p class="hint svelte-13s71iz">Der App-Zugriff läuft nur in der Android-App von Orbit. Hier siehst du die
+var root_17 = from_html(`<p class="hint svelte-13s71iz">Der App-Zugriff läuft nur in der Android-App von Orbit. Hier siehst du die
         Uhr-Vorschau.</p>`);
 
-var root_17 = from_html(`<span> </span>`);
-var root_18 = from_html(`<div class="bubble svelte-13s71iz"> </div>`);
-var root_19 = from_html(`<div role="presentation"><!> <!></div>`);
-var root_20 = from_html(`<button class="sheet-item svelte-13s71iz"><!> App-Info</button> <button class="sheet-item svelte-13s71iz"><!> App deinstallieren</button>`, 1);
-var root_21 = from_html(`<div class="sheet-backdrop svelte-13s71iz" role="presentation"><div class="sheet svelte-13s71iz" role="dialog" tabindex="-1"><div class="sheet-title svelte-13s71iz"> </div> <button class="sheet-item svelte-13s71iz"><!> </button> <button class="sheet-item svelte-13s71iz"><!> In App-Liste ausblenden</button> <!></div></div>`);
-var root_22 = from_html(`<button class="sheet-item svelte-13s71iz"><!> Widget entfernen</button>`);
-var root_23 = from_html(`<div class="sheet-backdrop svelte-13s71iz" role="presentation"><div class="sheet svelte-13s71iz" role="dialog" tabindex="-1" aria-label="Home-Menü"><button class="sheet-item svelte-13s71iz"><!> Home-Bildschirm bearbeiten</button> <button class="sheet-item svelte-13s71iz"><!> Einstellungen</button> <!></div></div>`);
-var root_24 = from_html(`<button class="edit-addwidget svelte-13s71iz"><!> Widget hinzufügen</button>`);
-var root_25 = from_html(`<div class="edit-overlay svelte-13s71iz" role="presentation"><div class="edit-split svelte-13s71iz"><button class="edit-handle svelte-13s71iz" aria-label="Trennlinie Widgets/Favoriten verschieben"><span class="grip svelte-13s71iz"></span> <span class="edit-caption svelte-13s71iz">Widgets ↑ · Favoriten ↓</span></button></div> <div class="edit-railgrip svelte-13s71iz"><button class="edit-handle side svelte-13s71iz" aria-label="Swipe-Leiste verschieben"><span class="grip svelte-13s71iz"></span></button></div> <!> <button class="edit-done svelte-13s71iz">Fertig</button></div>`);
-var root_26 = from_html(`<img class="wpick-icon svelte-13s71iz" alt=""/>`);
-var root_27 = from_html(`<span class="wpick-icon fallback svelte-13s71iz"> </span>`);
-var root_28 = from_html(`<img class="wpick-preview svelte-13s71iz" alt=""/>`);
-var root_29 = from_html(`<div class="wpick-preview fallback svelte-13s71iz"></div>`);
-var root_30 = from_html(`<button class="wpick-widget svelte-13s71iz"><!> <span class="wpick-wlabel svelte-13s71iz"> </span></button>`);
-var root_31 = from_html(`<div class="wpick-widgets svelte-13s71iz"></div>`);
-var root_32 = from_html(`<button class="wpick-app svelte-13s71iz"><!> <span class="wpick-appmeta svelte-13s71iz"><span class="wpick-appname svelte-13s71iz"> </span> <span class="wpick-count svelte-13s71iz"> </span></span></button> <!>`, 1);
-var root_33 = from_html(`<div class="wpick-letter svelte-13s71iz"> </div> <!>`, 1);
-var root_34 = from_html(`<div class="wpick svelte-13s71iz" role="dialog" aria-label="Widget auswählen"><div class="wpick-search svelte-13s71iz"><!> <input placeholder="Widget auswählen" class="svelte-13s71iz"/> <button class="wpick-close svelte-13s71iz" aria-label="Schließen"><!></button></div> <div class="wpick-list svelte-13s71iz"></div></div>`);
-var root_35 = from_html(`<button> </button>`);
-var root_36 = from_html(`<div class="aw-row svelte-13s71iz"><span class="aw-label svelte-13s71iz"> </span> <button class="aw-remove svelte-13s71iz" aria-label="Entfernen"><!></button></div>`);
-var root_37 = from_html(`<div class="field svelte-13s71iz"><div class="row-name svelte-13s71iz">Android-Widgets</div> <!> <span class="row-sub svelte-13s71iz">Hinzufügen über <strong class="svelte-13s71iz">lange auf die Home drücken → Bearbeiten → Widget hinzufügen</strong>.</span></div>`);
-var root_38 = from_html(`<div class="field svelte-13s71iz"><div class="row-name svelte-13s71iz">Widgets im Startbereich</div> <div class="chips svelte-13s71iz"></div></div> <!>`, 1);
-var root_39 = from_html(`<button class="sheet-item svelte-13s71iz"><!> Orbit als Startbildschirm festlegen</button>`);
-var root_40 = from_html(`<div class="settings-full svelte-13s71iz" role="dialog" aria-label="Einstellungen"><div class="settings-head svelte-13s71iz"><button class="settings-close svelte-13s71iz" aria-label="Schließen"><!></button> <div class="settings-title svelte-13s71iz">Einstellungen</div></div> <div class="settings-body svelte-13s71iz"><button class="row svelte-13s71iz"><span class="row-text svelte-13s71iz"><span class="row-name svelte-13s71iz">Widgets anzeigen</span> <span class="row-sub svelte-13s71iz">Blendet den ganzen Widget-Bereich oben aus</span></span> <span><span class="knob svelte-13s71iz"></span></span></button> <!> <button class="row svelte-13s71iz"><span class="row-text svelte-13s71iz"><span class="row-name svelte-13s71iz">Haptik beim Scrubben</span> <span class="row-sub svelte-13s71iz">Kurzes Vibrieren bei jedem neuen Buchstaben</span></span> <span><span class="knob svelte-13s71iz"></span></span></button> <button class="row svelte-13s71iz"><span class="row-text svelte-13s71iz"><span class="row-name svelte-13s71iz">App-Leiste immer sichtbar</span> <span class="row-sub svelte-13s71iz">Aus: nur einblenden, wenn du an den rechten Rand tippst</span></span> <span><span class="knob svelte-13s71iz"></span></span></button> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Position der Liste</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0" max="0.6" step="0.01" class="svelte-13s71iz"/> <span class="row-sub svelte-13s71iz">Wie weit oben die gewählte Buchstaben-Gruppe landet</span></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Größe der Leiste</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0.4" max="1" step="0.02" class="svelte-13s71iz"/> <span class="row-sub svelte-13s71iz">Wie viel der rechten Seite die Buchstaben-Leiste einnimmt</span></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Abstand der Leiste vom rechten Rand</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0" max="60" step="2" class="svelte-13s71iz"/></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Bogen-Stärke (Welle)</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0" max="4" step="0.1" class="svelte-13s71iz"/> <span class="row-sub svelte-13s71iz">Wie weit sich die Buchstaben um den Finger nach links wölben</span></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Spreizung (hoch/runter)</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0" max="3" step="0.1" class="svelte-13s71iz"/> <span class="row-sub svelte-13s71iz">Wie weit die Buchstaben ober-/unterhalb des Fingers auseinandergehen</span></div> <button class="row svelte-13s71iz"><span class="row-text svelte-13s71iz"><span class="row-name svelte-13s71iz">Buchstaben-Kreis anzeigen</span> <span class="row-sub svelte-13s71iz">Der runde Kreis links der Leiste beim Scrubben</span></span> <span><span class="knob svelte-13s71iz"></span></span></button> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Größe des Kreises</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="36" max="110" step="2" class="svelte-13s71iz"/></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Abstand des Kreises vom rechten Rand</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="40" max="320" step="4" class="svelte-13s71iz"/></div> <button class="row svelte-13s71iz"><span class="row-text svelte-13s71iz"><span class="row-name svelte-13s71iz">App-Symbole anzeigen</span></span> <span><span class="knob svelte-13s71iz"></span></span></button> <button class="row svelte-13s71iz"><span class="row-text svelte-13s71iz"><span class="row-name svelte-13s71iz">App-Namen anzeigen</span></span> <span><span class="knob svelte-13s71iz"></span></span></button> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Symbolgröße</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="24" max="72" step="2" class="svelte-13s71iz"/></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Schriftgröße (App-Namen)</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0.6" max="2.2" step="0.05" class="svelte-13s71iz"/></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Schriftgröße (Leiste)</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0.5" max="2.5" step="0.05" class="svelte-13s71iz"/></div> <div class="field svelte-13s71iz"><div class="row-name svelte-13s71iz">Schriftart</div> <div class="chips svelte-13s71iz"></div></div> <div class="field svelte-13s71iz"><div class="row-name svelte-13s71iz">Farben</div> <!> <span class="row-sub svelte-13s71iz">Auto = global übernehmen · Fest = eigene Farbe<!></span></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Abstand vom linken Rand</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0" max="80" step="2" class="svelte-13s71iz"/></div> <!> <button class="sheet-item svelte-13s71iz"><!> </button> <button class="sheet-item svelte-13s71iz"><!> Orbit-App öffnen (Menü, Plugins, Themes)</button></div></div>`);
-var root_41 = from_html(`<div class="setup svelte-13s71iz" role="dialog" aria-label="Als Standard-Launcher festlegen"><div class="aurora a1 svelte-13s71iz"></div> <div class="aurora a2 svelte-13s71iz"></div> <button class="setup-x svelte-13s71iz" aria-label="Schließen"><!></button> <div class="setup-stage svelte-13s71iz"><svg class="setup-illu svelte-13s71iz" viewBox="0 0 260 210" aria-hidden="true"><defs class="svelte-13s71iz"><linearGradient id="orbGrad" x1="0" y1="0" x2="1" y2="1" class="svelte-13s71iz"><stop offset="0" stop-color="var(--accent)" class="svelte-13s71iz"></stop><stop offset="1" stop-color="color-mix(in srgb, var(--accent) 55%, #b06cf0)" class="svelte-13s71iz"></stop></linearGradient></defs><ellipse class="ring svelte-13s71iz" cx="130" cy="105" rx="86" ry="40" fill="none" stroke="color-mix(in srgb, var(--accent) 60%, transparent)" stroke-width="3"></ellipse><circle class="planet svelte-13s71iz" cx="130" cy="105" r="34" fill="url(#orbGrad)"></circle><path d="M118 108l12-11 12 11 M121 105v12h18v-12" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="svelte-13s71iz"></path><circle class="moon svelte-13s71iz" cx="216" cy="105" r="6" fill="var(--accent)"></circle></svg> <div class="setup-kicker svelte-13s71iz">Orbit Launcher</div> <h1 class="setup-h1 svelte-13s71iz">Orbit als Startbildschirm</h1> <p class="setup-p svelte-13s71iz">Lege Orbit als deinen Standard-Launcher fest, damit die Home-Taste direkt hierher führt.</p> <button class="setup-go svelte-13s71iz">Als Standard-Launcher festlegen</button></div></div>`);
-var root_42 = from_html(`<div class="launcher svelte-13s71iz"><div><!> <!></div> <!></div> <!> <!> <!> <!> <!> <!>`, 1);
+var root_18 = from_html(`<span> </span>`);
+var root_19 = from_html(`<div class="bubble svelte-13s71iz"> </div>`);
+var root_20 = from_html(`<div role="presentation"><!> <!></div>`);
+var root_21 = from_html(`<button class="sheet-item svelte-13s71iz"><!> App-Info</button> <button class="sheet-item svelte-13s71iz"><!> App deinstallieren</button>`, 1);
+var root_22 = from_html(`<div class="sheet-backdrop svelte-13s71iz" role="presentation"><div class="sheet svelte-13s71iz" role="dialog" tabindex="-1"><div class="sheet-title svelte-13s71iz"> </div> <button class="sheet-item svelte-13s71iz"><!> </button> <button class="sheet-item svelte-13s71iz"><!> In App-Liste ausblenden</button> <!></div></div>`);
+var root_23 = from_html(`<button class="sheet-item svelte-13s71iz"><!> Widget entfernen</button>`);
+var root_24 = from_html(`<div class="sheet-backdrop svelte-13s71iz" role="presentation"><div class="sheet svelte-13s71iz" role="dialog" tabindex="-1" aria-label="Home-Menü"><button class="sheet-item svelte-13s71iz"><!> Home-Bildschirm bearbeiten</button> <button class="sheet-item svelte-13s71iz"><!> Einstellungen</button> <!></div></div>`);
+var root_25 = from_html(`<button class="edit-addwidget svelte-13s71iz"><!> Widget hinzufügen</button>`);
+var root_26 = from_html(`<div class="edit-overlay svelte-13s71iz" role="presentation"><div class="edit-split svelte-13s71iz"><button class="edit-handle svelte-13s71iz" aria-label="Trennlinie Widgets/Favoriten verschieben"><span class="grip svelte-13s71iz"></span> <span class="edit-caption svelte-13s71iz">Widgets ↑ · Favoriten ↓</span></button></div> <div class="edit-railgrip svelte-13s71iz"><button class="edit-handle side svelte-13s71iz" aria-label="Swipe-Leiste verschieben"><span class="grip svelte-13s71iz"></span></button></div> <!> <button class="edit-done svelte-13s71iz">Fertig</button></div>`);
+var root_27 = from_html(`<img class="wpick-icon svelte-13s71iz" alt=""/>`);
+var root_28 = from_html(`<span class="wpick-icon fallback svelte-13s71iz"> </span>`);
+var root_29 = from_html(`<img class="wpick-preview svelte-13s71iz" alt=""/>`);
+var root_30 = from_html(`<div class="wpick-preview fallback svelte-13s71iz"></div>`);
+var root_31 = from_html(`<button class="wpick-widget svelte-13s71iz"><!> <span class="wpick-wlabel svelte-13s71iz"> </span></button>`);
+var root_32 = from_html(`<div class="wpick-widgets svelte-13s71iz"></div>`);
+var root_33 = from_html(`<button class="wpick-app svelte-13s71iz"><!> <span class="wpick-appmeta svelte-13s71iz"><span class="wpick-appname svelte-13s71iz"> </span> <span class="wpick-count svelte-13s71iz"> </span></span></button> <!>`, 1);
+var root_34 = from_html(`<div class="wpick-letter svelte-13s71iz"> </div> <!>`, 1);
+var root_35 = from_html(`<div class="wpick svelte-13s71iz" role="dialog" aria-label="Widget auswählen"><div class="wpick-search svelte-13s71iz"><!> <input placeholder="Widget auswählen" class="svelte-13s71iz"/> <button class="wpick-close svelte-13s71iz" aria-label="Schließen"><!></button></div> <div class="wpick-list svelte-13s71iz"></div></div>`);
+var root_36 = from_html(`<button> </button>`);
+var root_37 = from_html(`<div class="aw-row svelte-13s71iz"><span class="aw-label svelte-13s71iz"> </span> <button class="aw-remove svelte-13s71iz" aria-label="Entfernen"><!></button></div>`);
+var root_38 = from_html(`<div class="field svelte-13s71iz"><div class="row-name svelte-13s71iz">Android-Widgets</div> <!> <span class="row-sub svelte-13s71iz">Hinzufügen über <strong class="svelte-13s71iz">lange auf die Home drücken → Bearbeiten → Widget hinzufügen</strong>.</span></div>`);
+var root_39 = from_html(`<div class="field svelte-13s71iz"><div class="row-name svelte-13s71iz">Widgets im Startbereich</div> <div class="chips svelte-13s71iz"></div></div> <!>`, 1);
+var root_40 = from_html(`<button class="sheet-item svelte-13s71iz"><!> Orbit als Startbildschirm festlegen</button>`);
+var root_41 = from_html(`<div class="settings-full svelte-13s71iz" role="dialog" aria-label="Einstellungen"><div class="settings-head svelte-13s71iz"><button class="settings-close svelte-13s71iz" aria-label="Schließen"><!></button> <div class="settings-title svelte-13s71iz">Einstellungen</div></div> <div class="settings-body svelte-13s71iz"><button class="row svelte-13s71iz"><span class="row-text svelte-13s71iz"><span class="row-name svelte-13s71iz">Widgets anzeigen</span> <span class="row-sub svelte-13s71iz">Blendet den ganzen Widget-Bereich oben aus</span></span> <span><span class="knob svelte-13s71iz"></span></span></button> <!> <button class="row svelte-13s71iz"><span class="row-text svelte-13s71iz"><span class="row-name svelte-13s71iz">Haptik beim Scrubben</span> <span class="row-sub svelte-13s71iz">Kurzes Vibrieren bei jedem neuen Buchstaben</span></span> <span><span class="knob svelte-13s71iz"></span></span></button> <button class="row svelte-13s71iz"><span class="row-text svelte-13s71iz"><span class="row-name svelte-13s71iz">App-Leiste immer sichtbar</span> <span class="row-sub svelte-13s71iz">Aus: nur einblenden, wenn du an den rechten Rand tippst</span></span> <span><span class="knob svelte-13s71iz"></span></span></button> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Position der Liste</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0" max="0.6" step="0.01" class="svelte-13s71iz"/> <span class="row-sub svelte-13s71iz">Wie weit oben die gewählte Buchstaben-Gruppe landet</span></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Größe der Leiste</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0.4" max="1" step="0.02" class="svelte-13s71iz"/> <span class="row-sub svelte-13s71iz">Wie viel der rechten Seite die Buchstaben-Leiste einnimmt</span></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Abstand der Leiste vom rechten Rand</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0" max="60" step="2" class="svelte-13s71iz"/></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Bogen-Stärke (Welle)</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0" max="4" step="0.1" class="svelte-13s71iz"/> <span class="row-sub svelte-13s71iz">Wie weit sich die Buchstaben um den Finger nach links wölben</span></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Spreizung (hoch/runter)</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0" max="3" step="0.1" class="svelte-13s71iz"/> <span class="row-sub svelte-13s71iz">Wie weit die Buchstaben ober-/unterhalb des Fingers auseinandergehen</span></div> <button class="row svelte-13s71iz"><span class="row-text svelte-13s71iz"><span class="row-name svelte-13s71iz">Buchstaben-Kreis anzeigen</span> <span class="row-sub svelte-13s71iz">Der runde Kreis links der Leiste beim Scrubben</span></span> <span><span class="knob svelte-13s71iz"></span></span></button> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Größe des Kreises</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="36" max="110" step="2" class="svelte-13s71iz"/></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Abstand des Kreises vom rechten Rand</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="40" max="320" step="4" class="svelte-13s71iz"/></div> <button class="row svelte-13s71iz"><span class="row-text svelte-13s71iz"><span class="row-name svelte-13s71iz">App-Symbole anzeigen</span></span> <span><span class="knob svelte-13s71iz"></span></span></button> <button class="row svelte-13s71iz"><span class="row-text svelte-13s71iz"><span class="row-name svelte-13s71iz">App-Namen anzeigen</span></span> <span><span class="knob svelte-13s71iz"></span></span></button> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Symbolgröße</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="24" max="72" step="2" class="svelte-13s71iz"/></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Schriftgröße (App-Namen)</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0.6" max="2.2" step="0.05" class="svelte-13s71iz"/></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Schriftgröße (Leiste)</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0.5" max="2.5" step="0.05" class="svelte-13s71iz"/></div> <div class="field svelte-13s71iz"><div class="row-name svelte-13s71iz">Schriftart</div> <div class="chips svelte-13s71iz"></div></div> <div class="field svelte-13s71iz"><div class="row-name svelte-13s71iz">Farben</div> <!> <span class="row-sub svelte-13s71iz">Auto = global übernehmen · Fest = eigene Farbe<!></span></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Abstand vom linken Rand</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0" max="80" step="2" class="svelte-13s71iz"/></div> <!> <button class="sheet-item svelte-13s71iz"><!> </button> <button class="sheet-item svelte-13s71iz"><!> Orbit-App öffnen (Menü, Plugins, Themes)</button></div></div>`);
+var root_42 = from_html(`<div class="setup svelte-13s71iz" role="dialog" aria-label="Als Standard-Launcher festlegen"><div class="aurora a1 svelte-13s71iz"></div> <div class="aurora a2 svelte-13s71iz"></div> <button class="setup-x svelte-13s71iz" aria-label="Schließen"><!></button> <div class="setup-stage svelte-13s71iz"><svg class="setup-illu svelte-13s71iz" viewBox="0 0 260 210" aria-hidden="true"><defs class="svelte-13s71iz"><linearGradient id="orbGrad" x1="0" y1="0" x2="1" y2="1" class="svelte-13s71iz"><stop offset="0" stop-color="var(--accent)" class="svelte-13s71iz"></stop><stop offset="1" stop-color="color-mix(in srgb, var(--accent) 55%, #b06cf0)" class="svelte-13s71iz"></stop></linearGradient></defs><ellipse class="ring svelte-13s71iz" cx="130" cy="105" rx="86" ry="40" fill="none" stroke="color-mix(in srgb, var(--accent) 60%, transparent)" stroke-width="3"></ellipse><circle class="planet svelte-13s71iz" cx="130" cy="105" r="34" fill="url(#orbGrad)"></circle><path d="M118 108l12-11 12 11 M121 105v12h18v-12" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="svelte-13s71iz"></path><circle class="moon svelte-13s71iz" cx="216" cy="105" r="6" fill="var(--accent)"></circle></svg> <div class="setup-kicker svelte-13s71iz">Orbit Launcher</div> <h1 class="setup-h1 svelte-13s71iz">Orbit als Startbildschirm</h1> <p class="setup-p svelte-13s71iz">Lege Orbit als deinen Standard-Launcher fest, damit die Home-Taste direkt hierher führt.</p> <button class="setup-go svelte-13s71iz">Als Standard-Launcher festlegen</button></div></div>`);
+var root_43 = from_html(`<div class="launcher svelte-13s71iz"><div><!> <!></div> <!></div> <!> <!> <!> <!> <!> <!>`, 1);
 
 const $$css = {
 	hash: 'svelte-13s71iz',
-	code: '\n  /* Transparent so the global wallpaper layer shows through (wallpaper-forward). */.launcher.svelte-13s71iz {position:relative;height:100%;overflow:hidden;}.list.svelte-13s71iz {position:relative; /* offset parent for section.offsetTop (anchor scroll) */height:100%;overflow-y:auto;padding:calc(env(safe-area-inset-top) + 40px) 52px calc(env(safe-area-inset-bottom) + 24px)\n      var(--list-pad, 20px);-webkit-overflow-scrolling:touch;}.clock.svelte-13s71iz {color:var(--text);text-shadow:0 2px 18px rgba(0, 0, 0, 0.4);margin-bottom:26px;font-family:var(--app-font, inherit);}\n  /* On the ★-home the widget area fills the space above the divider and its\n     content sits at the bottom (just above the line); favourites follow below. */.clock.home-region.svelte-13s71iz {display:flex;flex-direction:column;justify-content:flex-end;margin-bottom:10px;box-sizing:border-box;}.time.svelte-13s71iz {font-size:clamp(3.2rem, 16vw, 5rem);font-weight:300;letter-spacing:-0.03em;line-height:1;}.date.svelte-13s71iz {margin-top:6px;font-size:1.05rem;font-weight:500;opacity:0.9;text-transform:capitalize;}.batt.svelte-13s71iz {margin-top:10px;font-size:0.95rem;font-weight:600;opacity:0.85;}\n  /* Reserved space for a hosted Android widget; the native view draws on top. */.aw-slot.svelte-13s71iz {width:100%;margin-top:12px;border-radius:16px;\n    /* No placeholder fill: a loaded widget draws its own content on top; a\n       broken/empty slot stays invisible instead of an ugly dark box. */background:transparent;}\n  /* A widget that failed to render: subtle dashed hint, removable by long-press. */.aw-slot.broken.svelte-13s71iz {display:flex;align-items:center;justify-content:center;min-height:64px;border:1px dashed color-mix(in srgb, var(--fg) 30%, transparent);background:color-mix(in srgb, var(--bg-elevated) 18%, transparent);}.aw-broken-hint.svelte-13s71iz {display:inline-flex;align-items:center;gap:6px;font-size:12px;opacity:0.7;text-align:center;padding:0 10px;}.aw-row.svelte-13s71iz {display:flex;align-items:center;justify-content:space-between;padding:8px 0;}.aw-label.svelte-13s71iz {color:var(--text);font-size:1rem;}.aw-remove.svelte-13s71iz {background:none;border:none;color:var(--text-muted, color-mix(in srgb, var(--text) 55%, transparent));cursor:pointer;}.group.svelte-13s71iz {margin-bottom:14px;}.group-label.svelte-13s71iz {font-size:0.78rem;font-weight:700;letter-spacing:0.08em;color:var(--text);opacity:0.9;text-shadow:0 1px 8px rgba(0, 0, 0, 0.4);padding:4px 10px;}.app.svelte-13s71iz {width:100%;display:flex;align-items:center;gap:14px;padding:7px 10px;background:none;border:none;border-radius:14px;color:var(--text);text-shadow:0 1px 10px rgba(0, 0, 0, 0.35);cursor:pointer;transition:background 0.14s ease, transform 0.1s ease;touch-action:pan-y;}.app.svelte-13s71iz:active {transform:scale(0.98);background:color-mix(in srgb, var(--bg-elevated) 50%, transparent);}.app-icon.svelte-13s71iz {width:var(--app-icon, 42px);height:var(--app-icon, 42px);border-radius:12px;object-fit:cover;flex:none;}.app-icon.fallback.svelte-13s71iz {display:grid;place-items:center;background:color-mix(in srgb, var(--accent) 35%, var(--bg-elevated));font-weight:700;font-size:calc(var(--app-icon, 42px) * 0.42);}.app-label.svelte-13s71iz {font-size:calc(1.08rem * var(--app-label-scale, 1));font-weight:500;font-family:var(--app-font, inherit);}\n\n  /* While scrubbing, show only the active letter block (SKWD-Wall style); the\n     rest fades back in on release. */.clock.svelte-13s71iz,\n  .foot.svelte-13s71iz,\n  .group.svelte-13s71iz {transition:opacity 0.18s ease;}.list.focusing.svelte-13s71iz .clock:where(.svelte-13s71iz),\n  .list.focusing.svelte-13s71iz .foot:where(.svelte-13s71iz),\n  .list.focusing.svelte-13s71iz .group:where(.svelte-13s71iz):not(.active) {opacity:0;pointer-events:none;}.hint.svelte-13s71iz {color:var(--text);opacity:0.85;font-size:0.98rem;line-height:1.5;text-shadow:0 1px 10px rgba(0, 0, 0, 0.35);max-width:28rem;padding:20px 10px;}.foot.svelte-13s71iz {margin-top:10px;padding-top:14px;border-top:1px solid color-mix(in srgb, var(--text) 14%, transparent);display:flex;flex-direction:column;align-items:flex-start;gap:2px;}.foot-item.svelte-13s71iz {display:inline-flex;align-items:center;gap:12px;padding:12px 10px;background:none;border:none;color:var(--text);opacity:0.9;font-size:1.02rem;text-shadow:0 1px 10px rgba(0, 0, 0, 0.35);cursor:pointer;}\n\n  /* ---- Wave scrubber ---- */.scrubber.svelte-13s71iz {position:absolute;top:50%;transform:translateY(-50%); /* vertically centred band; height set inline */right:0;width:34px;display:flex;flex-direction:column;align-items:stretch;padding-right:8px;touch-action:none;z-index:5;transition:opacity 0.2s ease;}.scrubber.hidden.svelte-13s71iz {opacity:0; /* still hittable at the edge → tapping the edge reveals it */}\n  /* Equal slots so a letter\'s visual centre matches (i+0.5)·rowH in the wave math. */.scrub-key.svelte-13s71iz {flex:1 1 0;display:flex;align-items:center;justify-content:flex-end;font-size:calc(0.8rem * var(--rail-label-scale, 1));font-weight:700;font-family:var(--app-font, inherit);color:var(--text);opacity:1;text-shadow:0 1px 8px rgba(0, 0, 0, 0.5);transform-origin:right center;will-change:transform;pointer-events:none;line-height:1;}.scrub-key.active.svelte-13s71iz {color:var(--accent);}.bubble.svelte-13s71iz {position:absolute;right:46px;transform:translateY(-50%);width:58px;height:58px;display:grid;place-items:center;border-radius:50%;background:var(--accent);color:#fff;font-size:1.6rem;font-weight:700;box-shadow:0 8px 26px rgba(0, 0, 0, 0.35);pointer-events:none;z-index:6;\n    /* Snap to each letter\'s centre — the "einrasten" detent feel. */transition:top 0.07s ease-out;}\n\n  /* ---- Fullscreen settings page ---- */.settings-full.svelte-13s71iz {position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;flex-direction:column;}.settings-head.svelte-13s71iz {display:flex;align-items:center;gap:12px;padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;border-bottom:1px solid var(--border);}.settings-close.svelte-13s71iz {flex:none;width:44px;height:44px;display:grid;place-items:center;border:none;background:none;color:var(--text);border-radius:12px;cursor:pointer;}.settings-close.svelte-13s71iz:active {background:var(--bg-elevated);}.settings-title.svelte-13s71iz {font-size:1.3rem;font-weight:700;color:var(--text);}.settings-body.svelte-13s71iz {flex:1;overflow-y:auto;padding:8px 10px calc(env(safe-area-inset-bottom) + 24px);}\n\n  /* ---- Sheets ---- */.sheet-backdrop.svelte-13s71iz {position:fixed;inset:0;z-index:95;background:rgba(0, 0, 0, 0.45);display:flex;align-items:flex-end;}.sheet.svelte-13s71iz {width:100%;background:var(--bg-elevated);border-radius:20px 20px 0 0;padding:14px 10px calc(env(safe-area-inset-bottom) + 14px);box-shadow:0 -12px 40px rgba(0, 0, 0, 0.3);}.sheet-title.svelte-13s71iz {font-size:1.1rem;font-weight:700;color:var(--text);padding:6px 12px 12px;}.sheet-item.svelte-13s71iz {width:100%;display:flex;align-items:center;gap:14px;padding:14px 12px;background:none;border:none;border-radius:12px;color:var(--text);font-size:1.02rem;text-align:left;cursor:pointer;}.sheet-item.svelte-13s71iz:active {background:var(--bg);}.row.svelte-13s71iz {width:100%;display:flex;align-items:center;gap:14px;padding:12px;background:none;border:none;color:var(--text);text-align:left;cursor:pointer;}.row-text.svelte-13s71iz {flex:1;display:flex;flex-direction:column;gap:2px;}.row-name.svelte-13s71iz {font-size:1.02rem;}.row-sub.svelte-13s71iz {font-size:0.85rem;color:var(--text-muted, color-mix(in srgb, var(--text) 55%, transparent));}.switch.svelte-13s71iz {flex:none;width:46px;height:28px;border-radius:999px;background:color-mix(in srgb, var(--text) 25%, transparent);position:relative;transition:background 0.15s ease;}.switch.on.svelte-13s71iz {background:var(--accent);}.knob.svelte-13s71iz {position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform 0.15s ease;}.switch.on.svelte-13s71iz .knob:where(.svelte-13s71iz) {transform:translateX(18px);}.slider.svelte-13s71iz {display:flex;flex-direction:column;gap:6px;padding:12px;}.slider-head.svelte-13s71iz {display:flex;justify-content:space-between;align-items:baseline;}.slider-val.svelte-13s71iz {font-size:0.85rem;font-weight:700;color:var(--accent);}.slider.svelte-13s71iz input[type=\'range\']:where(.svelte-13s71iz) {width:100%;accent-color:var(--accent);}.field.svelte-13s71iz {display:flex;flex-direction:column;gap:10px;padding:12px;}.chips.svelte-13s71iz {display:flex;flex-wrap:wrap;gap:8px;}.chip.svelte-13s71iz {padding:8px 14px;border-radius:999px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:0.95rem;cursor:pointer;}.chip.on.svelte-13s71iz {background:var(--accent);color:#fff;border-color:var(--accent);}\n\n  /* ---- Home edit mode ---- */.edit-overlay.svelte-13s71iz {position:fixed;inset:0;z-index:110;background:rgba(0, 0, 0, 0.35);touch-action:none;}.edit-split.svelte-13s71iz {position:absolute;left:0;right:0;transform:translateY(-50%);display:flex;justify-content:center;}.edit-split.svelte-13s71iz::before {content:\'\';position:absolute;left:16px;right:16px;top:50%;height:2px;background:var(--accent);opacity:0.85;}.edit-railgrip.svelte-13s71iz {position:absolute;right:0;}.edit-handle.svelte-13s71iz {position:relative;display:inline-flex;flex-direction:column;align-items:center;gap:6px;padding:8px 16px;border:none;border-radius:999px;background:var(--accent);color:#fff;box-shadow:0 6px 20px rgba(0, 0, 0, 0.4);cursor:grab;touch-action:none;}.edit-handle.side.svelte-13s71iz {padding:12px 10px;border-radius:12px;margin-right:6px;}.grip.svelte-13s71iz {width:28px;height:4px;border-radius:2px;background:rgba(255, 255, 255, 0.9);}.edit-handle.side.svelte-13s71iz .grip:where(.svelte-13s71iz) {width:18px;}.edit-caption.svelte-13s71iz {font-size:0.8rem;font-weight:700;white-space:nowrap;}.edit-done.svelte-13s71iz {position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 24px);transform:translateX(-50%);padding:12px 32px;border-radius:999px;border:none;background:var(--accent);color:#fff;font-weight:700;font-size:1rem;box-shadow:0 8px 24px rgba(0, 0, 0, 0.3);cursor:pointer;}.edit-addwidget.svelte-13s71iz {position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);transform:translateX(-50%);display:inline-flex;align-items:center;gap:8px;padding:11px 22px;border-radius:999px;border:1px solid color-mix(in srgb, var(--text) 25%, transparent);background:color-mix(in srgb, var(--bg-elevated) 70%, transparent);color:var(--text);font-weight:700;font-size:0.95rem;backdrop-filter:blur(8px);cursor:pointer;white-space:nowrap;}\n\n  /* ---- Widget picker (Niagara-style: A–Z app list + expandable previews) ---- */.wpick.svelte-13s71iz {position:fixed;inset:0;z-index:100;background:color-mix(in srgb, var(--bg) 82%, transparent);backdrop-filter:blur(10px);display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top) + 14px) 14px calc(env(safe-area-inset-bottom) + 14px);}.wpick-search.svelte-13s71iz {display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:999px;background:var(--bg-elevated);color:var(--text);margin-bottom:12px;flex:none;}.wpick-search.svelte-13s71iz input:where(.svelte-13s71iz) {flex:1;border:none;background:none;color:var(--text);font-size:1.1rem;outline:none;}.wpick-close.svelte-13s71iz {flex:none;width:34px;height:34px;display:grid;place-items:center;border:none;background:none;color:var(--text);cursor:pointer;}.wpick-list.svelte-13s71iz {flex:1;overflow-y:auto;}.wpick-letter.svelte-13s71iz {font-size:0.9rem;font-weight:700;color:var(--text);opacity:0.6;padding:10px 6px 4px;}.wpick-app.svelte-13s71iz {width:100%;display:flex;align-items:center;gap:16px;padding:10px 6px;background:none;border:none;color:var(--text);cursor:pointer;text-align:left;}.wpick-icon.svelte-13s71iz {width:46px;height:46px;border-radius:12px;object-fit:cover;flex:none;}.wpick-icon.fallback.svelte-13s71iz {display:grid;place-items:center;background:color-mix(in srgb, var(--accent) 35%, var(--bg-elevated));font-weight:700;font-size:1.2rem;}.wpick-appmeta.svelte-13s71iz {display:flex;flex-direction:column;}.wpick-appname.svelte-13s71iz {font-size:1.15rem;font-weight:600;}.wpick-count.svelte-13s71iz {font-size:0.9rem;opacity:0.6;}.wpick-widgets.svelte-13s71iz {display:flex;flex-direction:column;gap:12px;padding:6px 6px 14px 72px;}.wpick-widget.svelte-13s71iz {display:flex;flex-direction:column;gap:8px;padding:10px;border:none;border-radius:16px;background:var(--bg-elevated);color:var(--text);cursor:pointer;text-align:left;}.wpick-preview.svelte-13s71iz {width:100%;max-height:220px;object-fit:contain;border-radius:12px;}.wpick-preview.fallback.svelte-13s71iz {height:120px;background:var(--bg);}.wpick-wlabel.svelte-13s71iz {font-size:1rem;font-weight:500;}\n\n  /* ---- Set-as-default-launcher prompt (setup-dialog standard) ---- */.setup.svelte-13s71iz {position:fixed;inset:0;z-index:950;background:radial-gradient(\n        circle at 50% 28%,\n        color-mix(in srgb, var(--accent) 22%, transparent),\n        transparent 70%\n      ),\n      var(--bg);display:flex;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top) + 40px) 24px calc(env(safe-area-inset-bottom) + 32px);overflow:hidden;}.aurora.svelte-13s71iz {position:absolute;border-radius:50%;filter:blur(60px);opacity:0.45;pointer-events:none;}.a1.svelte-13s71iz {width:320px;height:320px;background:var(--accent);top:-60px;left:-40px;\n    animation: svelte-13s71iz-drift1 14s ease-in-out infinite;}.a2.svelte-13s71iz {width:280px;height:280px;background:color-mix(in srgb, var(--accent) 50%, #b06cf0);bottom:-60px;right:-40px;\n    animation: svelte-13s71iz-drift2 16s ease-in-out infinite;}\n  @keyframes svelte-13s71iz-drift1 {\n    0%,\n    100% {\n      transform: translate(0, 0);\n    }\n    50% {\n      transform: translate(30px, 40px);\n    }\n  }\n  @keyframes svelte-13s71iz-drift2 {\n    0%,\n    100% {\n      transform: translate(0, 0);\n    }\n    50% {\n      transform: translate(-30px, -30px);\n    }\n  }.setup-x.svelte-13s71iz {position:absolute;top:calc(env(safe-area-inset-top) + 12px);right:16px;width:44px;height:44px;display:grid;place-items:center;border:none;background:color-mix(in srgb, var(--bg-elevated) 60%, transparent);color:var(--text);border-radius:50%;cursor:pointer;z-index:2;}.setup-stage.svelte-13s71iz {position:relative;max-width:440px;text-align:center;z-index:1;}.setup-illu.svelte-13s71iz {width:220px;height:auto;margin:0 auto 20px;display:block;}.setup-illu.svelte-13s71iz .planet:where(.svelte-13s71iz) {\n    animation: svelte-13s71iz-pop 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);transform-origin:center;}.setup-illu.svelte-13s71iz .ring:where(.svelte-13s71iz) {\n    animation: svelte-13s71iz-spin 18s linear infinite;transform-origin:130px 105px;}.setup-illu.svelte-13s71iz .moon:where(.svelte-13s71iz) {\n    animation: svelte-13s71iz-spin 6s linear infinite;transform-origin:130px 105px;}\n  @keyframes svelte-13s71iz-pop {\n    from {\n      transform: scale(0);\n    }\n    to {\n      transform: scale(1);\n    }\n  }\n  @keyframes svelte-13s71iz-spin {\n    to {\n      transform: rotate(360deg);\n    }\n  }.setup-kicker.svelte-13s71iz {text-transform:uppercase;letter-spacing:0.08em;font-size:0.8rem;font-weight:700;color:var(--accent);margin-bottom:8px;}.setup-h1.svelte-13s71iz {font-size:clamp(1.6rem, 7vw, 2.2rem);font-weight:800;letter-spacing:-0.02em;color:var(--text);margin:0 0 12px;}.setup-p.svelte-13s71iz {color:var(--text-muted, color-mix(in srgb, var(--text) 65%, transparent));font-size:1.02rem;line-height:1.6;margin:0 auto 28px;max-width:32rem;}.setup-go.svelte-13s71iz {width:100%;max-width:360px;padding:15px;border-radius:16px;border:none;background:linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #b06cf0));color:#fff;font-size:1.05rem;font-weight:700;cursor:pointer;box-shadow:0 10px 28px rgba(0, 0, 0, 0.3);}\n\n  @media (prefers-reduced-motion: reduce) {.app.svelte-13s71iz,\n    .scrubber.svelte-13s71iz,\n    .switch.svelte-13s71iz,\n    .knob.svelte-13s71iz,\n    .group.svelte-13s71iz,\n    .clock.svelte-13s71iz,\n    .foot.svelte-13s71iz {transition:none;}.aurora.svelte-13s71iz,\n    .setup-illu.svelte-13s71iz .planet:where(.svelte-13s71iz),\n    .setup-illu.svelte-13s71iz .ring:where(.svelte-13s71iz),\n    .setup-illu.svelte-13s71iz .moon:where(.svelte-13s71iz) {\n      animation: none;}\n  }'
+	code: '\n  /* Transparent so the global wallpaper layer shows through (wallpaper-forward). */.launcher.svelte-13s71iz {position:relative;height:100%;overflow:hidden;}.list.svelte-13s71iz {position:relative; /* offset parent for section.offsetTop (anchor scroll) */height:100%;overflow-y:auto;padding:calc(env(safe-area-inset-top) + 40px) 52px calc(env(safe-area-inset-bottom) + 24px)\n      var(--list-pad, 20px);-webkit-overflow-scrolling:touch;}.clock.svelte-13s71iz {color:var(--text);text-shadow:0 2px 18px rgba(0, 0, 0, 0.4);margin-bottom:26px;font-family:var(--app-font, inherit);}\n  /* On the ★-home the widget area fills the space above the divider and its\n     content sits at the bottom (just above the line); favourites follow below. */.clock.home-region.svelte-13s71iz {display:flex;flex-direction:column;justify-content:flex-end;margin-bottom:10px;box-sizing:border-box;}.test-badge.svelte-13s71iz {align-self:flex-start;margin-bottom:8px;padding:2px 10px;border-radius:999px;font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#fff;background:color-mix(in srgb, #ff6b35 85%, transparent);box-shadow:0 1px 6px rgba(0, 0, 0, 0.3);}.time.svelte-13s71iz {font-size:clamp(3.2rem, 16vw, 5rem);font-weight:300;letter-spacing:-0.03em;line-height:1;}.date.svelte-13s71iz {margin-top:6px;font-size:1.05rem;font-weight:500;opacity:0.9;text-transform:capitalize;}.batt.svelte-13s71iz {margin-top:10px;font-size:0.95rem;font-weight:600;opacity:0.85;}\n  /* Reserved space for a hosted Android widget; the native view draws on top. */.aw-slot.svelte-13s71iz {width:100%;margin-top:12px;border-radius:16px;\n    /* No placeholder fill: a loaded widget draws its own content on top; a\n       broken/empty slot stays invisible instead of an ugly dark box. */background:transparent;}\n  /* A widget that failed to render: subtle dashed hint, removable by long-press. */.aw-slot.broken.svelte-13s71iz {display:flex;align-items:center;justify-content:center;min-height:64px;border:1px dashed color-mix(in srgb, var(--fg) 30%, transparent);background:color-mix(in srgb, var(--bg-elevated) 18%, transparent);}.aw-broken-hint.svelte-13s71iz {display:inline-flex;align-items:center;gap:6px;font-size:12px;opacity:0.7;text-align:center;padding:0 10px;}.aw-row.svelte-13s71iz {display:flex;align-items:center;justify-content:space-between;padding:8px 0;}.aw-label.svelte-13s71iz {color:var(--text);font-size:1rem;}.aw-remove.svelte-13s71iz {background:none;border:none;color:var(--text-muted, color-mix(in srgb, var(--text) 55%, transparent));cursor:pointer;}.group.svelte-13s71iz {margin-bottom:14px;}.group-label.svelte-13s71iz {font-size:0.78rem;font-weight:700;letter-spacing:0.08em;color:var(--text);opacity:0.9;text-shadow:0 1px 8px rgba(0, 0, 0, 0.4);padding:4px 10px;}.app.svelte-13s71iz {width:100%;display:flex;align-items:center;gap:14px;padding:7px 10px;background:none;border:none;border-radius:14px;color:var(--text);text-shadow:0 1px 10px rgba(0, 0, 0, 0.35);cursor:pointer;transition:background 0.14s ease, transform 0.1s ease;touch-action:pan-y;}.app.svelte-13s71iz:active {transform:scale(0.98);background:color-mix(in srgb, var(--bg-elevated) 50%, transparent);}.app-icon.svelte-13s71iz {width:var(--app-icon, 42px);height:var(--app-icon, 42px);border-radius:12px;object-fit:cover;flex:none;}.app-icon.fallback.svelte-13s71iz {display:grid;place-items:center;background:color-mix(in srgb, var(--accent) 35%, var(--bg-elevated));font-weight:700;font-size:calc(var(--app-icon, 42px) * 0.42);}.app-label.svelte-13s71iz {font-size:calc(1.08rem * var(--app-label-scale, 1));font-weight:500;font-family:var(--app-font, inherit);}\n\n  /* While scrubbing, show only the active letter block (SKWD-Wall style); the\n     rest fades back in on release. */.clock.svelte-13s71iz,\n  .foot.svelte-13s71iz,\n  .group.svelte-13s71iz {transition:opacity 0.18s ease;}.list.focusing.svelte-13s71iz .clock:where(.svelte-13s71iz),\n  .list.focusing.svelte-13s71iz .foot:where(.svelte-13s71iz),\n  .list.focusing.svelte-13s71iz .group:where(.svelte-13s71iz):not(.active) {opacity:0;pointer-events:none;}.hint.svelte-13s71iz {color:var(--text);opacity:0.85;font-size:0.98rem;line-height:1.5;text-shadow:0 1px 10px rgba(0, 0, 0, 0.35);max-width:28rem;padding:20px 10px;}.foot.svelte-13s71iz {margin-top:10px;padding-top:14px;border-top:1px solid color-mix(in srgb, var(--text) 14%, transparent);display:flex;flex-direction:column;align-items:flex-start;gap:2px;}.foot-item.svelte-13s71iz {display:inline-flex;align-items:center;gap:12px;padding:12px 10px;background:none;border:none;color:var(--text);opacity:0.9;font-size:1.02rem;text-shadow:0 1px 10px rgba(0, 0, 0, 0.35);cursor:pointer;}\n\n  /* ---- Wave scrubber ---- */.scrubber.svelte-13s71iz {position:absolute;top:50%;transform:translateY(-50%); /* vertically centred band; height set inline */right:0;width:34px;display:flex;flex-direction:column;align-items:stretch;padding-right:8px;touch-action:none;z-index:5;transition:opacity 0.2s ease;}.scrubber.hidden.svelte-13s71iz {opacity:0; /* still hittable at the edge → tapping the edge reveals it */}\n  /* Equal slots so a letter\'s visual centre matches (i+0.5)·rowH in the wave math. */.scrub-key.svelte-13s71iz {flex:1 1 0;display:flex;align-items:center;justify-content:flex-end;font-size:calc(0.8rem * var(--rail-label-scale, 1));font-weight:700;font-family:var(--app-font, inherit);color:var(--text);opacity:1;text-shadow:0 1px 8px rgba(0, 0, 0, 0.5);transform-origin:right center;will-change:transform;pointer-events:none;line-height:1;}.scrub-key.active.svelte-13s71iz {color:var(--accent);}.bubble.svelte-13s71iz {position:absolute;right:46px;transform:translateY(-50%);width:58px;height:58px;display:grid;place-items:center;border-radius:50%;background:var(--accent);color:#fff;font-size:1.6rem;font-weight:700;box-shadow:0 8px 26px rgba(0, 0, 0, 0.35);pointer-events:none;z-index:6;\n    /* Snap to each letter\'s centre — the "einrasten" detent feel. */transition:top 0.07s ease-out;}\n\n  /* ---- Fullscreen settings page ---- */.settings-full.svelte-13s71iz {position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;flex-direction:column;}.settings-head.svelte-13s71iz {display:flex;align-items:center;gap:12px;padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;border-bottom:1px solid var(--border);}.settings-close.svelte-13s71iz {flex:none;width:44px;height:44px;display:grid;place-items:center;border:none;background:none;color:var(--text);border-radius:12px;cursor:pointer;}.settings-close.svelte-13s71iz:active {background:var(--bg-elevated);}.settings-title.svelte-13s71iz {font-size:1.3rem;font-weight:700;color:var(--text);}.settings-body.svelte-13s71iz {flex:1;overflow-y:auto;padding:8px 10px calc(env(safe-area-inset-bottom) + 24px);}\n\n  /* ---- Sheets ---- */.sheet-backdrop.svelte-13s71iz {position:fixed;inset:0;z-index:95;background:rgba(0, 0, 0, 0.45);display:flex;align-items:flex-end;}.sheet.svelte-13s71iz {width:100%;background:var(--bg-elevated);border-radius:20px 20px 0 0;padding:14px 10px calc(env(safe-area-inset-bottom) + 14px);box-shadow:0 -12px 40px rgba(0, 0, 0, 0.3);}.sheet-title.svelte-13s71iz {font-size:1.1rem;font-weight:700;color:var(--text);padding:6px 12px 12px;}.sheet-item.svelte-13s71iz {width:100%;display:flex;align-items:center;gap:14px;padding:14px 12px;background:none;border:none;border-radius:12px;color:var(--text);font-size:1.02rem;text-align:left;cursor:pointer;}.sheet-item.svelte-13s71iz:active {background:var(--bg);}.row.svelte-13s71iz {width:100%;display:flex;align-items:center;gap:14px;padding:12px;background:none;border:none;color:var(--text);text-align:left;cursor:pointer;}.row-text.svelte-13s71iz {flex:1;display:flex;flex-direction:column;gap:2px;}.row-name.svelte-13s71iz {font-size:1.02rem;}.row-sub.svelte-13s71iz {font-size:0.85rem;color:var(--text-muted, color-mix(in srgb, var(--text) 55%, transparent));}.switch.svelte-13s71iz {flex:none;width:46px;height:28px;border-radius:999px;background:color-mix(in srgb, var(--text) 25%, transparent);position:relative;transition:background 0.15s ease;}.switch.on.svelte-13s71iz {background:var(--accent);}.knob.svelte-13s71iz {position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform 0.15s ease;}.switch.on.svelte-13s71iz .knob:where(.svelte-13s71iz) {transform:translateX(18px);}.slider.svelte-13s71iz {display:flex;flex-direction:column;gap:6px;padding:12px;}.slider-head.svelte-13s71iz {display:flex;justify-content:space-between;align-items:baseline;}.slider-val.svelte-13s71iz {font-size:0.85rem;font-weight:700;color:var(--accent);}.slider.svelte-13s71iz input[type=\'range\']:where(.svelte-13s71iz) {width:100%;accent-color:var(--accent);}.field.svelte-13s71iz {display:flex;flex-direction:column;gap:10px;padding:12px;}.chips.svelte-13s71iz {display:flex;flex-wrap:wrap;gap:8px;}.chip.svelte-13s71iz {padding:8px 14px;border-radius:999px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:0.95rem;cursor:pointer;}.chip.on.svelte-13s71iz {background:var(--accent);color:#fff;border-color:var(--accent);}\n\n  /* ---- Home edit mode ---- */.edit-overlay.svelte-13s71iz {position:fixed;inset:0;z-index:110;background:rgba(0, 0, 0, 0.35);touch-action:none;}.edit-split.svelte-13s71iz {position:absolute;left:0;right:0;transform:translateY(-50%);display:flex;justify-content:center;}.edit-split.svelte-13s71iz::before {content:\'\';position:absolute;left:16px;right:16px;top:50%;height:2px;background:var(--accent);opacity:0.85;}.edit-railgrip.svelte-13s71iz {position:absolute;right:0;}.edit-handle.svelte-13s71iz {position:relative;display:inline-flex;flex-direction:column;align-items:center;gap:6px;padding:8px 16px;border:none;border-radius:999px;background:var(--accent);color:#fff;box-shadow:0 6px 20px rgba(0, 0, 0, 0.4);cursor:grab;touch-action:none;}.edit-handle.side.svelte-13s71iz {padding:12px 10px;border-radius:12px;margin-right:6px;}.grip.svelte-13s71iz {width:28px;height:4px;border-radius:2px;background:rgba(255, 255, 255, 0.9);}.edit-handle.side.svelte-13s71iz .grip:where(.svelte-13s71iz) {width:18px;}.edit-caption.svelte-13s71iz {font-size:0.8rem;font-weight:700;white-space:nowrap;}.edit-done.svelte-13s71iz {position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 24px);transform:translateX(-50%);padding:12px 32px;border-radius:999px;border:none;background:var(--accent);color:#fff;font-weight:700;font-size:1rem;box-shadow:0 8px 24px rgba(0, 0, 0, 0.3);cursor:pointer;}.edit-addwidget.svelte-13s71iz {position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);transform:translateX(-50%);display:inline-flex;align-items:center;gap:8px;padding:11px 22px;border-radius:999px;border:1px solid color-mix(in srgb, var(--text) 25%, transparent);background:color-mix(in srgb, var(--bg-elevated) 70%, transparent);color:var(--text);font-weight:700;font-size:0.95rem;backdrop-filter:blur(8px);cursor:pointer;white-space:nowrap;}\n\n  /* ---- Widget picker (Niagara-style: A–Z app list + expandable previews) ---- */.wpick.svelte-13s71iz {position:fixed;inset:0;z-index:100;background:color-mix(in srgb, var(--bg) 82%, transparent);backdrop-filter:blur(10px);display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top) + 14px) 14px calc(env(safe-area-inset-bottom) + 14px);}.wpick-search.svelte-13s71iz {display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:999px;background:var(--bg-elevated);color:var(--text);margin-bottom:12px;flex:none;}.wpick-search.svelte-13s71iz input:where(.svelte-13s71iz) {flex:1;border:none;background:none;color:var(--text);font-size:1.1rem;outline:none;}.wpick-close.svelte-13s71iz {flex:none;width:34px;height:34px;display:grid;place-items:center;border:none;background:none;color:var(--text);cursor:pointer;}.wpick-list.svelte-13s71iz {flex:1;overflow-y:auto;}.wpick-letter.svelte-13s71iz {font-size:0.9rem;font-weight:700;color:var(--text);opacity:0.6;padding:10px 6px 4px;}.wpick-app.svelte-13s71iz {width:100%;display:flex;align-items:center;gap:16px;padding:10px 6px;background:none;border:none;color:var(--text);cursor:pointer;text-align:left;}.wpick-icon.svelte-13s71iz {width:46px;height:46px;border-radius:12px;object-fit:cover;flex:none;}.wpick-icon.fallback.svelte-13s71iz {display:grid;place-items:center;background:color-mix(in srgb, var(--accent) 35%, var(--bg-elevated));font-weight:700;font-size:1.2rem;}.wpick-appmeta.svelte-13s71iz {display:flex;flex-direction:column;}.wpick-appname.svelte-13s71iz {font-size:1.15rem;font-weight:600;}.wpick-count.svelte-13s71iz {font-size:0.9rem;opacity:0.6;}.wpick-widgets.svelte-13s71iz {display:flex;flex-direction:column;gap:12px;padding:6px 6px 14px 72px;}.wpick-widget.svelte-13s71iz {display:flex;flex-direction:column;gap:8px;padding:10px;border:none;border-radius:16px;background:var(--bg-elevated);color:var(--text);cursor:pointer;text-align:left;}.wpick-preview.svelte-13s71iz {width:100%;max-height:220px;object-fit:contain;border-radius:12px;}.wpick-preview.fallback.svelte-13s71iz {height:120px;background:var(--bg);}.wpick-wlabel.svelte-13s71iz {font-size:1rem;font-weight:500;}\n\n  /* ---- Set-as-default-launcher prompt (setup-dialog standard) ---- */.setup.svelte-13s71iz {position:fixed;inset:0;z-index:950;background:radial-gradient(\n        circle at 50% 28%,\n        color-mix(in srgb, var(--accent) 22%, transparent),\n        transparent 70%\n      ),\n      var(--bg);display:flex;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top) + 40px) 24px calc(env(safe-area-inset-bottom) + 32px);overflow:hidden;}.aurora.svelte-13s71iz {position:absolute;border-radius:50%;filter:blur(60px);opacity:0.45;pointer-events:none;}.a1.svelte-13s71iz {width:320px;height:320px;background:var(--accent);top:-60px;left:-40px;\n    animation: svelte-13s71iz-drift1 14s ease-in-out infinite;}.a2.svelte-13s71iz {width:280px;height:280px;background:color-mix(in srgb, var(--accent) 50%, #b06cf0);bottom:-60px;right:-40px;\n    animation: svelte-13s71iz-drift2 16s ease-in-out infinite;}\n  @keyframes svelte-13s71iz-drift1 {\n    0%,\n    100% {\n      transform: translate(0, 0);\n    }\n    50% {\n      transform: translate(30px, 40px);\n    }\n  }\n  @keyframes svelte-13s71iz-drift2 {\n    0%,\n    100% {\n      transform: translate(0, 0);\n    }\n    50% {\n      transform: translate(-30px, -30px);\n    }\n  }.setup-x.svelte-13s71iz {position:absolute;top:calc(env(safe-area-inset-top) + 12px);right:16px;width:44px;height:44px;display:grid;place-items:center;border:none;background:color-mix(in srgb, var(--bg-elevated) 60%, transparent);color:var(--text);border-radius:50%;cursor:pointer;z-index:2;}.setup-stage.svelte-13s71iz {position:relative;max-width:440px;text-align:center;z-index:1;}.setup-illu.svelte-13s71iz {width:220px;height:auto;margin:0 auto 20px;display:block;}.setup-illu.svelte-13s71iz .planet:where(.svelte-13s71iz) {\n    animation: svelte-13s71iz-pop 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);transform-origin:center;}.setup-illu.svelte-13s71iz .ring:where(.svelte-13s71iz) {\n    animation: svelte-13s71iz-spin 18s linear infinite;transform-origin:130px 105px;}.setup-illu.svelte-13s71iz .moon:where(.svelte-13s71iz) {\n    animation: svelte-13s71iz-spin 6s linear infinite;transform-origin:130px 105px;}\n  @keyframes svelte-13s71iz-pop {\n    from {\n      transform: scale(0);\n    }\n    to {\n      transform: scale(1);\n    }\n  }\n  @keyframes svelte-13s71iz-spin {\n    to {\n      transform: rotate(360deg);\n    }\n  }.setup-kicker.svelte-13s71iz {text-transform:uppercase;letter-spacing:0.08em;font-size:0.8rem;font-weight:700;color:var(--accent);margin-bottom:8px;}.setup-h1.svelte-13s71iz {font-size:clamp(1.6rem, 7vw, 2.2rem);font-weight:800;letter-spacing:-0.02em;color:var(--text);margin:0 0 12px;}.setup-p.svelte-13s71iz {color:var(--text-muted, color-mix(in srgb, var(--text) 65%, transparent));font-size:1.02rem;line-height:1.6;margin:0 auto 28px;max-width:32rem;}.setup-go.svelte-13s71iz {width:100%;max-width:360px;padding:15px;border-radius:16px;border:none;background:linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #b06cf0));color:#fff;font-size:1.05rem;font-weight:700;cursor:pointer;box-shadow:0 10px 28px rgba(0, 0, 0, 0.3);}\n\n  @media (prefers-reduced-motion: reduce) {.app.svelte-13s71iz,\n    .scrubber.svelte-13s71iz,\n    .switch.svelte-13s71iz,\n    .knob.svelte-13s71iz,\n    .group.svelte-13s71iz,\n    .clock.svelte-13s71iz,\n    .foot.svelte-13s71iz {transition:none;}.aurora.svelte-13s71iz,\n    .setup-illu.svelte-13s71iz .planet:where(.svelte-13s71iz),\n    .setup-illu.svelte-13s71iz .ring:where(.svelte-13s71iz),\n    .setup-illu.svelte-13s71iz .moon:where(.svelte-13s71iz) {\n      animation: none;}\n  }'
 };
 
 function Home($$anchor, $$props) {
@@ -7797,6 +7813,9 @@ function Home($$anchor, $$props) {
 
 	let appWidgets = state(proxy([]));
 	let widgetMenuId = state(null);
+
+	// Which build we're in, so the test app is visibly distinct from the normal one.
+	let isTestApp = state(false);
 
 	/** Widget ids whose RemoteViews failed to render (show a removable placeholder). */
 	let brokenWidgets = state(proxy([]));
@@ -8079,6 +8098,7 @@ function Home($$anchor, $$props) {
 
 		const t = setInterval(() => set(now, new Date(), true), 10_000);
 
+		void manager().ensureSelf().then(() => set(isTestApp, manager().isTestApp, true));
 		void loadAppWidgets();
 
 		appwidgets?.onLongPress((id) => {
@@ -8529,83 +8549,97 @@ function Home($$anchor, $$props) {
 		}
 	}
 
-	var fragment = root_42();
+	var fragment = root_43();
 	var div = first_child(fragment);
 	var div_1 = child(div);
 	let classes;
 	var node_1 = child(div_1);
 
 	{
-		var consequent_4 = ($$anchor) => {
-			var header = root_5();
+		var consequent_5 = ($$anchor) => {
+			var header = root_6();
 			let classes_1;
 			var node_2 = child(header);
 
-			each(node_2, 16, () => get(widgets), (w) => w, ($$anchor, w) => {
+			{
+				var consequent = ($$anchor) => {
+					var div_2 = root();
+
+					append($$anchor, div_2);
+				};
+
+				if_block(node_2, ($$render) => {
+					if (get(isTestApp)) $$render(consequent);
+				});
+			}
+
+			var node_3 = sibling(node_2, 2);
+
+			each(node_3, 16, () => get(widgets), (w) => w, ($$anchor, w) => {
 				var fragment_1 = comment();
-				var node_3 = first_child(fragment_1);
+				var node_4 = first_child(fragment_1);
 
 				{
-					var consequent = ($$anchor) => {
-						var div_2 = root();
-						var text = only_child(div_2, true);
-
-						template_effect(() => set_text(text, get(timeStr)));
-						append($$anchor, div_2);
-					};
-
 					var consequent_1 = ($$anchor) => {
 						var div_3 = root_1();
-						var text_1 = only_child(div_3, true);
+						var text = only_child(div_3, true);
 
-						template_effect(() => set_text(text_1, get(dateStr)));
+						template_effect(() => set_text(text, get(timeStr)));
 						append($$anchor, div_3);
 					};
 
 					var consequent_2 = ($$anchor) => {
 						var div_4 = root_2();
-						var text_2 = only_child(div_4);
+						var text_1 = only_child(div_4, true);
 
-						template_effect(() => set_text(text_2, `Akku · ${get(batteryStr) ?? ''}`));
+						template_effect(() => set_text(text_1, get(dateStr)));
 						append($$anchor, div_4);
 					};
 
-					if_block(node_3, ($$render) => {
-						if (w === 'clock') $$render(consequent); else if (w === 'date') $$render(consequent_1, 1); else if (w === 'battery') $$render(consequent_2, 2);
+					var consequent_3 = ($$anchor) => {
+						var div_5 = root_3();
+						var text_2 = only_child(div_5);
+
+						template_effect(() => set_text(text_2, `Akku · ${get(batteryStr) ?? ''}`));
+						append($$anchor, div_5);
+					};
+
+					if_block(node_4, ($$render) => {
+						if (w === 'clock') $$render(consequent_1); else if (w === 'date') $$render(consequent_2, 1); else if (w === 'battery') $$render(consequent_3, 2);
 					});
 				}
 
 				append($$anchor, fragment_1);
 			});
 
-			var node_4 = sibling(node_2, 2);
+			var node_5 = sibling(node_3, 2);
 
-			each(node_4, 17, () => get(appWidgets), (aw) => aw.widgetId, ($$anchor, aw) => {
-				var div_5 = root_4();
+			each(node_5, 17, () => get(appWidgets), (aw) => aw.widgetId, ($$anchor, aw) => {
+				var div_6 = root_5();
 				let classes_2;
-				var node_5 = child(div_5);
+				var node_6 = child(div_6);
 
 				{
-					var consequent_3 = ($$anchor) => {
-						var span = root_3();
-						var node_6 = child(span);
+					var consequent_4 = ($$anchor) => {
+						var span = root_4();
+						var node_7 = child(span);
 
-						Icon(node_6, { name: 'trash', size: 16 });
+						Icon(node_7, { name: 'trash', size: 16 });
 						append($$anchor, span);
 					};
 
 					var d_1 = user_derived(() => get(brokenWidgets).includes(get(aw).widgetId));
 
-					if_block(node_5, ($$render) => {
-						if (get(d_1)) $$render(consequent_3);
+					if_block(node_6, ($$render) => {
+						if (get(d_1)) $$render(consequent_4);
 					});
 				}
 
 				template_effect(
 					($0, $1) => {
-						classes_2 = set_class(div_5, 1, 'aw-slot svelte-13s71iz', null, classes_2, { broken: $0 });
-						set_attribute(div_5, 'data-aw', get(aw).widgetId);
-						set_style(div_5, `height: ${$1 ?? ''}px;`);
+						classes_2 = set_class(div_6, 1, 'aw-slot svelte-13s71iz', null, classes_2, { broken: $0 });
+						set_attribute(div_6, 'data-aw', get(aw).widgetId);
+						set_style(div_6, `height: ${$1 ?? ''}px;`);
 					},
 					[
 						() => get(brokenWidgets).includes(get(aw).widgetId),
@@ -8613,7 +8647,7 @@ function Home($$anchor, $$props) {
 					]
 				);
 
-				append($$anchor, div_5);
+				append($$anchor, div_6);
 			});
 
 			template_effect(
@@ -8631,102 +8665,102 @@ function Home($$anchor, $$props) {
 			append($$anchor, header);
 		};
 
-		var consequent_5 = ($$anchor) => {
-			var div_6 = root_6();
+		var consequent_6 = ($$anchor) => {
+			var div_7 = root_7();
 
-			template_effect(($0) => set_style(div_6, `height: max(0px, calc(${$0 ?? ''}vh - env(safe-area-inset-top) - 40px));`), [() => (get(homeSplit) * 100).toFixed(1)]);
-			append($$anchor, div_6);
+			template_effect(($0) => set_style(div_7, `height: max(0px, calc(${$0 ?? ''}vh - env(safe-area-inset-top) - 40px));`), [() => (get(homeSplit) * 100).toFixed(1)]);
+			append($$anchor, div_7);
 		};
 
 		if_block(node_1, ($$render) => {
-			if (get(showWidgets)) $$render(consequent_4); else if (!get(appsRevealed)) $$render(consequent_5, 1);
+			if (get(showWidgets)) $$render(consequent_5); else if (!get(appsRevealed)) $$render(consequent_6, 1);
 		});
 	}
 
-	var node_7 = sibling(node_1, 2);
+	var node_8 = sibling(node_1, 2);
 
 	{
-		var consequent_12 = ($$anchor) => {
-			var fragment_2 = root_14();
-			var node_8 = first_child(fragment_2);
+		var consequent_13 = ($$anchor) => {
+			var fragment_2 = root_15();
+			var node_9 = first_child(fragment_2);
 
-			each(node_8, 19, () => get(sections), (s) => s.key, ($$anchor, s, i) => {
+			each(node_9, 19, () => get(sections), (s) => s.key, ($$anchor, s, i) => {
 				var fragment_3 = comment();
-				var node_9 = first_child(fragment_3);
+				var node_10 = first_child(fragment_3);
 
 				{
-					var consequent_10 = ($$anchor) => {
-						var section = root_12();
+					var consequent_11 = ($$anchor) => {
+						var section = root_13();
 						let classes_3;
-						var node_10 = child(section);
+						var node_11 = child(section);
 
 						{
-							var consequent_6 = ($$anchor) => {
-								var div_7 = root_7();
-								var text_3 = only_child(div_7, true);
+							var consequent_7 = ($$anchor) => {
+								var div_8 = root_8();
+								var text_3 = only_child(div_8, true);
 
 								template_effect(() => set_text(text_3, get(s).label));
-								append($$anchor, div_7);
+								append($$anchor, div_8);
 							};
 
-							if_block(node_10, ($$render) => {
-								if (get(s).key !== '★') $$render(consequent_6);
+							if_block(node_11, ($$render) => {
+								if (get(s).key !== '★') $$render(consequent_7);
 							});
 						}
 
-						var node_11 = sibling(node_10, 2);
+						var node_12 = sibling(node_11, 2);
 
-						each(node_11, 17, () => get(s).apps, (a) => get(s).key + ':' + a.packageName, ($$anchor, a) => {
-							var button = root_11();
-							var node_12 = child(button);
+						each(node_12, 17, () => get(s).apps, (a) => get(s).key + ':' + a.packageName, ($$anchor, a) => {
+							var button = root_12();
+							var node_13 = child(button);
 
 							{
-								var consequent_8 = ($$anchor) => {
+								var consequent_9 = ($$anchor) => {
 									var fragment_4 = comment();
-									var node_13 = first_child(fragment_4);
+									var node_14 = first_child(fragment_4);
 
 									{
-										var consequent_7 = ($$anchor) => {
-											var img = root_8();
+										var consequent_8 = ($$anchor) => {
+											var img = root_9();
 
 											template_effect(() => set_attribute(img, 'src', get(icons)[get(a).packageName]));
 											append($$anchor, img);
 										};
 
 										var alternate = ($$anchor) => {
-											var span_1 = root_9();
+											var span_1 = root_10();
 											var text_4 = only_child(span_1, true);
 
 											template_effect(($0) => set_text(text_4, $0), [() => get(a).label.charAt(0)]);
 											append($$anchor, span_1);
 										};
 
-										if_block(node_13, ($$render) => {
-											if (get(icons)[get(a).packageName]) $$render(consequent_7); else $$render(alternate, -1);
+										if_block(node_14, ($$render) => {
+											if (get(icons)[get(a).packageName]) $$render(consequent_8); else $$render(alternate, -1);
 										});
 									}
 
 									append($$anchor, fragment_4);
 								};
 
-								if_block(node_12, ($$render) => {
-									if (get(showIcons)) $$render(consequent_8);
+								if_block(node_13, ($$render) => {
+									if (get(showIcons)) $$render(consequent_9);
 								});
 							}
 
-							var node_14 = sibling(node_12, 2);
+							var node_15 = sibling(node_13, 2);
 
 							{
-								var consequent_9 = ($$anchor) => {
-									var span_2 = root_10();
+								var consequent_10 = ($$anchor) => {
+									var span_2 = root_11();
 									var text_5 = only_child(span_2, true);
 
 									template_effect(() => set_text(text_5, get(a).label));
 									append($$anchor, span_2);
 								};
 
-								if_block(node_14, ($$render) => {
-									if (get(showLabels)) $$render(consequent_9);
+								if_block(node_15, ($$render) => {
+									if (get(showLabels)) $$render(consequent_10);
 								});
 							}
 							action(button, ($$node, $$action_arg) => longpress?.($$node, $$action_arg), () => () => set(menuApp, get(a), true));
@@ -8746,70 +8780,70 @@ function Home($$anchor, $$props) {
 						append($$anchor, section);
 					};
 
-					if_block(node_9, ($$render) => {
-						if (get(appsRevealed) || get(s).key === '★') $$render(consequent_10);
+					if_block(node_10, ($$render) => {
+						if (get(appsRevealed) || get(s).key === '★') $$render(consequent_11);
 					});
 				}
 
 				append($$anchor, fragment_3);
 			});
 
-			var node_15 = sibling(node_8, 2);
+			var node_16 = sibling(node_9, 2);
 
 			{
-				var consequent_11 = ($$anchor) => {
-					var footer = root_13();
+				var consequent_12 = ($$anchor) => {
+					var footer = root_14();
 					var button_1 = child(footer);
-					var node_16 = child(button_1);
+					var node_17 = child(button_1);
 
-					Icon(node_16, { name: 'settings', size: 20 });
+					Icon(node_17, { name: 'settings', size: 20 });
 
 					var button_2 = sibling(button_1, 2);
-					var node_17 = child(button_2);
+					var node_18 = child(button_2);
 
-					Icon(node_17, { name: 'plugin', size: 20 });
+					Icon(node_18, { name: 'plugin', size: 20 });
 					delegated('click', button_1, () => set(settingsOpen, true));
 					delegated('click', button_2, openOrbitApp);
 					append($$anchor, footer);
 				};
 
-				if_block(node_15, ($$render) => {
-					if (get(appsRevealed)) $$render(consequent_11);
+				if_block(node_16, ($$render) => {
+					if (get(appsRevealed)) $$render(consequent_12);
 				});
 			}
 
 			append($$anchor, fragment_2);
 		};
 
-		var consequent_13 = ($$anchor) => {
-			var p_1 = root_15();
+		var consequent_14 = ($$anchor) => {
+			var p_1 = root_16();
 
 			append($$anchor, p_1);
 		};
 
 		var alternate_1 = ($$anchor) => {
-			var p_2 = root_16();
+			var p_2 = root_17();
 
 			append($$anchor, p_2);
 		};
 
-		if_block(node_7, ($$render) => {
-			if (get(sections).length > 0) $$render(consequent_12); else if (hasLauncher) $$render(consequent_13, 1); else $$render(alternate_1, -1);
+		if_block(node_8, ($$render) => {
+			if (get(sections).length > 0) $$render(consequent_13); else if (hasLauncher) $$render(consequent_14, 1); else $$render(alternate_1, -1);
 		});
 	}
 	bind_this(div_1, ($$value) => listEl = $$value, () => listEl);
 	action(div_1, ($$node) => homeLongpress?.($$node));
 
-	var node_18 = sibling(div_1, 2);
+	var node_19 = sibling(div_1, 2);
 
 	{
-		var consequent_15 = ($$anchor) => {
-			var div_8 = root_19();
+		var consequent_16 = ($$anchor) => {
+			var div_9 = root_20();
 			let classes_4;
-			var node_19 = child(div_8);
+			var node_20 = child(div_9);
 
-			each(node_19, 19, () => get(sections), (s) => s.key, ($$anchor, s, i) => {
-				var span_3 = root_17();
+			each(node_20, 19, () => get(sections), (s) => s.key, ($$anchor, s, i) => {
+				var span_3 = root_18();
 				let classes_5;
 				var text_6 = only_child(span_3, true);
 
@@ -8825,97 +8859,97 @@ function Home($$anchor, $$props) {
 				append($$anchor, span_3);
 			});
 
-			var node_20 = sibling(node_19, 2);
+			var node_21 = sibling(node_20, 2);
 
 			{
-				var consequent_14 = ($$anchor) => {
-					var div_9 = root_18();
-					var text_7 = only_child(div_9, true);
+				var consequent_15 = ($$anchor) => {
+					var div_10 = root_19();
+					var text_7 = only_child(div_10, true);
 
 					template_effect(
 						($0) => {
-							set_style(div_9, `top: ${get(bubbleTop) ?? ''}px; width: ${get(bubbleSize) ?? ''}px; height: ${get(bubbleSize) ?? ''}px; right: ${get(bubbleRight) ?? ''}px; font-size: ${$0 ?? ''}px;`);
+							set_style(div_10, `top: ${get(bubbleTop) ?? ''}px; width: ${get(bubbleSize) ?? ''}px; height: ${get(bubbleSize) ?? ''}px; right: ${get(bubbleRight) ?? ''}px; font-size: ${$0 ?? ''}px;`);
 							set_text(text_7, get(sections)[get(activeIndex)].key);
 						},
 						[() => Math.round(get(bubbleSize) * 0.46)]
 					);
 
-					append($$anchor, div_9);
+					append($$anchor, div_10);
 				};
 
-				if_block(node_20, ($$render) => {
-					if (get(scrubbing) && get(activeIndex) >= 0 && get(bubbleVisible)) $$render(consequent_14);
+				if_block(node_21, ($$render) => {
+					if (get(scrubbing) && get(activeIndex) >= 0 && get(bubbleVisible)) $$render(consequent_15);
 				});
 			}
-			bind_this(div_8, ($$value) => scrubEl = $$value, () => scrubEl);
+			bind_this(div_9, ($$value) => scrubEl = $$value, () => scrubEl);
 
 			template_effect(
 				($0) => {
-					classes_4 = set_class(div_8, 1, 'scrubber svelte-13s71iz', null, classes_4, { hidden: !get(railVisible) });
-					set_style(div_8, `top: ${get(railPos) * 100}%; height: ${$0 ?? ''}%; right: ${get(railRight) ?? ''}px;`);
+					classes_4 = set_class(div_9, 1, 'scrubber svelte-13s71iz', null, classes_4, { hidden: !get(railVisible) });
+					set_style(div_9, `top: ${get(railPos) * 100}%; height: ${$0 ?? ''}%; right: ${get(railRight) ?? ''}px;`);
 				},
 				[() => Math.round(get(railHeightFrac) * 100)]
 			);
 
-			delegated('pointerdown', div_8, onScrubDown);
-			delegated('pointermove', div_8, onScrubMove);
-			delegated('pointerup', div_8, onScrubUp);
-			event('pointercancel', div_8, onScrubUp);
-			append($$anchor, div_8);
+			delegated('pointerdown', div_9, onScrubDown);
+			delegated('pointermove', div_9, onScrubMove);
+			delegated('pointerup', div_9, onScrubUp);
+			event('pointercancel', div_9, onScrubUp);
+			append($$anchor, div_9);
 		};
 
-		if_block(node_18, ($$render) => {
-			if (hasLauncher && get(sections).length > 0) $$render(consequent_15);
+		if_block(node_19, ($$render) => {
+			if (hasLauncher && get(sections).length > 0) $$render(consequent_16);
 		});
 	}
 
-	var node_21 = sibling(div, 2);
+	var node_22 = sibling(div, 2);
 
 	{
-		var consequent_17 = ($$anchor) => {
-			var div_10 = root_21();
-			var div_11 = child(div_10);
+		var consequent_18 = ($$anchor) => {
+			var div_11 = root_22();
 			var div_12 = child(div_11);
-			var text_8 = only_child(div_12, true);
-			var button_3 = sibling(div_12, 2);
-			var node_22 = child(button_3);
+			var div_13 = child(div_12);
+			var text_8 = only_child(div_13, true);
+			var button_3 = sibling(div_13, 2);
+			var node_23 = child(button_3);
 
-			Icon(node_22, { name: 'star', size: 20 });
+			Icon(node_23, { name: 'star', size: 20 });
 
-			var text_9 = sibling(node_22);
+			var text_9 = sibling(node_23);
 
 			var button_4 = sibling(button_3, 2);
-			var node_23 = child(button_4);
+			var node_24 = child(button_4);
 
-			Icon(node_23, { name: 'close', size: 20 });
+			Icon(node_24, { name: 'close', size: 20 });
 
-			var node_24 = sibling(button_4, 2);
+			var node_25 = sibling(button_4, 2);
 
 			{
-				var consequent_16 = ($$anchor) => {
-					var fragment_5 = root_20();
+				var consequent_17 = ($$anchor) => {
+					var fragment_5 = root_21();
 					var button_5 = first_child(fragment_5);
-					var node_25 = child(button_5);
+					var node_26 = child(button_5);
 
-					Icon(node_25, { name: 'settings', size: 20 });
+					Icon(node_26, { name: 'settings', size: 20 });
 
 					var button_6 = sibling(button_5, 2);
-					var node_26 = child(button_6);
+					var node_27 = child(button_6);
 
-					Icon(node_26, { name: 'trash', size: 20 });
+					Icon(node_27, { name: 'trash', size: 20 });
 					delegated('click', button_5, () => get(menuApp) && appInfoApp(get(menuApp).packageName));
 					delegated('click', button_6, () => get(menuApp) && uninstallApp(get(menuApp).packageName));
 					append($$anchor, fragment_5);
 				};
 
-				if_block(node_24, ($$render) => {
-					if (get(menuApp).packageName !== manager().selfPackage) $$render(consequent_16);
+				if_block(node_25, ($$render) => {
+					if (get(menuApp).packageName !== manager().selfPackage) $$render(consequent_17);
 				});
 			}
 
 			template_effect(
 				($0) => {
-					set_attribute(div_11, 'aria-label', get(menuApp).label);
+					set_attribute(div_12, 'aria-label', get(menuApp).label);
 					set_text(text_8, get(menuApp).label);
 					set_text(text_9, ` ${$0 ?? ''}`);
 				},
@@ -8924,42 +8958,42 @@ function Home($$anchor, $$props) {
 				]
 			);
 
-			delegated('click', div_10, () => set(menuApp, null));
-			delegated('click', div_11, (e) => e.stopPropagation());
+			delegated('click', div_11, () => set(menuApp, null));
+			delegated('click', div_12, (e) => e.stopPropagation());
 			delegated('click', button_3, () => get(menuApp) && toggleFavorite(get(menuApp).packageName));
 			delegated('click', button_4, () => get(menuApp) && hideApp(get(menuApp).packageName));
-			append($$anchor, div_10);
+			append($$anchor, div_11);
 		};
 
-		if_block(node_21, ($$render) => {
-			if (get(menuApp)) $$render(consequent_17);
+		if_block(node_22, ($$render) => {
+			if (get(menuApp)) $$render(consequent_18);
 		});
 	}
 
-	var node_27 = sibling(node_21, 2);
+	var node_28 = sibling(node_22, 2);
 
 	{
-		var consequent_19 = ($$anchor) => {
-			var div_13 = root_23();
-			var div_14 = child(div_13);
-			var button_7 = child(div_14);
-			var node_28 = child(button_7);
+		var consequent_20 = ($$anchor) => {
+			var div_14 = root_24();
+			var div_15 = child(div_14);
+			var button_7 = child(div_15);
+			var node_29 = child(button_7);
 
-			Icon(node_28, { name: 'rows', size: 20 });
+			Icon(node_29, { name: 'rows', size: 20 });
 
 			var button_8 = sibling(button_7, 2);
-			var node_29 = child(button_8);
+			var node_30 = child(button_8);
 
-			Icon(node_29, { name: 'settings', size: 20 });
+			Icon(node_30, { name: 'settings', size: 20 });
 
-			var node_30 = sibling(button_8, 2);
+			var node_31 = sibling(button_8, 2);
 
 			{
-				var consequent_18 = ($$anchor) => {
-					var button_9 = root_22();
-					var node_31 = child(button_9);
+				var consequent_19 = ($$anchor) => {
+					var button_9 = root_23();
+					var node_32 = child(button_9);
 
-					Icon(node_31, { name: 'trash', size: 20 });
+					Icon(node_32, { name: 'trash', size: 20 });
 
 					delegated('click', button_9, () => {
 						const id = get(widgetMenuId);
@@ -8973,17 +9007,17 @@ function Home($$anchor, $$props) {
 					append($$anchor, button_9);
 				};
 
-				if_block(node_30, ($$render) => {
-					if (get(widgetMenuId) !== null) $$render(consequent_18);
+				if_block(node_31, ($$render) => {
+					if (get(widgetMenuId) !== null) $$render(consequent_19);
 				});
 			}
 
-			delegated('click', div_13, () => {
+			delegated('click', div_14, () => {
 				set(editMenuOpen, false);
 				set(widgetMenuId, null);
 			});
 
-			delegated('click', div_14, (e) => e.stopPropagation());
+			delegated('click', div_15, (e) => e.stopPropagation());
 
 			delegated('click', button_7, () => {
 				set(editMenuOpen, false);
@@ -8997,31 +9031,31 @@ function Home($$anchor, $$props) {
 				set(settingsOpen, true);
 			});
 
-			append($$anchor, div_13);
+			append($$anchor, div_14);
 		};
 
-		if_block(node_27, ($$render) => {
-			if (get(editMenuOpen)) $$render(consequent_19);
+		if_block(node_28, ($$render) => {
+			if (get(editMenuOpen)) $$render(consequent_20);
 		});
 	}
 
-	var node_32 = sibling(node_27, 2);
+	var node_33 = sibling(node_28, 2);
 
 	{
-		var consequent_21 = ($$anchor) => {
-			var div_15 = root_25();
-			var div_16 = child(div_15);
-			var button_10 = only_child(div_16);
-			var div_17 = sibling(div_16, 2);
-			var button_11 = only_child(div_17);
-			var node_33 = sibling(div_17, 2);
+		var consequent_22 = ($$anchor) => {
+			var div_16 = root_26();
+			var div_17 = child(div_16);
+			var button_10 = only_child(div_17);
+			var div_18 = sibling(div_17, 2);
+			var button_11 = only_child(div_18);
+			var node_34 = sibling(div_18, 2);
 
 			{
-				var consequent_20 = ($$anchor) => {
-					var button_12 = root_24();
-					var node_34 = child(button_12);
+				var consequent_21 = ($$anchor) => {
+					var button_12 = root_25();
+					var node_35 = child(button_12);
 
-					Icon(node_34, { name: 'plus', size: 20 });
+					Icon(node_35, { name: 'plus', size: 20 });
 
 					delegated('click', button_12, () => {
 						set(editing, false);
@@ -9031,129 +9065,129 @@ function Home($$anchor, $$props) {
 					append($$anchor, button_12);
 				};
 
-				if_block(node_33, ($$render) => {
-					if (appwidgets) $$render(consequent_20);
+				if_block(node_34, ($$render) => {
+					if (appwidgets) $$render(consequent_21);
 				});
 			}
 
-			var button_13 = sibling(node_33, 2);
+			var button_13 = sibling(node_34, 2);
 
 			template_effect(() => {
-				set_style(div_16, `top: ${get(homeSplit) * 100}%;`);
-				set_style(div_17, `top: calc(${get(railPos) * 100}% - ${get(railHeightFrac) * 50}%);`);
+				set_style(div_17, `top: ${get(homeSplit) * 100}%;`);
+				set_style(div_18, `top: calc(${get(railPos) * 100}% - ${get(railHeightFrac) * 50}%);`);
 			});
 
-			delegated('pointermove', div_15, onDragMove);
-			delegated('pointerup', div_15, onDragEnd);
-			event('pointercancel', div_15, onDragEnd);
+			delegated('pointermove', div_16, onDragMove);
+			delegated('pointerup', div_16, onDragEnd);
+			event('pointercancel', div_16, onDragEnd);
 			delegated('pointerdown', button_10, (e) => startDrag(e, 'split'));
 			delegated('pointerdown', button_11, (e) => startDrag(e, 'rail'));
 			delegated('click', button_13, () => set(editing, false));
-			append($$anchor, div_15);
+			append($$anchor, div_16);
 		};
 
-		if_block(node_32, ($$render) => {
-			if (get(editing)) $$render(consequent_21);
+		if_block(node_33, ($$render) => {
+			if (get(editing)) $$render(consequent_22);
 		});
 	}
 
-	var node_35 = sibling(node_32, 2);
+	var node_36 = sibling(node_33, 2);
 
 	{
-		var consequent_25 = ($$anchor) => {
-			var div_18 = root_34();
-			var div_19 = child(div_18);
-			var node_36 = child(div_19);
+		var consequent_26 = ($$anchor) => {
+			var div_19 = root_35();
+			var div_20 = child(div_19);
+			var node_37 = child(div_20);
 
-			Icon(node_36, { name: 'search', size: 18 });
+			Icon(node_37, { name: 'search', size: 18 });
 
-			var input = sibling(node_36, 2);
+			var input = sibling(node_37, 2);
 
 			var button_14 = sibling(input, 2);
-			var node_37 = child(button_14);
+			var node_38 = child(button_14);
 
-			Icon(node_37, { name: 'close', size: 20 });
+			Icon(node_38, { name: 'close', size: 20 });
 
-			var div_20 = sibling(div_19, 2);
+			var div_21 = sibling(div_20, 2);
 
-			each(div_20, 21, () => get(widgetApps), (sec) => sec.key, ($$anchor, sec) => {
-				var fragment_6 = root_33();
-				var div_21 = first_child(fragment_6);
-				var text_10 = only_child(div_21, true);
-				var node_38 = sibling(div_21, 2);
+			each(div_21, 21, () => get(widgetApps), (sec) => sec.key, ($$anchor, sec) => {
+				var fragment_6 = root_34();
+				var div_22 = first_child(fragment_6);
+				var text_10 = only_child(div_22, true);
+				var node_39 = sibling(div_22, 2);
 
-				each(node_38, 17, () => get(sec).apps, (a) => a.pkg, ($$anchor, a) => {
-					var fragment_7 = root_32();
+				each(node_39, 17, () => get(sec).apps, (a) => a.pkg, ($$anchor, a) => {
+					var fragment_7 = root_33();
 					var button_15 = first_child(fragment_7);
-					var node_39 = child(button_15);
+					var node_40 = child(button_15);
 
 					{
-						var consequent_22 = ($$anchor) => {
-							var img_1 = root_26();
+						var consequent_23 = ($$anchor) => {
+							var img_1 = root_27();
 
 							template_effect(() => set_attribute(img_1, 'src', get(widgetAppIcons)[get(a).pkg]));
 							append($$anchor, img_1);
 						};
 
 						var alternate_2 = ($$anchor) => {
-							var span_4 = root_27();
+							var span_4 = root_28();
 							var text_11 = only_child(span_4, true);
 
 							template_effect(($0) => set_text(text_11, $0), [() => get(a).appLabel.charAt(0)]);
 							append($$anchor, span_4);
 						};
 
-						if_block(node_39, ($$render) => {
-							if (get(widgetAppIcons)[get(a).pkg]) $$render(consequent_22); else $$render(alternate_2, -1);
+						if_block(node_40, ($$render) => {
+							if (get(widgetAppIcons)[get(a).pkg]) $$render(consequent_23); else $$render(alternate_2, -1);
 						});
 					}
 
-					var span_5 = sibling(node_39, 2);
+					var span_5 = sibling(node_40, 2);
 					var span_6 = child(span_5);
 					var text_12 = only_child(span_6, true);
 					var span_7 = sibling(span_6, 2);
 					var text_13 = only_child(span_7);
 
-					var node_40 = sibling(button_15, 2);
+					var node_41 = sibling(button_15, 2);
 
 					{
-						var consequent_24 = ($$anchor) => {
-							var div_22 = root_31();
+						var consequent_25 = ($$anchor) => {
+							var div_23 = root_32();
 
-							each(div_22, 21, () => get(a).widgets, (w) => w.cls, ($$anchor, w) => {
-								var button_16 = root_30();
-								var node_41 = child(button_16);
+							each(div_23, 21, () => get(a).widgets, (w) => w.cls, ($$anchor, w) => {
+								var button_16 = root_31();
+								var node_42 = child(button_16);
 
 								{
-									var consequent_23 = ($$anchor) => {
-										var img_2 = root_28();
+									var consequent_24 = ($$anchor) => {
+										var img_2 = root_29();
 
 										template_effect(() => set_attribute(img_2, 'src', get(widgetPreviews)[`${get(w).pkg}|${get(w).cls}`]));
 										append($$anchor, img_2);
 									};
 
 									var alternate_3 = ($$anchor) => {
-										var div_23 = root_29();
+										var div_24 = root_30();
 
-										append($$anchor, div_23);
+										append($$anchor, div_24);
 									};
 
-									if_block(node_41, ($$render) => {
-										if (get(widgetPreviews)[`${get(w).pkg}|${get(w).cls}`]) $$render(consequent_23); else $$render(alternate_3, -1);
+									if_block(node_42, ($$render) => {
+										if (get(widgetPreviews)[`${get(w).pkg}|${get(w).cls}`]) $$render(consequent_24); else $$render(alternate_3, -1);
 									});
 								}
 
-								var span_8 = sibling(node_41, 2);
+								var span_8 = sibling(node_42, 2);
 								var text_14 = only_child(span_8, true);
 								template_effect(() => set_text(text_14, get(w).label));
 								delegated('click', button_16, () => chooseProvider(get(w).pkg, get(w).cls));
 								append($$anchor, button_16);
 							});
-							append($$anchor, div_22);
+							append($$anchor, div_23);
 						};
 
-						if_block(node_40, ($$render) => {
-							if (get(expandedApp) === get(a).pkg) $$render(consequent_24);
+						if_block(node_41, ($$render) => {
+							if (get(expandedApp) === get(a).pkg) $$render(consequent_25);
 						});
 					}
 
@@ -9178,40 +9212,40 @@ function Home($$anchor, $$props) {
 			});
 			bind_value(input, () => get(widgetSearch), ($$value) => set(widgetSearch, $$value));
 			delegated('click', button_14, () => set(widgetPickerOpen, false));
-			append($$anchor, div_18);
+			append($$anchor, div_19);
 		};
 
-		if_block(node_35, ($$render) => {
-			if (get(widgetPickerOpen)) $$render(consequent_25);
+		if_block(node_36, ($$render) => {
+			if (get(widgetPickerOpen)) $$render(consequent_26);
 		});
 	}
 
-	var node_42 = sibling(node_35, 2);
+	var node_43 = sibling(node_36, 2);
 
 	{
-		var consequent_30 = ($$anchor) => {
-			var div_24 = root_40();
-			var div_25 = child(div_24);
-			var button_17 = child(div_25);
-			var node_43 = child(button_17);
+		var consequent_31 = ($$anchor) => {
+			var div_25 = root_41();
+			var div_26 = child(div_25);
+			var button_17 = child(div_26);
+			var node_44 = child(button_17);
 
-			Icon(node_43, { name: 'close', size: 24 });
+			Icon(node_44, { name: 'close', size: 24 });
 
-			var div_26 = sibling(div_25, 2);
-			var button_18 = child(div_26);
+			var div_27 = sibling(div_26, 2);
+			var button_18 = child(div_27);
 			var span_9 = sibling(child(button_18), 2);
 			let classes_6;
 
-			var node_44 = sibling(button_18, 2);
+			var node_45 = sibling(button_18, 2);
 
 			{
-				var consequent_27 = ($$anchor) => {
-					var fragment_8 = root_38();
-					var div_27 = first_child(fragment_8);
-					var div_28 = sibling(child(div_27), 2);
+				var consequent_28 = ($$anchor) => {
+					var fragment_8 = root_39();
+					var div_28 = first_child(fragment_8);
+					var div_29 = sibling(child(div_28), 2);
 
-					each(div_28, 21, () => AVAILABLE_WIDGETS, (w) => w.id, ($$anchor, w) => {
-						var button_19 = root_35();
+					each(div_29, 21, () => AVAILABLE_WIDGETS, (w) => w.id, ($$anchor, w) => {
+						var button_19 = root_36();
 						let classes_7;
 						var text_15 = only_child(button_19, true);
 
@@ -9227,42 +9261,42 @@ function Home($$anchor, $$props) {
 						append($$anchor, button_19);
 					});
 
-					var node_45 = sibling(div_27, 2);
+					var node_46 = sibling(div_28, 2);
 
 					{
-						var consequent_26 = ($$anchor) => {
-							var div_29 = root_37();
-							var node_46 = sibling(child(div_29), 2);
+						var consequent_27 = ($$anchor) => {
+							var div_30 = root_38();
+							var node_47 = sibling(child(div_30), 2);
 
-							each(node_46, 17, () => get(appWidgets), (aw) => aw.widgetId, ($$anchor, aw) => {
-								var div_30 = root_36();
-								var span_10 = child(div_30);
+							each(node_47, 17, () => get(appWidgets), (aw) => aw.widgetId, ($$anchor, aw) => {
+								var div_31 = root_37();
+								var span_10 = child(div_31);
 								var text_16 = only_child(span_10, true);
 								var button_20 = sibling(span_10, 2);
-								var node_47 = child(button_20);
+								var node_48 = child(button_20);
 
-								Icon(node_47, { name: 'trash', size: 18 });
+								Icon(node_48, { name: 'trash', size: 18 });
 								template_effect(() => set_text(text_16, get(aw).label));
 								delegated('click', button_20, () => removeAppWidget(get(aw).widgetId));
-								append($$anchor, div_30);
+								append($$anchor, div_31);
 							});
-							append($$anchor, div_29);
+							append($$anchor, div_30);
 						};
 
-						if_block(node_45, ($$render) => {
-							if (appwidgets) $$render(consequent_26);
+						if_block(node_46, ($$render) => {
+							if (appwidgets) $$render(consequent_27);
 						});
 					}
 
 					append($$anchor, fragment_8);
 				};
 
-				if_block(node_44, ($$render) => {
-					if (get(showWidgets)) $$render(consequent_27);
+				if_block(node_45, ($$render) => {
+					if (get(showWidgets)) $$render(consequent_28);
 				});
 			}
 
-			var button_21 = sibling(node_44, 2);
+			var button_21 = sibling(node_45, 2);
 			var span_11 = sibling(child(button_21), 2);
 			let classes_8;
 
@@ -9270,60 +9304,60 @@ function Home($$anchor, $$props) {
 			var span_12 = sibling(child(button_22), 2);
 			let classes_9;
 
-			var div_31 = sibling(button_22, 2);
-			var div_32 = child(div_31);
-			var span_13 = sibling(child(div_32), 2);
+			var div_32 = sibling(button_22, 2);
+			var div_33 = child(div_32);
+			var span_13 = sibling(child(div_33), 2);
 			var text_17 = only_child(span_13);
 
-			var input_1 = sibling(div_32, 2);
+			var input_1 = sibling(div_33, 2);
 
-			var div_33 = sibling(div_31, 2);
-			var div_34 = child(div_33);
-			var span_14 = sibling(child(div_34), 2);
+			var div_34 = sibling(div_32, 2);
+			var div_35 = child(div_34);
+			var span_14 = sibling(child(div_35), 2);
 			var text_18 = only_child(span_14);
 
-			var input_2 = sibling(div_34, 2);
+			var input_2 = sibling(div_35, 2);
 
-			var div_35 = sibling(div_33, 2);
-			var div_36 = child(div_35);
-			var span_15 = sibling(child(div_36), 2);
+			var div_36 = sibling(div_34, 2);
+			var div_37 = child(div_36);
+			var span_15 = sibling(child(div_37), 2);
 			var text_19 = only_child(span_15);
 
-			var input_3 = sibling(div_36, 2);
+			var input_3 = sibling(div_37, 2);
 
-			var div_37 = sibling(div_35, 2);
-			var div_38 = child(div_37);
-			var span_16 = sibling(child(div_38), 2);
+			var div_38 = sibling(div_36, 2);
+			var div_39 = child(div_38);
+			var span_16 = sibling(child(div_39), 2);
 			var text_20 = only_child(span_16);
 
-			var input_4 = sibling(div_38, 2);
+			var input_4 = sibling(div_39, 2);
 
-			var div_39 = sibling(div_37, 2);
-			var div_40 = child(div_39);
-			var span_17 = sibling(child(div_40), 2);
+			var div_40 = sibling(div_38, 2);
+			var div_41 = child(div_40);
+			var span_17 = sibling(child(div_41), 2);
 			var text_21 = only_child(span_17);
 
-			var input_5 = sibling(div_40, 2);
+			var input_5 = sibling(div_41, 2);
 
-			var button_23 = sibling(div_39, 2);
+			var button_23 = sibling(div_40, 2);
 			var span_18 = sibling(child(button_23), 2);
 			let classes_10;
 
-			var div_41 = sibling(button_23, 2);
-			var div_42 = child(div_41);
-			var span_19 = sibling(child(div_42), 2);
+			var div_42 = sibling(button_23, 2);
+			var div_43 = child(div_42);
+			var span_19 = sibling(child(div_43), 2);
 			var text_22 = only_child(span_19);
 
-			var input_6 = sibling(div_42, 2);
+			var input_6 = sibling(div_43, 2);
 
-			var div_43 = sibling(div_41, 2);
-			var div_44 = child(div_43);
-			var span_20 = sibling(child(div_44), 2);
+			var div_44 = sibling(div_42, 2);
+			var div_45 = child(div_44);
+			var span_20 = sibling(child(div_45), 2);
 			var text_23 = only_child(span_20);
 
-			var input_7 = sibling(div_44, 2);
+			var input_7 = sibling(div_45, 2);
 
-			var button_24 = sibling(div_43, 2);
+			var button_24 = sibling(div_44, 2);
 			var span_21 = sibling(child(button_24), 2);
 			let classes_11;
 
@@ -9331,32 +9365,32 @@ function Home($$anchor, $$props) {
 			var span_22 = sibling(child(button_25), 2);
 			let classes_12;
 
-			var div_45 = sibling(button_25, 2);
-			var div_46 = child(div_45);
-			var span_23 = sibling(child(div_46), 2);
+			var div_46 = sibling(button_25, 2);
+			var div_47 = child(div_46);
+			var span_23 = sibling(child(div_47), 2);
 			var text_24 = only_child(span_23);
 
-			var input_8 = sibling(div_46, 2);
+			var input_8 = sibling(div_47, 2);
 
-			var div_47 = sibling(div_45, 2);
-			var div_48 = child(div_47);
-			var span_24 = sibling(child(div_48), 2);
+			var div_48 = sibling(div_46, 2);
+			var div_49 = child(div_48);
+			var span_24 = sibling(child(div_49), 2);
 			var text_25 = only_child(span_24);
 
-			var input_9 = sibling(div_48, 2);
+			var input_9 = sibling(div_49, 2);
 
-			var div_49 = sibling(div_47, 2);
-			var div_50 = child(div_49);
-			var span_25 = sibling(child(div_50), 2);
+			var div_50 = sibling(div_48, 2);
+			var div_51 = child(div_50);
+			var span_25 = sibling(child(div_51), 2);
 			var text_26 = only_child(span_25);
 
-			var input_10 = sibling(div_50, 2);
+			var input_10 = sibling(div_51, 2);
 
-			var div_51 = sibling(div_49, 2);
-			var div_52 = sibling(child(div_51), 2);
+			var div_52 = sibling(div_50, 2);
+			var div_53 = sibling(child(div_52), 2);
 
-			each(div_52, 21, () => FONTS, (f) => f.label, ($$anchor, f) => {
-				var button_26 = root_35();
+			each(div_53, 21, () => FONTS, (f) => f.label, ($$anchor, f) => {
+				var button_26 = root_36();
 				let classes_13;
 				var text_27 = only_child(button_26, true);
 
@@ -9370,10 +9404,10 @@ function Home($$anchor, $$props) {
 				append($$anchor, button_26);
 			});
 
-			var div_53 = sibling(div_51, 2);
-			var node_48 = sibling(child(div_53), 2);
+			var div_54 = sibling(div_52, 2);
+			var node_49 = sibling(child(div_54), 2);
 
-			ColorMenu(node_48, {
+			ColorMenu(node_49, {
 				get roles() {
 					return colorRoles;
 				},
@@ -9385,56 +9419,56 @@ function Home($$anchor, $$props) {
 				autoLabel: 'Auto'
 			});
 
-			var span_26 = sibling(node_48, 2);
-			var node_49 = sibling(child(span_26));
+			var span_26 = sibling(node_49, 2);
+			var node_50 = sibling(child(span_26));
 
 			{
-				var consequent_28 = ($$anchor) => {
+				var consequent_29 = ($$anchor) => {
 					var text_28 = text('· SKWD = Wallpaper-Farben');
 
 					append($$anchor, text_28);
 				};
 
-				if_block(node_49, ($$render) => {
-					if (skwdAvailable) $$render(consequent_28);
+				if_block(node_50, ($$render) => {
+					if (skwdAvailable) $$render(consequent_29);
 				});
 			}
 
-			var div_54 = sibling(div_53, 2);
-			var div_55 = child(div_54);
-			var span_27 = sibling(child(div_55), 2);
+			var div_55 = sibling(div_54, 2);
+			var div_56 = child(div_55);
+			var span_27 = sibling(child(div_56), 2);
 			var text_29 = only_child(span_27);
 
-			var input_11 = sibling(div_55, 2);
+			var input_11 = sibling(div_56, 2);
 
-			var node_50 = sibling(div_54, 2);
+			var node_51 = sibling(div_55, 2);
 
 			{
-				var consequent_29 = ($$anchor) => {
-					var button_27 = root_39();
-					var node_51 = child(button_27);
+				var consequent_30 = ($$anchor) => {
+					var button_27 = root_40();
+					var node_52 = child(button_27);
 
-					Icon(node_51, { name: 'home', size: 20 });
+					Icon(node_52, { name: 'home', size: 20 });
 					delegated('click', button_27, makeDefault);
 					append($$anchor, button_27);
 				};
 
-				if_block(node_50, ($$render) => {
-					if (hasLauncher && !get(isDefault)) $$render(consequent_29);
+				if_block(node_51, ($$render) => {
+					if (hasLauncher && !get(isDefault)) $$render(consequent_30);
 				});
 			}
 
-			var button_28 = sibling(node_50, 2);
-			var node_52 = child(button_28);
+			var button_28 = sibling(node_51, 2);
+			var node_53 = child(button_28);
 
-			Icon(node_52, { name: 'check', size: 20 });
+			Icon(node_53, { name: 'check', size: 20 });
 
-			var text_30 = sibling(node_52);
+			var text_30 = sibling(node_53);
 
 			var button_29 = sibling(button_28, 2);
-			var node_53 = child(button_29);
+			var node_54 = child(button_29);
 
-			Icon(node_53, { name: 'plugin', size: 20 });
+			Icon(node_54, { name: 'plugin', size: 20 });
 
 			template_effect(
 				($0, $1, $2, $3, $4, $5) => {
@@ -9501,26 +9535,26 @@ function Home($$anchor, $$props) {
 			delegated('input', input_11, (e) => setLeftPad(+e.currentTarget.value));
 			delegated('click', button_28, copyAppearance);
 			delegated('click', button_29, openOrbitApp);
-			append($$anchor, div_24);
+			append($$anchor, div_25);
 		};
 
-		if_block(node_42, ($$render) => {
-			if (get(settingsOpen)) $$render(consequent_30);
+		if_block(node_43, ($$render) => {
+			if (get(settingsOpen)) $$render(consequent_31);
 		});
 	}
 
-	var node_54 = sibling(node_42, 2);
+	var node_55 = sibling(node_43, 2);
 
 	{
-		var consequent_31 = ($$anchor) => {
-			var div_56 = root_41();
-			var button_30 = sibling(child(div_56), 4);
-			var node_55 = child(button_30);
+		var consequent_32 = ($$anchor) => {
+			var div_57 = root_42();
+			var button_30 = sibling(child(div_57), 4);
+			var node_56 = child(button_30);
 
-			Icon(node_55, { name: 'close', size: 24 });
+			Icon(node_56, { name: 'close', size: 24 });
 
-			var div_57 = sibling(button_30, 2);
-			var button_31 = sibling(child(div_57), 8);
+			var div_58 = sibling(button_30, 2);
+			var button_31 = sibling(child(div_58), 8);
 			delegated('click', button_30, () => set(showDefaultPrompt, false));
 
 			delegated('click', button_31, () => {
@@ -9528,11 +9562,11 @@ function Home($$anchor, $$props) {
 				set(showDefaultPrompt, false);
 			});
 
-			append($$anchor, div_56);
+			append($$anchor, div_57);
 		};
 
-		if_block(node_54, ($$render) => {
-			if (get(showDefaultPrompt)) $$render(consequent_31);
+		if_block(node_55, ($$render) => {
+			if (get(showDefaultPrompt)) $$render(consequent_32);
 		});
 	}
 
