@@ -7365,11 +7365,12 @@ class LauncherManager {
     else delete c[key];
     this.app.config.set(NS, "colors", c);
   }
-  // ---- Home pages (horizontal pager) ---------------------------------------
+  // ---- Home pages (2D grid; flick between neighbours) -----------------------
   /**
-   * The ordered home pages. The first is always the permanent `home` page; its
-   * widgets migrate from the old single-page 'widgetOrder'/'widgets' keys so
-   * existing installs keep their layout. Extra pages are user-created.
+   * The home pages. Exactly one `home` page exists at grid (0,0); other pages
+   * sit at any (col,row) and you flick between neighbours. Legacy linear pages
+   * (pre-grid) are migrated onto row 0 (col = their order). The home page's
+   * widgets migrate from the old single-page keys so installs keep their layout.
    */
   pages() {
     const stored = this.app.config.get(NS, PAGES_KEY);
@@ -7378,13 +7379,19 @@ class LauncherManager {
         id: HOME_ID,
         name: "Start",
         type: "home",
-        widgets: ["clock", "date"]
+        widgets: ["clock", "date"],
+        col: 0,
+        row: 0
       };
       const rest = stored.filter((p) => p.id !== home.id);
-      return [home, ...rest];
+      let nextCol = 1;
+      const withCoords = rest.map(
+        (p) => typeof p.col === "number" && typeof p.row === "number" ? p : { ...p, col: nextCol++, row: 0 }
+      );
+      return [{ ...home, col: 0, row: 0 }, ...withCoords];
     }
     const legacy = this.app.config.get(NS, "widgetOrder") ?? this.app.config.get(NS, "widgets") ?? ["clock", "date"];
-    return [{ id: HOME_ID, name: "Start", type: "home", widgets: legacy }];
+    return [{ id: HOME_ID, name: "Start", type: "home", widgets: legacy, col: 0, row: 0 }];
   }
   setPages(list) {
     this.app.config.set(NS, PAGES_KEY, list);
@@ -7392,18 +7399,22 @@ class LauncherManager {
   updatePage(id, fn) {
     this.setPages(this.pages().map((p) => p.id === id ? fn(p) : p));
   }
-  /** Create a new page after the current ones; returns its id. */
-  addPage(name, type = "widgets", view) {
+  /** The page at a grid cell, if any. */
+  pageAt(col, row) {
+    return this.pages().find((p) => p.col === col && p.row === row);
+  }
+  /** Create a page at a specific grid cell; returns its id ('' if occupied). */
+  addPageAt(col, row, name = "Seite", type = "widgets", view) {
+    if (this.pageAt(col, row)) return "";
     const id = `p${Date.now().toString(36)}${Math.floor(Math.random() * 1e4).toString(36)}`;
-    const page = { id, name: name.trim() || "Seite", type, widgets: [], view };
+    const page = { id, name: name.trim() || "Seite", type, widgets: [], view, col, row };
     this.setPages([...this.pages(), page]);
     return id;
   }
   /** Remove a page (the permanent home page is protected). */
   removePage(id) {
     if (id === HOME_ID) return;
-    const next = this.pages().filter((p) => p.id !== id);
-    this.setPages(next.find((p) => p.type === "home") ? next : this.pages());
+    this.setPages(this.pages().filter((p) => p.id !== id));
   }
   renamePage(id, name) {
     this.updatePage(id, (p) => ({ ...p, name: name.trim() || p.name }));
@@ -7412,16 +7423,6 @@ class LauncherManager {
   setPageView(id, view) {
     if (id === HOME_ID) return;
     this.updatePage(id, (p) => ({ ...p, type: view ? "view" : "widgets", view }));
-  }
-  /** Move a (non-home) page left (-1) or right (+1); home stays pinned first. */
-  movePage(id, dir) {
-    if (id === HOME_ID) return;
-    const pages = [...this.pages()];
-    const i = pages.findIndex((p) => p.id === id);
-    const j = i + dir;
-    if (i < 1 || j < 1 || j >= pages.length) return;
-    [pages[i], pages[j]] = [pages[j], pages[i]];
-    this.setPages(pages);
   }
   // ---- Per-page widgets (tokens: 'clock'|'date'|'battery'|'aw:<id>') ---------
   /** Widget tokens of one page (defaults to the home page). */
@@ -7997,42 +7998,51 @@ var root_29 = from_html(`<div class="page svelte-13s71iz"><!></div>`);
 var root_30 = from_html(`<span> </span>`);
 var root_31 = from_html(`<div class="bubble svelte-13s71iz"> </div>`);
 var root_32 = from_html(`<div role="presentation"><!> <!></div>`);
-var root_33 = from_html(`<button></button>`);
-var root_34 = from_html(`<div class="page-dots svelte-13s71iz"></div>`);
-var root_35 = from_html(`<div class="sheet-backdrop svelte-13s71iz" role="presentation"><div class="sheet svelte-13s71iz" role="dialog" tabindex="-1" aria-label="Seite umbenennen"><div class="sheet-title svelte-13s71iz">Seite umbenennen</div> <input class="rename-input svelte-13s71iz" placeholder="Name der Seite"/> <button class="sheet-item svelte-13s71iz"><!> Fertig</button></div></div>`);
-var root_36 = from_html(`<button class="sheet-item svelte-13s71iz"><!> App-Info</button> <button class="sheet-item svelte-13s71iz"><!> App deinstallieren</button>`, 1);
-var root_37 = from_html(`<div class="sheet-backdrop svelte-13s71iz" role="presentation"><div class="sheet svelte-13s71iz" role="dialog" tabindex="-1"><div class="sheet-title svelte-13s71iz"> </div> <button class="sheet-item svelte-13s71iz"><!> </button> <button class="sheet-item svelte-13s71iz"><!> In App-Liste ausblenden</button> <!></div></div>`);
-var root_38 = from_html(`<button class="sheet-item svelte-13s71iz"><!> Widget entfernen</button>`);
-var root_39 = from_html(`<button class="sheet-item svelte-13s71iz"><!> Diese Seite umbenennen</button> <button class="sheet-item svelte-13s71iz"><!> Diese Seite = Ansicht/App zuweisen</button> <button class="sheet-item danger svelte-13s71iz"><!> Diese Seite entfernen</button>`, 1);
-var root_40 = from_html(`<div class="sheet-backdrop svelte-13s71iz" role="presentation"><div class="sheet svelte-13s71iz" role="dialog" tabindex="-1" aria-label="Home-Menü"><button class="sheet-item svelte-13s71iz"><!> Home-Bildschirm bearbeiten</button> <button class="sheet-item svelte-13s71iz"><!> Einstellungen</button> <!> <div class="sheet-sep svelte-13s71iz">Seiten & Gesten</div> <button class="sheet-item svelte-13s71iz"><!> Weitere Startseite hinzufügen</button> <button class="sheet-item svelte-13s71iz"><!> Gesten hinzufügen</button> <!></div></div>`);
-var root_41 = from_html(`<button> </button>`);
-var root_42 = from_html(`<div class="sheet-backdrop svelte-13s71iz" role="presentation"><div class="sheet svelte-13s71iz" role="dialog" tabindex="-1" aria-label="Seite zuweisen"><div class="sheet-title svelte-13s71iz"> </div> <div class="assign-list svelte-13s71iz"><button>Nur Widgets</button> <!></div></div></div>`);
-var root_43 = from_html(`<div class="g-row svelte-13s71iz"><svg class="g-prev svelte-13s71iz" viewBox="0 0 100 100" aria-hidden="true"><path fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" class="svelte-13s71iz"></path></svg> <span class="g-meta svelte-13s71iz"><span class="g-name svelte-13s71iz"> </span> <span class="g-act svelte-13s71iz"> </span></span> <button class="aw-remove svelte-13s71iz" aria-label="Entfernen"><!></button></div>`);
-var root_44 = from_html(`<div class="field svelte-13s71iz"><div class="row-name svelte-13s71iz">Deine Gesten</div> <!></div>`);
-var root_45 = from_svg(`<path fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" class="svelte-13s71iz"></path>`);
-var root_46 = from_html(`<div class="settings-full svelte-13s71iz" role="dialog" aria-label="Gesten"><div class="settings-head svelte-13s71iz"><button class="settings-close svelte-13s71iz" aria-label="Schließen"><!></button> <div class="settings-title svelte-13s71iz">Gesten</div></div> <div class="settings-body svelte-13s71iz"><!> <div class="field svelte-13s71iz"><div class="row-name svelte-13s71iz">Neue Geste zeichnen</div> <svg class="g-canvas svelte-13s71iz" viewBox="0 0 300 300" role="presentation"><rect x="0" y="0" width="300" height="300" fill="transparent" class="svelte-13s71iz"></rect><!></svg> <div class="g-canvas-row svelte-13s71iz"><span class="row-sub svelte-13s71iz"> </span> <button class="chip svelte-13s71iz">Neu zeichnen</button></div></div> <div class="field svelte-13s71iz"><div class="row-name svelte-13s71iz">Name</div> <input class="rename-input svelte-13s71iz" placeholder="z.B. Wallpaper"/></div> <div class="field svelte-13s71iz"><div class="row-name svelte-13s71iz">Aktion — was die Geste öffnet</div> <div class="chips svelte-13s71iz"><!> <!> <!> <button>Orbit-App</button></div> <span class="row-sub svelte-13s71iz">Apps stammen aus deinen Favoriten — mehr Apps? Erst favorisieren.</span></div> <button><!> Geste speichern</button> <span class="row-sub svelte-13s71iz" style="padding: 0 16px 12px">Gezeichnete Gesten erkennt Orbit auf freier Fläche der Startseite (nicht auf Apps, nicht in der App-Liste).</span></div></div>`);
-var root_47 = from_html(`<button class="edit-addwidget svelte-13s71iz"><!> Widget hinzufügen</button>`);
-var root_48 = from_html(`<div class="edit-overlay svelte-13s71iz" role="presentation"><div class="edit-split svelte-13s71iz"><button class="edit-handle svelte-13s71iz" aria-label="Trennlinie Widgets/Favoriten verschieben"><span class="grip svelte-13s71iz"></span> <span class="edit-caption svelte-13s71iz">Widgets ↑ · Favoriten ↓</span></button></div> <div class="edit-railgrip svelte-13s71iz"><button class="edit-handle side svelte-13s71iz" aria-label="Swipe-Leiste verschieben"><span class="grip svelte-13s71iz"></span></button></div> <!> <button class="edit-done svelte-13s71iz">Fertig</button></div>`);
-var root_49 = from_html(`<img class="wpick-icon svelte-13s71iz" alt=""/>`);
-var root_50 = from_html(`<span class="wpick-icon fallback svelte-13s71iz"> </span>`);
-var root_51 = from_html(`<img class="wpick-preview svelte-13s71iz" alt=""/>`);
-var root_52 = from_html(`<div class="wpick-preview fallback svelte-13s71iz"></div>`);
-var root_53 = from_html(`<button class="wpick-widget svelte-13s71iz"><!> <span class="wpick-wlabel svelte-13s71iz"> </span></button>`);
-var root_54 = from_html(`<div class="wpick-widgets svelte-13s71iz"></div>`);
-var root_55 = from_html(`<button class="wpick-app svelte-13s71iz"><!> <span class="wpick-appmeta svelte-13s71iz"><span class="wpick-appname svelte-13s71iz"> </span> <span class="wpick-count svelte-13s71iz"> </span></span></button> <!>`, 1);
-var root_56 = from_html(`<div class="wpick-letter svelte-13s71iz"> </div> <!>`, 1);
-var root_57 = from_html(`<div class="wpick svelte-13s71iz" role="dialog" aria-label="Widget auswählen"><div class="wpick-search svelte-13s71iz"><!> <input placeholder="Widget auswählen" class="svelte-13s71iz"/> <button class="wpick-close svelte-13s71iz" aria-label="Schließen"><!></button></div> <div class="wpick-list svelte-13s71iz"></div></div>`);
-var root_58 = from_html(`<div class="aw-row svelte-13s71iz"><span class="aw-label svelte-13s71iz"> </span> <button class="aw-remove svelte-13s71iz" aria-label="Entfernen"><!></button></div>`);
-var root_59 = from_html(`<div class="field svelte-13s71iz"><div class="row-name svelte-13s71iz">Android-Widgets</div> <!> <span class="row-sub svelte-13s71iz">Hinzufügen über <strong class="svelte-13s71iz">lange auf die Home drücken → Bearbeiten → Widget hinzufügen</strong>.</span></div>`);
-var root_60 = from_html(`<div class="field svelte-13s71iz"><div class="row-name svelte-13s71iz">Widgets im Startbereich</div> <div class="chips svelte-13s71iz"></div></div> <!>`, 1);
-var root_61 = from_html(`<button class="sheet-item svelte-13s71iz"><!> Orbit als Startbildschirm festlegen</button>`);
-var root_62 = from_html(`<div class="settings-full svelte-13s71iz" role="dialog" aria-label="Einstellungen"><div class="settings-head svelte-13s71iz"><button class="settings-close svelte-13s71iz" aria-label="Schließen"><!></button> <div class="settings-title svelte-13s71iz">Einstellungen</div></div> <div class="settings-body svelte-13s71iz"><button class="row svelte-13s71iz"><span class="row-text svelte-13s71iz"><span class="row-name svelte-13s71iz">Widgets anzeigen</span> <span class="row-sub svelte-13s71iz">Blendet den ganzen Widget-Bereich oben aus</span></span> <span><span class="knob svelte-13s71iz"></span></span></button> <!> <button class="row svelte-13s71iz"><span class="row-text svelte-13s71iz"><span class="row-name svelte-13s71iz">Haptik beim Scrubben</span> <span class="row-sub svelte-13s71iz">Kurzes Vibrieren bei jedem neuen Buchstaben</span></span> <span><span class="knob svelte-13s71iz"></span></span></button> <button class="row svelte-13s71iz"><span class="row-text svelte-13s71iz"><span class="row-name svelte-13s71iz">App-Leiste immer sichtbar</span> <span class="row-sub svelte-13s71iz">Aus: nur einblenden, wenn du an den rechten Rand tippst</span></span> <span><span class="knob svelte-13s71iz"></span></span></button> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Position der Liste</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0" max="0.6" step="0.01" class="svelte-13s71iz"/> <span class="row-sub svelte-13s71iz">Wie weit oben die gewählte Buchstaben-Gruppe landet</span></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Größe der Leiste</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0.4" max="1" step="0.02" class="svelte-13s71iz"/> <span class="row-sub svelte-13s71iz">Wie viel der rechten Seite die Buchstaben-Leiste einnimmt</span></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Abstand der Leiste vom rechten Rand</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0" max="60" step="2" class="svelte-13s71iz"/></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Bogen-Stärke (Welle)</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0" max="4" step="0.1" class="svelte-13s71iz"/> <span class="row-sub svelte-13s71iz">Wie weit sich die Buchstaben um den Finger nach links wölben</span></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Spreizung (hoch/runter)</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0" max="3" step="0.1" class="svelte-13s71iz"/> <span class="row-sub svelte-13s71iz">Wie weit die Buchstaben ober-/unterhalb des Fingers auseinandergehen</span></div> <button class="row svelte-13s71iz"><span class="row-text svelte-13s71iz"><span class="row-name svelte-13s71iz">Buchstaben-Kreis anzeigen</span> <span class="row-sub svelte-13s71iz">Der runde Kreis links der Leiste beim Scrubben</span></span> <span><span class="knob svelte-13s71iz"></span></span></button> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Größe des Kreises</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="36" max="110" step="2" class="svelte-13s71iz"/></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Abstand des Kreises vom rechten Rand</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="40" max="320" step="4" class="svelte-13s71iz"/></div> <button class="row svelte-13s71iz"><span class="row-text svelte-13s71iz"><span class="row-name svelte-13s71iz">App-Symbole anzeigen</span></span> <span><span class="knob svelte-13s71iz"></span></span></button> <button class="row svelte-13s71iz"><span class="row-text svelte-13s71iz"><span class="row-name svelte-13s71iz">App-Namen anzeigen</span></span> <span><span class="knob svelte-13s71iz"></span></span></button> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Symbolgröße</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="24" max="72" step="2" class="svelte-13s71iz"/></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Schriftgröße (App-Namen)</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0.6" max="2.2" step="0.05" class="svelte-13s71iz"/></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Schriftgröße (Leiste)</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0.5" max="2.5" step="0.05" class="svelte-13s71iz"/></div> <div class="field svelte-13s71iz"><div class="row-name svelte-13s71iz">Schriftart</div> <div class="chips svelte-13s71iz"></div></div> <div class="field svelte-13s71iz"><div class="row-name svelte-13s71iz">Farben</div> <!> <span class="row-sub svelte-13s71iz">Auto = global übernehmen · Fest = eigene Farbe<!></span></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Abstand vom linken Rand</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0" max="80" step="2" class="svelte-13s71iz"/></div> <!> <button class="sheet-item svelte-13s71iz"><!> </button> <button class="sheet-item svelte-13s71iz"><!> Orbit-App öffnen (Menü, Plugins, Themes)</button></div></div>`);
-var root_63 = from_html(`<div class="setup svelte-13s71iz" role="dialog" aria-label="Als Standard-Launcher festlegen"><div class="aurora a1 svelte-13s71iz"></div> <div class="aurora a2 svelte-13s71iz"></div> <button class="setup-x svelte-13s71iz" aria-label="Schließen"><!></button> <div class="setup-stage svelte-13s71iz"><svg class="setup-illu svelte-13s71iz" viewBox="0 0 260 210" aria-hidden="true"><defs class="svelte-13s71iz"><linearGradient id="orbGrad" x1="0" y1="0" x2="1" y2="1" class="svelte-13s71iz"><stop offset="0" stop-color="var(--accent)" class="svelte-13s71iz"></stop><stop offset="1" stop-color="color-mix(in srgb, var(--accent) 55%, #b06cf0)" class="svelte-13s71iz"></stop></linearGradient></defs><ellipse class="ring svelte-13s71iz" cx="130" cy="105" rx="86" ry="40" fill="none" stroke="color-mix(in srgb, var(--accent) 60%, transparent)" stroke-width="3"></ellipse><circle class="planet svelte-13s71iz" cx="130" cy="105" r="34" fill="url(#orbGrad)"></circle><path d="M118 108l12-11 12 11 M121 105v12h18v-12" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="svelte-13s71iz"></path><circle class="moon svelte-13s71iz" cx="216" cy="105" r="6" fill="var(--accent)"></circle></svg> <div class="setup-kicker svelte-13s71iz">Orbit Launcher</div> <h1 class="setup-h1 svelte-13s71iz">Orbit als Startbildschirm</h1> <p class="setup-p svelte-13s71iz">Lege Orbit als deinen Standard-Launcher fest, damit die Home-Taste direkt hierher führt.</p> <button class="setup-go svelte-13s71iz">Als Standard-Launcher festlegen</button></div></div>`);
-var root_64 = from_html(`<div class="launcher svelte-13s71iz"><div role="presentation"></div> <!> <!></div> <!> <!> <!> <!> <!> <!> <!> <!> <!>`, 1);
+var root_33 = from_html(`<div class="edge-arrow left svelte-13s71iz">‹</div>`);
+var root_34 = from_html(`<div class="edge-arrow right svelte-13s71iz">›</div>`);
+var root_35 = from_html(`<div class="edge-arrow up svelte-13s71iz">‹</div>`);
+var root_36 = from_html(`<div class="edge-arrow down svelte-13s71iz">›</div>`);
+var root_37 = from_html(`<!> <!> <!> <!> <button class="overview-btn svelte-13s71iz" aria-label="Seitenübersicht"><!></button>`, 1);
+var root_38 = from_html(`<div class="sheet-backdrop svelte-13s71iz" role="presentation"><div class="sheet svelte-13s71iz" role="dialog" tabindex="-1" aria-label="Seite umbenennen"><div class="sheet-title svelte-13s71iz">Seite umbenennen</div> <input class="rename-input svelte-13s71iz" placeholder="Name der Seite"/> <button class="sheet-item svelte-13s71iz"><!> Fertig</button></div></div>`);
+var root_39 = from_html(`<button class="sheet-item svelte-13s71iz"><!> App-Info</button> <button class="sheet-item svelte-13s71iz"><!> App deinstallieren</button>`, 1);
+var root_40 = from_html(`<div class="sheet-backdrop svelte-13s71iz" role="presentation"><div class="sheet svelte-13s71iz" role="dialog" tabindex="-1"><div class="sheet-title svelte-13s71iz"> </div> <button class="sheet-item svelte-13s71iz"><!> </button> <button class="sheet-item svelte-13s71iz"><!> In App-Liste ausblenden</button> <!></div></div>`);
+var root_41 = from_html(`<button class="sheet-item svelte-13s71iz"><!> Widget entfernen</button>`);
+var root_42 = from_html(`<button class="sheet-item svelte-13s71iz"><!> Diese Seite umbenennen</button> <button class="sheet-item svelte-13s71iz"><!> Diese Seite = Ansicht/App zuweisen</button> <button class="sheet-item danger svelte-13s71iz"><!> Diese Seite entfernen</button>`, 1);
+var root_43 = from_html(`<div class="sheet-backdrop svelte-13s71iz" role="presentation"><div class="sheet svelte-13s71iz" role="dialog" tabindex="-1" aria-label="Home-Menü"><button class="sheet-item svelte-13s71iz"><!> Home-Bildschirm bearbeiten</button> <button class="sheet-item svelte-13s71iz"><!> Einstellungen</button> <!> <div class="sheet-sep svelte-13s71iz">Seiten & Gesten</div> <button class="sheet-item svelte-13s71iz"><!> Seitenübersicht (alle Seiten)</button> <button class="sheet-item svelte-13s71iz"><!> Weitere Startseite hinzufügen</button> <button class="sheet-item svelte-13s71iz"><!> Gesten hinzufügen</button> <!></div></div>`);
+var root_44 = from_html(`<button> </button>`);
+var root_45 = from_html(`<div class="sheet-backdrop svelte-13s71iz" role="presentation"><div class="sheet svelte-13s71iz" role="dialog" tabindex="-1" aria-label="Seite zuweisen"><div class="sheet-title svelte-13s71iz"> </div> <div class="assign-list svelte-13s71iz"><button>Nur Widgets</button> <!></div></div></div>`);
+var root_46 = from_html(`<button class="ov-del svelte-13s71iz" aria-label="Seite löschen"><!></button>`);
+var root_47 = from_html(`<div><button class="ov-open svelte-13s71iz"><span class="ov-name svelte-13s71iz"> </span> <span class="ov-type svelte-13s71iz"> </span></button> <!></div>`);
+var root_48 = from_html(`<button class="ov-cell ov-add svelte-13s71iz" aria-label="Seite hier hinzufügen"><!></button>`);
+var root_49 = from_html(`<div class="ov-cell ov-empty svelte-13s71iz"></div>`);
+var root_50 = from_html(`<div class="ov-row svelte-13s71iz"></div>`);
+var root_51 = from_html(`<div class="overview svelte-13s71iz" role="dialog" aria-label="Seitenübersicht"><div class="settings-head svelte-13s71iz"><button class="settings-close svelte-13s71iz" aria-label="Schließen"><!></button> <div class="settings-title svelte-13s71iz">Seiten</div></div> <div class="overview-scroll svelte-13s71iz"><div class="ov-grid svelte-13s71iz"></div> <p class="ov-hint svelte-13s71iz">Tippen öffnet die Seite · <strong class="svelte-13s71iz">+</strong> legt eine Seite in die Richtung an · Mülleimer löscht sie. Wischen auf der Startseite springt zwischen Nachbarn.</p></div></div>`);
+var root_52 = from_html(`<div class="g-row svelte-13s71iz"><svg class="g-prev svelte-13s71iz" viewBox="0 0 100 100" aria-hidden="true"><path fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" class="svelte-13s71iz"></path></svg> <span class="g-meta svelte-13s71iz"><span class="g-name svelte-13s71iz"> </span> <span class="g-act svelte-13s71iz"> </span></span> <button class="aw-remove svelte-13s71iz" aria-label="Entfernen"><!></button></div>`);
+var root_53 = from_html(`<div class="field svelte-13s71iz"><div class="row-name svelte-13s71iz">Deine Gesten</div> <!></div>`);
+var root_54 = from_svg(`<path fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" class="svelte-13s71iz"></path>`);
+var root_55 = from_html(`<div class="settings-full svelte-13s71iz" role="dialog" aria-label="Gesten"><div class="settings-head svelte-13s71iz"><button class="settings-close svelte-13s71iz" aria-label="Schließen"><!></button> <div class="settings-title svelte-13s71iz">Gesten</div></div> <div class="settings-body svelte-13s71iz"><!> <div class="field svelte-13s71iz"><div class="row-name svelte-13s71iz">Neue Geste zeichnen</div> <svg class="g-canvas svelte-13s71iz" viewBox="0 0 300 300" role="presentation"><rect x="0" y="0" width="300" height="300" fill="transparent" class="svelte-13s71iz"></rect><!></svg> <div class="g-canvas-row svelte-13s71iz"><span class="row-sub svelte-13s71iz"> </span> <button class="chip svelte-13s71iz">Neu zeichnen</button></div></div> <div class="field svelte-13s71iz"><div class="row-name svelte-13s71iz">Name</div> <input class="rename-input svelte-13s71iz" placeholder="z.B. Wallpaper"/></div> <div class="field svelte-13s71iz"><div class="row-name svelte-13s71iz">Aktion — was die Geste öffnet</div> <div class="chips svelte-13s71iz"><!> <!> <!> <button>Orbit-App</button></div> <span class="row-sub svelte-13s71iz">Apps stammen aus deinen Favoriten — mehr Apps? Erst favorisieren.</span></div> <button><!> Geste speichern</button> <span class="row-sub svelte-13s71iz" style="padding: 0 16px 12px">Gezeichnete Gesten erkennt Orbit auf freier Fläche der Startseite (nicht auf Apps, nicht in der App-Liste).</span></div></div>`);
+var root_56 = from_html(`<button class="edit-addwidget svelte-13s71iz"><!> Widget hinzufügen</button>`);
+var root_57 = from_html(`<div class="edit-overlay svelte-13s71iz" role="presentation"><div class="edit-split svelte-13s71iz"><button class="edit-handle svelte-13s71iz" aria-label="Trennlinie Widgets/Favoriten verschieben"><span class="grip svelte-13s71iz"></span> <span class="edit-caption svelte-13s71iz">Widgets ↑ · Favoriten ↓</span></button></div> <div class="edit-railgrip svelte-13s71iz"><button class="edit-handle side svelte-13s71iz" aria-label="Swipe-Leiste verschieben"><span class="grip svelte-13s71iz"></span></button></div> <!> <button class="edit-done svelte-13s71iz">Fertig</button></div>`);
+var root_58 = from_html(`<img class="wpick-icon svelte-13s71iz" alt=""/>`);
+var root_59 = from_html(`<span class="wpick-icon fallback svelte-13s71iz"> </span>`);
+var root_60 = from_html(`<img class="wpick-preview svelte-13s71iz" alt=""/>`);
+var root_61 = from_html(`<div class="wpick-preview fallback svelte-13s71iz"></div>`);
+var root_62 = from_html(`<button class="wpick-widget svelte-13s71iz"><!> <span class="wpick-wlabel svelte-13s71iz"> </span></button>`);
+var root_63 = from_html(`<div class="wpick-widgets svelte-13s71iz"></div>`);
+var root_64 = from_html(`<button class="wpick-app svelte-13s71iz"><!> <span class="wpick-appmeta svelte-13s71iz"><span class="wpick-appname svelte-13s71iz"> </span> <span class="wpick-count svelte-13s71iz"> </span></span></button> <!>`, 1);
+var root_65 = from_html(`<div class="wpick-letter svelte-13s71iz"> </div> <!>`, 1);
+var root_66 = from_html(`<div class="wpick svelte-13s71iz" role="dialog" aria-label="Widget auswählen"><div class="wpick-search svelte-13s71iz"><!> <input placeholder="Widget auswählen" class="svelte-13s71iz"/> <button class="wpick-close svelte-13s71iz" aria-label="Schließen"><!></button></div> <div class="wpick-list svelte-13s71iz"></div></div>`);
+var root_67 = from_html(`<div class="aw-row svelte-13s71iz"><span class="aw-label svelte-13s71iz"> </span> <button class="aw-remove svelte-13s71iz" aria-label="Entfernen"><!></button></div>`);
+var root_68 = from_html(`<div class="field svelte-13s71iz"><div class="row-name svelte-13s71iz">Android-Widgets</div> <!> <span class="row-sub svelte-13s71iz">Hinzufügen über <strong class="svelte-13s71iz">lange auf die Home drücken → Bearbeiten → Widget hinzufügen</strong>.</span></div>`);
+var root_69 = from_html(`<div class="field svelte-13s71iz"><div class="row-name svelte-13s71iz">Widgets im Startbereich</div> <div class="chips svelte-13s71iz"></div></div> <!>`, 1);
+var root_70 = from_html(`<button class="sheet-item svelte-13s71iz"><!> Orbit als Startbildschirm festlegen</button>`);
+var root_71 = from_html(`<div class="settings-full svelte-13s71iz" role="dialog" aria-label="Einstellungen"><div class="settings-head svelte-13s71iz"><button class="settings-close svelte-13s71iz" aria-label="Schließen"><!></button> <div class="settings-title svelte-13s71iz">Einstellungen</div></div> <div class="settings-body svelte-13s71iz"><button class="row svelte-13s71iz"><span class="row-text svelte-13s71iz"><span class="row-name svelte-13s71iz">Widgets anzeigen</span> <span class="row-sub svelte-13s71iz">Blendet den ganzen Widget-Bereich oben aus</span></span> <span><span class="knob svelte-13s71iz"></span></span></button> <!> <button class="row svelte-13s71iz"><span class="row-text svelte-13s71iz"><span class="row-name svelte-13s71iz">Haptik beim Scrubben</span> <span class="row-sub svelte-13s71iz">Kurzes Vibrieren bei jedem neuen Buchstaben</span></span> <span><span class="knob svelte-13s71iz"></span></span></button> <button class="row svelte-13s71iz"><span class="row-text svelte-13s71iz"><span class="row-name svelte-13s71iz">App-Leiste immer sichtbar</span> <span class="row-sub svelte-13s71iz">Aus: nur einblenden, wenn du an den rechten Rand tippst</span></span> <span><span class="knob svelte-13s71iz"></span></span></button> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Position der Liste</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0" max="0.6" step="0.01" class="svelte-13s71iz"/> <span class="row-sub svelte-13s71iz">Wie weit oben die gewählte Buchstaben-Gruppe landet</span></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Größe der Leiste</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0.4" max="1" step="0.02" class="svelte-13s71iz"/> <span class="row-sub svelte-13s71iz">Wie viel der rechten Seite die Buchstaben-Leiste einnimmt</span></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Abstand der Leiste vom rechten Rand</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0" max="60" step="2" class="svelte-13s71iz"/></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Bogen-Stärke (Welle)</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0" max="4" step="0.1" class="svelte-13s71iz"/> <span class="row-sub svelte-13s71iz">Wie weit sich die Buchstaben um den Finger nach links wölben</span></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Spreizung (hoch/runter)</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0" max="3" step="0.1" class="svelte-13s71iz"/> <span class="row-sub svelte-13s71iz">Wie weit die Buchstaben ober-/unterhalb des Fingers auseinandergehen</span></div> <button class="row svelte-13s71iz"><span class="row-text svelte-13s71iz"><span class="row-name svelte-13s71iz">Buchstaben-Kreis anzeigen</span> <span class="row-sub svelte-13s71iz">Der runde Kreis links der Leiste beim Scrubben</span></span> <span><span class="knob svelte-13s71iz"></span></span></button> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Größe des Kreises</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="36" max="110" step="2" class="svelte-13s71iz"/></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Abstand des Kreises vom rechten Rand</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="40" max="320" step="4" class="svelte-13s71iz"/></div> <button class="row svelte-13s71iz"><span class="row-text svelte-13s71iz"><span class="row-name svelte-13s71iz">App-Symbole anzeigen</span></span> <span><span class="knob svelte-13s71iz"></span></span></button> <button class="row svelte-13s71iz"><span class="row-text svelte-13s71iz"><span class="row-name svelte-13s71iz">App-Namen anzeigen</span></span> <span><span class="knob svelte-13s71iz"></span></span></button> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Symbolgröße</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="24" max="72" step="2" class="svelte-13s71iz"/></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Schriftgröße (App-Namen)</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0.6" max="2.2" step="0.05" class="svelte-13s71iz"/></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Schriftgröße (Leiste)</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0.5" max="2.5" step="0.05" class="svelte-13s71iz"/></div> <div class="field svelte-13s71iz"><div class="row-name svelte-13s71iz">Schriftart</div> <div class="chips svelte-13s71iz"></div></div> <div class="field svelte-13s71iz"><div class="row-name svelte-13s71iz">Farben</div> <!> <span class="row-sub svelte-13s71iz">Auto = global übernehmen · Fest = eigene Farbe<!></span></div> <div class="slider svelte-13s71iz"><div class="slider-head svelte-13s71iz"><span class="row-name svelte-13s71iz">Abstand vom linken Rand</span> <span class="slider-val svelte-13s71iz"> </span></div> <input type="range" min="0" max="80" step="2" class="svelte-13s71iz"/></div> <!> <button class="sheet-item svelte-13s71iz"><!> </button> <button class="sheet-item svelte-13s71iz"><!> Orbit-App öffnen (Menü, Plugins, Themes)</button></div></div>`);
+var root_72 = from_html(`<div class="setup svelte-13s71iz" role="dialog" aria-label="Als Standard-Launcher festlegen"><div class="aurora a1 svelte-13s71iz"></div> <div class="aurora a2 svelte-13s71iz"></div> <button class="setup-x svelte-13s71iz" aria-label="Schließen"><!></button> <div class="setup-stage svelte-13s71iz"><svg class="setup-illu svelte-13s71iz" viewBox="0 0 260 210" aria-hidden="true"><defs class="svelte-13s71iz"><linearGradient id="orbGrad" x1="0" y1="0" x2="1" y2="1" class="svelte-13s71iz"><stop offset="0" stop-color="var(--accent)" class="svelte-13s71iz"></stop><stop offset="1" stop-color="color-mix(in srgb, var(--accent) 55%, #b06cf0)" class="svelte-13s71iz"></stop></linearGradient></defs><ellipse class="ring svelte-13s71iz" cx="130" cy="105" rx="86" ry="40" fill="none" stroke="color-mix(in srgb, var(--accent) 60%, transparent)" stroke-width="3"></ellipse><circle class="planet svelte-13s71iz" cx="130" cy="105" r="34" fill="url(#orbGrad)"></circle><path d="M118 108l12-11 12 11 M121 105v12h18v-12" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="svelte-13s71iz"></path><circle class="moon svelte-13s71iz" cx="216" cy="105" r="6" fill="var(--accent)"></circle></svg> <div class="setup-kicker svelte-13s71iz">Orbit Launcher</div> <h1 class="setup-h1 svelte-13s71iz">Orbit als Startbildschirm</h1> <p class="setup-p svelte-13s71iz">Lege Orbit als deinen Standard-Launcher fest, damit die Home-Taste direkt hierher führt.</p> <button class="setup-go svelte-13s71iz">Als Standard-Launcher festlegen</button></div></div>`);
+var root_73 = from_html(`<div class="launcher svelte-13s71iz"><div class="pager svelte-13s71iz" role="presentation"></div> <!> <!></div> <!> <!> <!> <!> <!> <!> <!> <!> <!> <!>`, 1);
 
 const $$css = {
 	hash: 'svelte-13s71iz',
-	code: '\n  /* Transparent so the global wallpaper layer shows through (wallpaper-forward). */.launcher.svelte-13s71iz {position:relative;height:100%;overflow:hidden;}\n\n  /* ---- Horizontal pager (home pages) ---- */.pager.svelte-13s71iz {display:flex;height:100%;width:100%;will-change:transform;}.pager.anim.svelte-13s71iz {transition:transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);}.page.svelte-13s71iz {flex:0 0 100%;width:100%;height:100%;position:relative;overflow:hidden;}\n  /* Extra widget page + view page share the clean, padded canvas look. */.page-canvas.svelte-13s71iz,\n  .page-view.svelte-13s71iz {height:100%;overflow-y:auto;padding:calc(env(safe-area-inset-top) + 48px) 24px calc(env(safe-area-inset-bottom) + 40px);box-sizing:border-box;color:var(--text);font-family:var(--app-font, inherit);text-shadow:0 2px 18px rgba(0, 0, 0, 0.4);}.page-title.svelte-13s71iz {font-size:1.1rem;font-weight:600;opacity:0.85;margin-bottom:18px;}.page-empty.svelte-13s71iz {display:flex;flex-direction:column;align-items:flex-start;gap:12px;opacity:0.9;}.page-hint.svelte-13s71iz {font-size:0.8rem;opacity:0.6;}.page-add.svelte-13s71iz {display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:12px;border:1px solid color-mix(in srgb, var(--text) 22%, transparent);background:color-mix(in srgb, var(--text) 8%, transparent);color:var(--text);font:inherit;cursor:pointer;}.page-view.svelte-13s71iz {display:flex;align-items:center;justify-content:center;}.view-card.svelte-13s71iz {display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;max-width:320px;}.view-name.svelte-13s71iz {font-size:1.5rem;font-weight:600;}.view-open.svelte-13s71iz {display:inline-flex;align-items:center;gap:10px;padding:14px 28px;border-radius:16px;border:none;background:var(--accent);color:#fff;font:inherit;font-weight:600;cursor:pointer;box-shadow:0 8px 28px color-mix(in srgb, var(--accent) 45%, transparent);}\n\n  /* ---- Page dots ---- */.page-dots.svelte-13s71iz {position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 10px);display:flex;justify-content:center;gap:8px;pointer-events:auto;z-index:4;}.page-dots.svelte-13s71iz .dot:where(.svelte-13s71iz) {width:7px;height:7px;border-radius:50%;border:none;padding:0;background:color-mix(in srgb, var(--text) 35%, transparent);cursor:pointer;transition:all 0.18s;}.page-dots.svelte-13s71iz .dot.on:where(.svelte-13s71iz) {background:var(--text);width:18px;border-radius:4px;}.list.svelte-13s71iz {position:relative; /* offset parent for section.offsetTop (anchor scroll) */height:100%;overflow-y:auto;padding:calc(env(safe-area-inset-top) + 40px) 52px calc(env(safe-area-inset-bottom) + 24px)\n      var(--list-pad, 20px);-webkit-overflow-scrolling:touch;}\n  /* At rest (apps not revealed) the home takes full control of touches so page\n     swipes and drawn gestures aren\'t stolen by the browser\'s scroll (which would\n     fire pointercancel and drop the stroke). When apps are revealed the list\n     scrolls normally again. */.list.touch-lock.svelte-13s71iz {touch-action:none;}.clock.svelte-13s71iz {color:var(--text);text-shadow:0 2px 18px rgba(0, 0, 0, 0.4);margin-bottom:26px;font-family:var(--app-font, inherit);}\n  /* On the ★-home the widget area fills the space above the divider and its\n     content sits at the bottom (just above the line); favourites follow below. */.clock.home-region.svelte-13s71iz {display:flex;flex-direction:column;justify-content:flex-end;margin-bottom:10px;box-sizing:border-box;}.test-badge.svelte-13s71iz {align-self:flex-start;width:max-content;max-width:max-content;flex:0 0 auto;margin-bottom:8px;padding:2px 10px;border-radius:999px;font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#fff;background:color-mix(in srgb, #ff6b35 85%, transparent);box-shadow:0 1px 6px rgba(0, 0, 0, 0.3);}\n  /* Reorder controls (edit mode): ↑/↓ next to each widget / favourite. */.approw.svelte-13s71iz {display:contents;}.approw.fav-edit.svelte-13s71iz {display:flex;align-items:center;gap:8px;}.wrow-edit.svelte-13s71iz {display:flex;align-items:center;gap:10px;margin:4px 0;}.wrow-edit.svelte-13s71iz .wcontent:where(.svelte-13s71iz) {flex:1 1 auto;min-width:0;}.wmoves.svelte-13s71iz {display:flex;flex-direction:column;gap:2px;flex:0 0 auto;}.wmove.svelte-13s71iz {width:30px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:7px;font-size:15px;line-height:1;color:var(--fg);background:color-mix(in srgb, var(--bg-elevated) 60%, transparent);border:1px solid color-mix(in srgb, var(--fg) 20%, transparent);}.wmove.svelte-13s71iz:disabled {opacity:0.3;}.time.svelte-13s71iz {font-size:clamp(3.2rem, 16vw, 5rem);font-weight:300;letter-spacing:-0.03em;line-height:1;}.date.svelte-13s71iz {margin-top:6px;font-size:1.05rem;font-weight:500;opacity:0.9;text-transform:capitalize;}.batt.svelte-13s71iz {margin-top:10px;font-size:0.95rem;font-weight:600;opacity:0.85;}\n  /* Reserved space for a hosted Android widget; the native view draws on top. */.aw-slot.svelte-13s71iz {width:100%;margin-top:12px;border-radius:16px;\n    /* No placeholder fill: a loaded widget draws its own content on top; a\n       broken/empty slot stays invisible instead of an ugly dark box. */background:transparent;}\n  /* A widget that failed to render: subtle dashed hint, removable by long-press. */.aw-slot.broken.svelte-13s71iz {display:flex;align-items:center;justify-content:center;min-height:64px;border:1px dashed color-mix(in srgb, var(--fg) 30%, transparent);background:color-mix(in srgb, var(--bg-elevated) 18%, transparent);}.aw-broken-hint.svelte-13s71iz {display:inline-flex;align-items:center;gap:6px;font-size:12px;opacity:0.7;text-align:center;padding:0 10px;}.aw-row.svelte-13s71iz {display:flex;align-items:center;justify-content:space-between;padding:8px 0;}.aw-label.svelte-13s71iz {color:var(--text);font-size:1rem;}.aw-remove.svelte-13s71iz {background:none;border:none;color:var(--text-muted, color-mix(in srgb, var(--text) 55%, transparent));cursor:pointer;}.group.svelte-13s71iz {margin-bottom:14px;}.group-label.svelte-13s71iz {font-size:0.78rem;font-weight:700;letter-spacing:0.08em;color:var(--text);opacity:0.9;text-shadow:0 1px 8px rgba(0, 0, 0, 0.4);padding:4px 10px;}.app.svelte-13s71iz {width:100%;display:flex;align-items:center;gap:14px;padding:7px 10px;background:none;border:none;border-radius:14px;color:var(--text);text-shadow:0 1px 10px rgba(0, 0, 0, 0.35);cursor:pointer;transition:background 0.14s ease, transform 0.1s ease;touch-action:pan-y;}.app.svelte-13s71iz:active {transform:scale(0.98);background:color-mix(in srgb, var(--bg-elevated) 50%, transparent);}.app-icon.svelte-13s71iz {width:var(--app-icon, 42px);height:var(--app-icon, 42px);border-radius:12px;object-fit:cover;flex:none;}.app-icon.fallback.svelte-13s71iz {display:grid;place-items:center;background:color-mix(in srgb, var(--accent) 35%, var(--bg-elevated));font-weight:700;font-size:calc(var(--app-icon, 42px) * 0.42);}.app-label.svelte-13s71iz {font-size:calc(1.08rem * var(--app-label-scale, 1));font-weight:500;font-family:var(--app-font, inherit);}\n\n  /* While scrubbing, show only the active letter block (SKWD-Wall style); the\n     rest fades back in on release. */.clock.svelte-13s71iz,\n  .foot.svelte-13s71iz,\n  .group.svelte-13s71iz {transition:opacity 0.18s ease;}.list.focusing.svelte-13s71iz .clock:where(.svelte-13s71iz),\n  .list.focusing.svelte-13s71iz .foot:where(.svelte-13s71iz),\n  .list.focusing.svelte-13s71iz .group:where(.svelte-13s71iz):not(.active) {opacity:0;pointer-events:none;}.hint.svelte-13s71iz {color:var(--text);opacity:0.85;font-size:0.98rem;line-height:1.5;text-shadow:0 1px 10px rgba(0, 0, 0, 0.35);max-width:28rem;padding:20px 10px;}.foot.svelte-13s71iz {margin-top:10px;padding-top:14px;border-top:1px solid color-mix(in srgb, var(--text) 14%, transparent);display:flex;flex-direction:column;align-items:flex-start;gap:2px;}.foot-item.svelte-13s71iz {display:inline-flex;align-items:center;gap:12px;padding:12px 10px;background:none;border:none;color:var(--text);opacity:0.9;font-size:1.02rem;text-shadow:0 1px 10px rgba(0, 0, 0, 0.35);cursor:pointer;}\n\n  /* ---- Wave scrubber ---- */.scrubber.svelte-13s71iz {position:absolute;top:50%;transform:translateY(-50%); /* vertically centred band; height set inline */right:0;width:34px;display:flex;flex-direction:column;align-items:stretch;padding-right:8px;touch-action:none;z-index:5;transition:opacity 0.2s ease;}.scrubber.hidden.svelte-13s71iz {opacity:0; /* still hittable at the edge → tapping the edge reveals it */}\n  /* Equal slots so a letter\'s visual centre matches (i+0.5)·rowH in the wave math. */.scrub-key.svelte-13s71iz {flex:1 1 0;display:flex;align-items:center;justify-content:flex-end;font-size:calc(0.8rem * var(--rail-label-scale, 1));font-weight:700;font-family:var(--app-font, inherit);color:var(--text);opacity:1;text-shadow:0 1px 8px rgba(0, 0, 0, 0.5);transform-origin:right center;will-change:transform;pointer-events:none;line-height:1;}.scrub-key.active.svelte-13s71iz {color:var(--accent);}.bubble.svelte-13s71iz {position:absolute;right:46px;transform:translateY(-50%);width:58px;height:58px;display:grid;place-items:center;border-radius:50%;background:var(--accent);color:#fff;font-size:1.6rem;font-weight:700;box-shadow:0 8px 26px rgba(0, 0, 0, 0.35);pointer-events:none;z-index:6;\n    /* Snap to each letter\'s centre — the "einrasten" detent feel. */transition:top 0.07s ease-out;}\n\n  /* ---- Fullscreen settings page ---- */.settings-full.svelte-13s71iz {position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;flex-direction:column;}.settings-head.svelte-13s71iz {display:flex;align-items:center;gap:12px;padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;border-bottom:1px solid var(--border);}.settings-close.svelte-13s71iz {flex:none;width:44px;height:44px;display:grid;place-items:center;border:none;background:none;color:var(--text);border-radius:12px;cursor:pointer;}.settings-close.svelte-13s71iz:active {background:var(--bg-elevated);}.settings-title.svelte-13s71iz {font-size:1.3rem;font-weight:700;color:var(--text);}.settings-body.svelte-13s71iz {flex:1;overflow-y:auto;padding:8px 10px calc(env(safe-area-inset-bottom) + 24px);}\n\n  /* ---- Sheets ---- */.sheet-backdrop.svelte-13s71iz {position:fixed;inset:0;z-index:95;background:rgba(0, 0, 0, 0.45);display:flex;align-items:flex-end;}.sheet.svelte-13s71iz {width:100%;background:var(--bg-elevated);border-radius:20px 20px 0 0;padding:14px 10px calc(env(safe-area-inset-bottom) + 14px);box-shadow:0 -12px 40px rgba(0, 0, 0, 0.3);}.sheet-title.svelte-13s71iz {font-size:1.1rem;font-weight:700;color:var(--text);padding:6px 12px 12px;}.sheet-item.svelte-13s71iz {width:100%;display:flex;align-items:center;gap:14px;padding:14px 12px;background:none;border:none;border-radius:12px;color:var(--text);font-size:1.02rem;text-align:left;cursor:pointer;}.sheet-item.svelte-13s71iz:active {background:var(--bg);}.sheet-item.danger.svelte-13s71iz {color:#e5484d;}.sheet-item.disabled.svelte-13s71iz {opacity:0.4;pointer-events:none;}.sheet-sep.svelte-13s71iz {padding:14px 12px 6px;font-size:0.78rem;letter-spacing:0.04em;text-transform:uppercase;opacity:0.55;color:var(--text);}.rename-input.svelte-13s71iz {width:100%;box-sizing:border-box;padding:12px 14px;margin:4px 0 8px;border-radius:12px;border:1px solid color-mix(in srgb, var(--text) 20%, transparent);background:var(--bg);color:var(--text);font:inherit;}.assign-list.svelte-13s71iz {display:flex;flex-wrap:wrap;gap:8px;padding:4px 12px 8px;}\n\n  /* ---- Gesture creator ---- */.g-row.svelte-13s71iz {display:flex;align-items:center;gap:12px;padding:8px 0;}.g-prev.svelte-13s71iz {width:40px;height:40px;flex:0 0 auto;border-radius:10px;background:color-mix(in srgb, var(--text) 8%, transparent);}.g-meta.svelte-13s71iz {display:flex;flex-direction:column;flex:1 1 auto;min-width:0;}.g-name.svelte-13s71iz {font-weight:600;}.g-act.svelte-13s71iz {font-size:0.8rem;opacity:0.6;}.g-canvas.svelte-13s71iz {width:100%;aspect-ratio:1 / 1;max-height:48vh;border-radius:16px;border:1.5px dashed color-mix(in srgb, var(--text) 28%, transparent);background:color-mix(in srgb, var(--text) 6%, transparent);touch-action:none;display:block;}.g-canvas-row.svelte-13s71iz {display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px;}.row.svelte-13s71iz {width:100%;display:flex;align-items:center;gap:14px;padding:12px;background:none;border:none;color:var(--text);text-align:left;cursor:pointer;}.row-text.svelte-13s71iz {flex:1;display:flex;flex-direction:column;gap:2px;}.row-name.svelte-13s71iz {font-size:1.02rem;}.row-sub.svelte-13s71iz {font-size:0.85rem;color:var(--text-muted, color-mix(in srgb, var(--text) 55%, transparent));}.switch.svelte-13s71iz {flex:none;width:46px;height:28px;border-radius:999px;background:color-mix(in srgb, var(--text) 25%, transparent);position:relative;transition:background 0.15s ease;}.switch.on.svelte-13s71iz {background:var(--accent);}.knob.svelte-13s71iz {position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform 0.15s ease;}.switch.on.svelte-13s71iz .knob:where(.svelte-13s71iz) {transform:translateX(18px);}.slider.svelte-13s71iz {display:flex;flex-direction:column;gap:6px;padding:12px;}.slider-head.svelte-13s71iz {display:flex;justify-content:space-between;align-items:baseline;}.slider-val.svelte-13s71iz {font-size:0.85rem;font-weight:700;color:var(--accent);}.slider.svelte-13s71iz input[type=\'range\']:where(.svelte-13s71iz) {width:100%;accent-color:var(--accent);}.field.svelte-13s71iz {display:flex;flex-direction:column;gap:10px;padding:12px;}.chips.svelte-13s71iz {display:flex;flex-wrap:wrap;gap:8px;}.chip.svelte-13s71iz {padding:8px 14px;border-radius:999px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:0.95rem;cursor:pointer;}.chip.on.svelte-13s71iz {background:var(--accent);color:#fff;border-color:var(--accent);}\n\n  /* ---- Home edit mode ---- */.edit-overlay.svelte-13s71iz {position:fixed;inset:0;z-index:110;background:rgba(0, 0, 0, 0.35);touch-action:none;}.edit-split.svelte-13s71iz {position:absolute;left:0;right:0;transform:translateY(-50%);display:flex;justify-content:center;}.edit-split.svelte-13s71iz::before {content:\'\';position:absolute;left:16px;right:16px;top:50%;height:2px;background:var(--accent);opacity:0.85;}.edit-railgrip.svelte-13s71iz {position:absolute;right:0;}.edit-handle.svelte-13s71iz {position:relative;display:inline-flex;flex-direction:column;align-items:center;gap:6px;padding:8px 16px;border:none;border-radius:999px;background:var(--accent);color:#fff;box-shadow:0 6px 20px rgba(0, 0, 0, 0.4);cursor:grab;touch-action:none;}.edit-handle.side.svelte-13s71iz {padding:12px 10px;border-radius:12px;margin-right:6px;}.grip.svelte-13s71iz {width:28px;height:4px;border-radius:2px;background:rgba(255, 255, 255, 0.9);}.edit-handle.side.svelte-13s71iz .grip:where(.svelte-13s71iz) {width:18px;}.edit-caption.svelte-13s71iz {font-size:0.8rem;font-weight:700;white-space:nowrap;}.edit-done.svelte-13s71iz {position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 24px);transform:translateX(-50%);padding:12px 32px;border-radius:999px;border:none;background:var(--accent);color:#fff;font-weight:700;font-size:1rem;box-shadow:0 8px 24px rgba(0, 0, 0, 0.3);cursor:pointer;}.edit-addwidget.svelte-13s71iz {position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);transform:translateX(-50%);display:inline-flex;align-items:center;gap:8px;padding:11px 22px;border-radius:999px;border:1px solid color-mix(in srgb, var(--text) 25%, transparent);background:color-mix(in srgb, var(--bg-elevated) 70%, transparent);color:var(--text);font-weight:700;font-size:0.95rem;backdrop-filter:blur(8px);cursor:pointer;white-space:nowrap;}\n\n  /* ---- Widget picker (Niagara-style: A–Z app list + expandable previews) ---- */.wpick.svelte-13s71iz {position:fixed;inset:0;z-index:100;background:color-mix(in srgb, var(--bg) 82%, transparent);backdrop-filter:blur(10px);display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top) + 14px) 14px calc(env(safe-area-inset-bottom) + 14px);}.wpick-search.svelte-13s71iz {display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:999px;background:var(--bg-elevated);color:var(--text);margin-bottom:12px;flex:none;}.wpick-search.svelte-13s71iz input:where(.svelte-13s71iz) {flex:1;border:none;background:none;color:var(--text);font-size:1.1rem;outline:none;}.wpick-close.svelte-13s71iz {flex:none;width:34px;height:34px;display:grid;place-items:center;border:none;background:none;color:var(--text);cursor:pointer;}.wpick-list.svelte-13s71iz {flex:1;overflow-y:auto;}.wpick-letter.svelte-13s71iz {font-size:0.9rem;font-weight:700;color:var(--text);opacity:0.6;padding:10px 6px 4px;}.wpick-app.svelte-13s71iz {width:100%;display:flex;align-items:center;gap:16px;padding:10px 6px;background:none;border:none;color:var(--text);cursor:pointer;text-align:left;}.wpick-icon.svelte-13s71iz {width:46px;height:46px;border-radius:12px;object-fit:cover;flex:none;}.wpick-icon.fallback.svelte-13s71iz {display:grid;place-items:center;background:color-mix(in srgb, var(--accent) 35%, var(--bg-elevated));font-weight:700;font-size:1.2rem;}.wpick-appmeta.svelte-13s71iz {display:flex;flex-direction:column;}.wpick-appname.svelte-13s71iz {font-size:1.15rem;font-weight:600;}.wpick-count.svelte-13s71iz {font-size:0.9rem;opacity:0.6;}.wpick-widgets.svelte-13s71iz {display:flex;flex-direction:column;gap:12px;padding:6px 6px 14px 72px;}.wpick-widget.svelte-13s71iz {display:flex;flex-direction:column;gap:8px;padding:10px;border:none;border-radius:16px;background:var(--bg-elevated);color:var(--text);cursor:pointer;text-align:left;}.wpick-preview.svelte-13s71iz {width:100%;max-height:220px;object-fit:contain;border-radius:12px;}.wpick-preview.fallback.svelte-13s71iz {height:120px;background:var(--bg);}.wpick-wlabel.svelte-13s71iz {font-size:1rem;font-weight:500;}\n\n  /* ---- Set-as-default-launcher prompt (setup-dialog standard) ---- */.setup.svelte-13s71iz {position:fixed;inset:0;z-index:950;background:radial-gradient(\n        circle at 50% 28%,\n        color-mix(in srgb, var(--accent) 22%, transparent),\n        transparent 70%\n      ),\n      var(--bg);display:flex;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top) + 40px) 24px calc(env(safe-area-inset-bottom) + 32px);overflow:hidden;}.aurora.svelte-13s71iz {position:absolute;border-radius:50%;filter:blur(60px);opacity:0.45;pointer-events:none;}.a1.svelte-13s71iz {width:320px;height:320px;background:var(--accent);top:-60px;left:-40px;\n    animation: svelte-13s71iz-drift1 14s ease-in-out infinite;}.a2.svelte-13s71iz {width:280px;height:280px;background:color-mix(in srgb, var(--accent) 50%, #b06cf0);bottom:-60px;right:-40px;\n    animation: svelte-13s71iz-drift2 16s ease-in-out infinite;}\n  @keyframes svelte-13s71iz-drift1 {\n    0%,\n    100% {\n      transform: translate(0, 0);\n    }\n    50% {\n      transform: translate(30px, 40px);\n    }\n  }\n  @keyframes svelte-13s71iz-drift2 {\n    0%,\n    100% {\n      transform: translate(0, 0);\n    }\n    50% {\n      transform: translate(-30px, -30px);\n    }\n  }.setup-x.svelte-13s71iz {position:absolute;top:calc(env(safe-area-inset-top) + 12px);right:16px;width:44px;height:44px;display:grid;place-items:center;border:none;background:color-mix(in srgb, var(--bg-elevated) 60%, transparent);color:var(--text);border-radius:50%;cursor:pointer;z-index:2;}.setup-stage.svelte-13s71iz {position:relative;max-width:440px;text-align:center;z-index:1;}.setup-illu.svelte-13s71iz {width:220px;height:auto;margin:0 auto 20px;display:block;}.setup-illu.svelte-13s71iz .planet:where(.svelte-13s71iz) {\n    animation: svelte-13s71iz-pop 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);transform-origin:center;}.setup-illu.svelte-13s71iz .ring:where(.svelte-13s71iz) {\n    animation: svelte-13s71iz-spin 18s linear infinite;transform-origin:130px 105px;}.setup-illu.svelte-13s71iz .moon:where(.svelte-13s71iz) {\n    animation: svelte-13s71iz-spin 6s linear infinite;transform-origin:130px 105px;}\n  @keyframes svelte-13s71iz-pop {\n    from {\n      transform: scale(0);\n    }\n    to {\n      transform: scale(1);\n    }\n  }\n  @keyframes svelte-13s71iz-spin {\n    to {\n      transform: rotate(360deg);\n    }\n  }.setup-kicker.svelte-13s71iz {text-transform:uppercase;letter-spacing:0.08em;font-size:0.8rem;font-weight:700;color:var(--accent);margin-bottom:8px;}.setup-h1.svelte-13s71iz {font-size:clamp(1.6rem, 7vw, 2.2rem);font-weight:800;letter-spacing:-0.02em;color:var(--text);margin:0 0 12px;}.setup-p.svelte-13s71iz {color:var(--text-muted, color-mix(in srgb, var(--text) 65%, transparent));font-size:1.02rem;line-height:1.6;margin:0 auto 28px;max-width:32rem;}.setup-go.svelte-13s71iz {width:100%;max-width:360px;padding:15px;border-radius:16px;border:none;background:linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #b06cf0));color:#fff;font-size:1.05rem;font-weight:700;cursor:pointer;box-shadow:0 10px 28px rgba(0, 0, 0, 0.3);}\n\n  @media (prefers-reduced-motion: reduce) {.app.svelte-13s71iz,\n    .scrubber.svelte-13s71iz,\n    .switch.svelte-13s71iz,\n    .knob.svelte-13s71iz,\n    .group.svelte-13s71iz,\n    .clock.svelte-13s71iz,\n    .foot.svelte-13s71iz {transition:none;}.aurora.svelte-13s71iz,\n    .setup-illu.svelte-13s71iz .planet:where(.svelte-13s71iz),\n    .setup-illu.svelte-13s71iz .ring:where(.svelte-13s71iz),\n    .setup-illu.svelte-13s71iz .moon:where(.svelte-13s71iz) {\n      animation: none;}\n  }'
+	code: '\n  /* Transparent so the global wallpaper layer shows through (wallpaper-forward). */.launcher.svelte-13s71iz {position:relative;height:100%;overflow:hidden;}\n\n  /* ---- 2D page grid ---- */.pager.svelte-13s71iz {position:absolute;inset:0;width:100%;height:100%;will-change:transform;transition:transform 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);touch-action:none; /* we own all touches on the launcher */}.page.svelte-13s71iz {position:absolute;width:100%;height:100%;overflow:hidden;}\n  /* Extra widget page + view page share the clean, padded canvas look. */.page-canvas.svelte-13s71iz,\n  .page-view.svelte-13s71iz {height:100%;overflow-y:auto;padding:calc(env(safe-area-inset-top) + 48px) 24px calc(env(safe-area-inset-bottom) + 40px);box-sizing:border-box;color:var(--text);font-family:var(--app-font, inherit);text-shadow:0 2px 18px rgba(0, 0, 0, 0.4);}.page-title.svelte-13s71iz {font-size:1.1rem;font-weight:600;opacity:0.85;margin-bottom:18px;}.page-empty.svelte-13s71iz {display:flex;flex-direction:column;align-items:flex-start;gap:12px;opacity:0.9;}.page-hint.svelte-13s71iz {font-size:0.8rem;opacity:0.6;}.page-add.svelte-13s71iz {display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:12px;border:1px solid color-mix(in srgb, var(--text) 22%, transparent);background:color-mix(in srgb, var(--text) 8%, transparent);color:var(--text);font:inherit;cursor:pointer;}.page-view.svelte-13s71iz {display:flex;align-items:center;justify-content:center;}.view-card.svelte-13s71iz {display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;max-width:320px;}.view-name.svelte-13s71iz {font-size:1.5rem;font-weight:600;}.view-open.svelte-13s71iz {display:inline-flex;align-items:center;gap:10px;padding:14px 28px;border-radius:16px;border:none;background:var(--accent);color:#fff;font:inherit;font-weight:600;cursor:pointer;box-shadow:0 8px 28px color-mix(in srgb, var(--accent) 45%, transparent);}\n\n  /* ---- Edge arrows + overview button ---- */.edge-arrow.svelte-13s71iz {position:absolute;color:var(--text);opacity:0.28;font-size:30px;line-height:1;pointer-events:none;z-index:3;text-shadow:0 1px 8px rgba(0, 0, 0, 0.5);}.edge-arrow.left.svelte-13s71iz {left:4px;top:50%;transform:translateY(-50%);}.edge-arrow.right.svelte-13s71iz {right:4px;top:50%;transform:translateY(-50%);}.edge-arrow.up.svelte-13s71iz {top:calc(env(safe-area-inset-top) + 4px);left:50%;transform:translateX(-50%) rotate(90deg);}.edge-arrow.down.svelte-13s71iz {bottom:calc(env(safe-area-inset-bottom) + 6px);left:50%;transform:translateX(-50%) rotate(90deg);}.overview-btn.svelte-13s71iz {position:absolute;bottom:calc(env(safe-area-inset-bottom) + 10px);left:50%;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;width:40px;height:24px;border-radius:12px;border:none;background:color-mix(in srgb, var(--text) 12%, transparent);color:var(--text);opacity:0.7;cursor:pointer;z-index:4;}\n\n  /* ---- Page overview (zoomed out) ---- */.overview.svelte-13s71iz {position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;flex-direction:column;}.overview-scroll.svelte-13s71iz {flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;align-items:center;gap:16px;}.ov-grid.svelte-13s71iz {display:inline-flex;flex-direction:column;gap:12px;margin:auto;}.ov-row.svelte-13s71iz {display:flex;gap:12px;}.ov-cell.svelte-13s71iz {width:116px;height:150px;border-radius:16px;box-sizing:border-box;flex:0 0 auto;}.ov-empty.svelte-13s71iz {background:transparent;}.ov-add.svelte-13s71iz {border:1.5px dashed color-mix(in srgb, var(--text) 30%, transparent);background:color-mix(in srgb, var(--text) 5%, transparent);color:var(--text);opacity:0.7;display:flex;align-items:center;justify-content:center;cursor:pointer;}.ov-add.svelte-13s71iz:active {opacity:1;}.ov-page.svelte-13s71iz {position:relative;border:1px solid color-mix(in srgb, var(--text) 14%, transparent);background:color-mix(in srgb, var(--text) 8%, transparent);overflow:hidden;}.ov-page.current.svelte-13s71iz {border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent);}.ov-open.svelte-13s71iz {width:100%;height:100%;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:2px;padding:12px;background:none;border:none;color:var(--text);text-align:left;cursor:pointer;}.ov-name.svelte-13s71iz {font-weight:600;font-size:0.95rem;}.ov-type.svelte-13s71iz {font-size:0.72rem;opacity:0.55;}.ov-del.svelte-13s71iz {position:absolute;top:6px;right:6px;width:30px;height:30px;border-radius:50%;border:none;background:color-mix(in srgb, var(--bg) 70%, transparent);color:#e5484d;display:flex;align-items:center;justify-content:center;cursor:pointer;}.ov-hint.svelte-13s71iz {max-width:420px;text-align:center;font-size:0.8rem;opacity:0.6;color:var(--text);}.list.svelte-13s71iz {position:relative; /* offset parent for section.offsetTop (anchor scroll) */height:100%;overflow-y:auto;padding:calc(env(safe-area-inset-top) + 40px) 52px calc(env(safe-area-inset-bottom) + 24px)\n      var(--list-pad, 20px);-webkit-overflow-scrolling:touch;}\n  /* At rest (apps not revealed) the home takes full control of touches so page\n     swipes and drawn gestures aren\'t stolen by the browser\'s scroll (which would\n     fire pointercancel and drop the stroke). When apps are revealed the list\n     scrolls normally again. */.list.touch-lock.svelte-13s71iz {touch-action:none;}.clock.svelte-13s71iz {color:var(--text);text-shadow:0 2px 18px rgba(0, 0, 0, 0.4);margin-bottom:26px;font-family:var(--app-font, inherit);}\n  /* On the ★-home the widget area fills the space above the divider and its\n     content sits at the bottom (just above the line); favourites follow below. */.clock.home-region.svelte-13s71iz {display:flex;flex-direction:column;justify-content:flex-end;margin-bottom:10px;box-sizing:border-box;}.test-badge.svelte-13s71iz {align-self:flex-start;width:max-content;max-width:max-content;flex:0 0 auto;margin-bottom:8px;padding:2px 10px;border-radius:999px;font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#fff;background:color-mix(in srgb, #ff6b35 85%, transparent);box-shadow:0 1px 6px rgba(0, 0, 0, 0.3);}\n  /* Reorder controls (edit mode): ↑/↓ next to each widget / favourite. */.approw.svelte-13s71iz {display:contents;}.approw.fav-edit.svelte-13s71iz {display:flex;align-items:center;gap:8px;}.wrow-edit.svelte-13s71iz {display:flex;align-items:center;gap:10px;margin:4px 0;}.wrow-edit.svelte-13s71iz .wcontent:where(.svelte-13s71iz) {flex:1 1 auto;min-width:0;}.wmoves.svelte-13s71iz {display:flex;flex-direction:column;gap:2px;flex:0 0 auto;}.wmove.svelte-13s71iz {width:30px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:7px;font-size:15px;line-height:1;color:var(--fg);background:color-mix(in srgb, var(--bg-elevated) 60%, transparent);border:1px solid color-mix(in srgb, var(--fg) 20%, transparent);}.wmove.svelte-13s71iz:disabled {opacity:0.3;}.time.svelte-13s71iz {font-size:clamp(3.2rem, 16vw, 5rem);font-weight:300;letter-spacing:-0.03em;line-height:1;}.date.svelte-13s71iz {margin-top:6px;font-size:1.05rem;font-weight:500;opacity:0.9;text-transform:capitalize;}.batt.svelte-13s71iz {margin-top:10px;font-size:0.95rem;font-weight:600;opacity:0.85;}\n  /* Reserved space for a hosted Android widget; the native view draws on top. */.aw-slot.svelte-13s71iz {width:100%;margin-top:12px;border-radius:16px;\n    /* No placeholder fill: a loaded widget draws its own content on top; a\n       broken/empty slot stays invisible instead of an ugly dark box. */background:transparent;}\n  /* A widget that failed to render: subtle dashed hint, removable by long-press. */.aw-slot.broken.svelte-13s71iz {display:flex;align-items:center;justify-content:center;min-height:64px;border:1px dashed color-mix(in srgb, var(--fg) 30%, transparent);background:color-mix(in srgb, var(--bg-elevated) 18%, transparent);}.aw-broken-hint.svelte-13s71iz {display:inline-flex;align-items:center;gap:6px;font-size:12px;opacity:0.7;text-align:center;padding:0 10px;}.aw-row.svelte-13s71iz {display:flex;align-items:center;justify-content:space-between;padding:8px 0;}.aw-label.svelte-13s71iz {color:var(--text);font-size:1rem;}.aw-remove.svelte-13s71iz {background:none;border:none;color:var(--text-muted, color-mix(in srgb, var(--text) 55%, transparent));cursor:pointer;}.group.svelte-13s71iz {margin-bottom:14px;}.group-label.svelte-13s71iz {font-size:0.78rem;font-weight:700;letter-spacing:0.08em;color:var(--text);opacity:0.9;text-shadow:0 1px 8px rgba(0, 0, 0, 0.4);padding:4px 10px;}.app.svelte-13s71iz {width:100%;display:flex;align-items:center;gap:14px;padding:7px 10px;background:none;border:none;border-radius:14px;color:var(--text);text-shadow:0 1px 10px rgba(0, 0, 0, 0.35);cursor:pointer;transition:background 0.14s ease, transform 0.1s ease;touch-action:pan-y;}.app.svelte-13s71iz:active {transform:scale(0.98);background:color-mix(in srgb, var(--bg-elevated) 50%, transparent);}.app-icon.svelte-13s71iz {width:var(--app-icon, 42px);height:var(--app-icon, 42px);border-radius:12px;object-fit:cover;flex:none;}.app-icon.fallback.svelte-13s71iz {display:grid;place-items:center;background:color-mix(in srgb, var(--accent) 35%, var(--bg-elevated));font-weight:700;font-size:calc(var(--app-icon, 42px) * 0.42);}.app-label.svelte-13s71iz {font-size:calc(1.08rem * var(--app-label-scale, 1));font-weight:500;font-family:var(--app-font, inherit);}\n\n  /* While scrubbing, show only the active letter block (SKWD-Wall style); the\n     rest fades back in on release. */.clock.svelte-13s71iz,\n  .foot.svelte-13s71iz,\n  .group.svelte-13s71iz {transition:opacity 0.18s ease;}.list.focusing.svelte-13s71iz .clock:where(.svelte-13s71iz),\n  .list.focusing.svelte-13s71iz .foot:where(.svelte-13s71iz),\n  .list.focusing.svelte-13s71iz .group:where(.svelte-13s71iz):not(.active) {opacity:0;pointer-events:none;}.hint.svelte-13s71iz {color:var(--text);opacity:0.85;font-size:0.98rem;line-height:1.5;text-shadow:0 1px 10px rgba(0, 0, 0, 0.35);max-width:28rem;padding:20px 10px;}.foot.svelte-13s71iz {margin-top:10px;padding-top:14px;border-top:1px solid color-mix(in srgb, var(--text) 14%, transparent);display:flex;flex-direction:column;align-items:flex-start;gap:2px;}.foot-item.svelte-13s71iz {display:inline-flex;align-items:center;gap:12px;padding:12px 10px;background:none;border:none;color:var(--text);opacity:0.9;font-size:1.02rem;text-shadow:0 1px 10px rgba(0, 0, 0, 0.35);cursor:pointer;}\n\n  /* ---- Wave scrubber ---- */.scrubber.svelte-13s71iz {position:absolute;top:50%;transform:translateY(-50%); /* vertically centred band; height set inline */right:0;width:34px;display:flex;flex-direction:column;align-items:stretch;padding-right:8px;touch-action:none;z-index:5;transition:opacity 0.2s ease;}.scrubber.hidden.svelte-13s71iz {opacity:0; /* still hittable at the edge → tapping the edge reveals it */}\n  /* Equal slots so a letter\'s visual centre matches (i+0.5)·rowH in the wave math. */.scrub-key.svelte-13s71iz {flex:1 1 0;display:flex;align-items:center;justify-content:flex-end;font-size:calc(0.8rem * var(--rail-label-scale, 1));font-weight:700;font-family:var(--app-font, inherit);color:var(--text);opacity:1;text-shadow:0 1px 8px rgba(0, 0, 0, 0.5);transform-origin:right center;will-change:transform;pointer-events:none;line-height:1;}.scrub-key.active.svelte-13s71iz {color:var(--accent);}.bubble.svelte-13s71iz {position:absolute;right:46px;transform:translateY(-50%);width:58px;height:58px;display:grid;place-items:center;border-radius:50%;background:var(--accent);color:#fff;font-size:1.6rem;font-weight:700;box-shadow:0 8px 26px rgba(0, 0, 0, 0.35);pointer-events:none;z-index:6;\n    /* Snap to each letter\'s centre — the "einrasten" detent feel. */transition:top 0.07s ease-out;}\n\n  /* ---- Fullscreen settings page ---- */.settings-full.svelte-13s71iz {position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;flex-direction:column;}.settings-head.svelte-13s71iz {display:flex;align-items:center;gap:12px;padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;border-bottom:1px solid var(--border);}.settings-close.svelte-13s71iz {flex:none;width:44px;height:44px;display:grid;place-items:center;border:none;background:none;color:var(--text);border-radius:12px;cursor:pointer;}.settings-close.svelte-13s71iz:active {background:var(--bg-elevated);}.settings-title.svelte-13s71iz {font-size:1.3rem;font-weight:700;color:var(--text);}.settings-body.svelte-13s71iz {flex:1;overflow-y:auto;padding:8px 10px calc(env(safe-area-inset-bottom) + 24px);}\n\n  /* ---- Sheets ---- */.sheet-backdrop.svelte-13s71iz {position:fixed;inset:0;z-index:95;background:rgba(0, 0, 0, 0.45);display:flex;align-items:flex-end;}.sheet.svelte-13s71iz {width:100%;background:var(--bg-elevated);border-radius:20px 20px 0 0;padding:14px 10px calc(env(safe-area-inset-bottom) + 14px);box-shadow:0 -12px 40px rgba(0, 0, 0, 0.3);}.sheet-title.svelte-13s71iz {font-size:1.1rem;font-weight:700;color:var(--text);padding:6px 12px 12px;}.sheet-item.svelte-13s71iz {width:100%;display:flex;align-items:center;gap:14px;padding:14px 12px;background:none;border:none;border-radius:12px;color:var(--text);font-size:1.02rem;text-align:left;cursor:pointer;}.sheet-item.svelte-13s71iz:active {background:var(--bg);}.sheet-item.danger.svelte-13s71iz {color:#e5484d;}.sheet-item.disabled.svelte-13s71iz {opacity:0.4;pointer-events:none;}.sheet-sep.svelte-13s71iz {padding:14px 12px 6px;font-size:0.78rem;letter-spacing:0.04em;text-transform:uppercase;opacity:0.55;color:var(--text);}.rename-input.svelte-13s71iz {width:100%;box-sizing:border-box;padding:12px 14px;margin:4px 0 8px;border-radius:12px;border:1px solid color-mix(in srgb, var(--text) 20%, transparent);background:var(--bg);color:var(--text);font:inherit;}.assign-list.svelte-13s71iz {display:flex;flex-wrap:wrap;gap:8px;padding:4px 12px 8px;}\n\n  /* ---- Gesture creator ---- */.g-row.svelte-13s71iz {display:flex;align-items:center;gap:12px;padding:8px 0;}.g-prev.svelte-13s71iz {width:40px;height:40px;flex:0 0 auto;border-radius:10px;background:color-mix(in srgb, var(--text) 8%, transparent);}.g-meta.svelte-13s71iz {display:flex;flex-direction:column;flex:1 1 auto;min-width:0;}.g-name.svelte-13s71iz {font-weight:600;}.g-act.svelte-13s71iz {font-size:0.8rem;opacity:0.6;}.g-canvas.svelte-13s71iz {width:100%;aspect-ratio:1 / 1;max-height:48vh;border-radius:16px;border:1.5px dashed color-mix(in srgb, var(--text) 28%, transparent);background:color-mix(in srgb, var(--text) 6%, transparent);touch-action:none;display:block;}.g-canvas-row.svelte-13s71iz {display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px;}.row.svelte-13s71iz {width:100%;display:flex;align-items:center;gap:14px;padding:12px;background:none;border:none;color:var(--text);text-align:left;cursor:pointer;}.row-text.svelte-13s71iz {flex:1;display:flex;flex-direction:column;gap:2px;}.row-name.svelte-13s71iz {font-size:1.02rem;}.row-sub.svelte-13s71iz {font-size:0.85rem;color:var(--text-muted, color-mix(in srgb, var(--text) 55%, transparent));}.switch.svelte-13s71iz {flex:none;width:46px;height:28px;border-radius:999px;background:color-mix(in srgb, var(--text) 25%, transparent);position:relative;transition:background 0.15s ease;}.switch.on.svelte-13s71iz {background:var(--accent);}.knob.svelte-13s71iz {position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform 0.15s ease;}.switch.on.svelte-13s71iz .knob:where(.svelte-13s71iz) {transform:translateX(18px);}.slider.svelte-13s71iz {display:flex;flex-direction:column;gap:6px;padding:12px;}.slider-head.svelte-13s71iz {display:flex;justify-content:space-between;align-items:baseline;}.slider-val.svelte-13s71iz {font-size:0.85rem;font-weight:700;color:var(--accent);}.slider.svelte-13s71iz input[type=\'range\']:where(.svelte-13s71iz) {width:100%;accent-color:var(--accent);}.field.svelte-13s71iz {display:flex;flex-direction:column;gap:10px;padding:12px;}.chips.svelte-13s71iz {display:flex;flex-wrap:wrap;gap:8px;}.chip.svelte-13s71iz {padding:8px 14px;border-radius:999px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:0.95rem;cursor:pointer;}.chip.on.svelte-13s71iz {background:var(--accent);color:#fff;border-color:var(--accent);}\n\n  /* ---- Home edit mode ---- */.edit-overlay.svelte-13s71iz {position:fixed;inset:0;z-index:110;background:rgba(0, 0, 0, 0.35);touch-action:none;}.edit-split.svelte-13s71iz {position:absolute;left:0;right:0;transform:translateY(-50%);display:flex;justify-content:center;}.edit-split.svelte-13s71iz::before {content:\'\';position:absolute;left:16px;right:16px;top:50%;height:2px;background:var(--accent);opacity:0.85;}.edit-railgrip.svelte-13s71iz {position:absolute;right:0;}.edit-handle.svelte-13s71iz {position:relative;display:inline-flex;flex-direction:column;align-items:center;gap:6px;padding:8px 16px;border:none;border-radius:999px;background:var(--accent);color:#fff;box-shadow:0 6px 20px rgba(0, 0, 0, 0.4);cursor:grab;touch-action:none;}.edit-handle.side.svelte-13s71iz {padding:12px 10px;border-radius:12px;margin-right:6px;}.grip.svelte-13s71iz {width:28px;height:4px;border-radius:2px;background:rgba(255, 255, 255, 0.9);}.edit-handle.side.svelte-13s71iz .grip:where(.svelte-13s71iz) {width:18px;}.edit-caption.svelte-13s71iz {font-size:0.8rem;font-weight:700;white-space:nowrap;}.edit-done.svelte-13s71iz {position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 24px);transform:translateX(-50%);padding:12px 32px;border-radius:999px;border:none;background:var(--accent);color:#fff;font-weight:700;font-size:1rem;box-shadow:0 8px 24px rgba(0, 0, 0, 0.3);cursor:pointer;}.edit-addwidget.svelte-13s71iz {position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);transform:translateX(-50%);display:inline-flex;align-items:center;gap:8px;padding:11px 22px;border-radius:999px;border:1px solid color-mix(in srgb, var(--text) 25%, transparent);background:color-mix(in srgb, var(--bg-elevated) 70%, transparent);color:var(--text);font-weight:700;font-size:0.95rem;backdrop-filter:blur(8px);cursor:pointer;white-space:nowrap;}\n\n  /* ---- Widget picker (Niagara-style: A–Z app list + expandable previews) ---- */.wpick.svelte-13s71iz {position:fixed;inset:0;z-index:100;background:color-mix(in srgb, var(--bg) 82%, transparent);backdrop-filter:blur(10px);display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top) + 14px) 14px calc(env(safe-area-inset-bottom) + 14px);}.wpick-search.svelte-13s71iz {display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:999px;background:var(--bg-elevated);color:var(--text);margin-bottom:12px;flex:none;}.wpick-search.svelte-13s71iz input:where(.svelte-13s71iz) {flex:1;border:none;background:none;color:var(--text);font-size:1.1rem;outline:none;}.wpick-close.svelte-13s71iz {flex:none;width:34px;height:34px;display:grid;place-items:center;border:none;background:none;color:var(--text);cursor:pointer;}.wpick-list.svelte-13s71iz {flex:1;overflow-y:auto;}.wpick-letter.svelte-13s71iz {font-size:0.9rem;font-weight:700;color:var(--text);opacity:0.6;padding:10px 6px 4px;}.wpick-app.svelte-13s71iz {width:100%;display:flex;align-items:center;gap:16px;padding:10px 6px;background:none;border:none;color:var(--text);cursor:pointer;text-align:left;}.wpick-icon.svelte-13s71iz {width:46px;height:46px;border-radius:12px;object-fit:cover;flex:none;}.wpick-icon.fallback.svelte-13s71iz {display:grid;place-items:center;background:color-mix(in srgb, var(--accent) 35%, var(--bg-elevated));font-weight:700;font-size:1.2rem;}.wpick-appmeta.svelte-13s71iz {display:flex;flex-direction:column;}.wpick-appname.svelte-13s71iz {font-size:1.15rem;font-weight:600;}.wpick-count.svelte-13s71iz {font-size:0.9rem;opacity:0.6;}.wpick-widgets.svelte-13s71iz {display:flex;flex-direction:column;gap:12px;padding:6px 6px 14px 72px;}.wpick-widget.svelte-13s71iz {display:flex;flex-direction:column;gap:8px;padding:10px;border:none;border-radius:16px;background:var(--bg-elevated);color:var(--text);cursor:pointer;text-align:left;}.wpick-preview.svelte-13s71iz {width:100%;max-height:220px;object-fit:contain;border-radius:12px;}.wpick-preview.fallback.svelte-13s71iz {height:120px;background:var(--bg);}.wpick-wlabel.svelte-13s71iz {font-size:1rem;font-weight:500;}\n\n  /* ---- Set-as-default-launcher prompt (setup-dialog standard) ---- */.setup.svelte-13s71iz {position:fixed;inset:0;z-index:950;background:radial-gradient(\n        circle at 50% 28%,\n        color-mix(in srgb, var(--accent) 22%, transparent),\n        transparent 70%\n      ),\n      var(--bg);display:flex;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top) + 40px) 24px calc(env(safe-area-inset-bottom) + 32px);overflow:hidden;}.aurora.svelte-13s71iz {position:absolute;border-radius:50%;filter:blur(60px);opacity:0.45;pointer-events:none;}.a1.svelte-13s71iz {width:320px;height:320px;background:var(--accent);top:-60px;left:-40px;\n    animation: svelte-13s71iz-drift1 14s ease-in-out infinite;}.a2.svelte-13s71iz {width:280px;height:280px;background:color-mix(in srgb, var(--accent) 50%, #b06cf0);bottom:-60px;right:-40px;\n    animation: svelte-13s71iz-drift2 16s ease-in-out infinite;}\n  @keyframes svelte-13s71iz-drift1 {\n    0%,\n    100% {\n      transform: translate(0, 0);\n    }\n    50% {\n      transform: translate(30px, 40px);\n    }\n  }\n  @keyframes svelte-13s71iz-drift2 {\n    0%,\n    100% {\n      transform: translate(0, 0);\n    }\n    50% {\n      transform: translate(-30px, -30px);\n    }\n  }.setup-x.svelte-13s71iz {position:absolute;top:calc(env(safe-area-inset-top) + 12px);right:16px;width:44px;height:44px;display:grid;place-items:center;border:none;background:color-mix(in srgb, var(--bg-elevated) 60%, transparent);color:var(--text);border-radius:50%;cursor:pointer;z-index:2;}.setup-stage.svelte-13s71iz {position:relative;max-width:440px;text-align:center;z-index:1;}.setup-illu.svelte-13s71iz {width:220px;height:auto;margin:0 auto 20px;display:block;}.setup-illu.svelte-13s71iz .planet:where(.svelte-13s71iz) {\n    animation: svelte-13s71iz-pop 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);transform-origin:center;}.setup-illu.svelte-13s71iz .ring:where(.svelte-13s71iz) {\n    animation: svelte-13s71iz-spin 18s linear infinite;transform-origin:130px 105px;}.setup-illu.svelte-13s71iz .moon:where(.svelte-13s71iz) {\n    animation: svelte-13s71iz-spin 6s linear infinite;transform-origin:130px 105px;}\n  @keyframes svelte-13s71iz-pop {\n    from {\n      transform: scale(0);\n    }\n    to {\n      transform: scale(1);\n    }\n  }\n  @keyframes svelte-13s71iz-spin {\n    to {\n      transform: rotate(360deg);\n    }\n  }.setup-kicker.svelte-13s71iz {text-transform:uppercase;letter-spacing:0.08em;font-size:0.8rem;font-weight:700;color:var(--accent);margin-bottom:8px;}.setup-h1.svelte-13s71iz {font-size:clamp(1.6rem, 7vw, 2.2rem);font-weight:800;letter-spacing:-0.02em;color:var(--text);margin:0 0 12px;}.setup-p.svelte-13s71iz {color:var(--text-muted, color-mix(in srgb, var(--text) 65%, transparent));font-size:1.02rem;line-height:1.6;margin:0 auto 28px;max-width:32rem;}.setup-go.svelte-13s71iz {width:100%;max-width:360px;padding:15px;border-radius:16px;border:none;background:linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #b06cf0));color:#fff;font-size:1.05rem;font-weight:700;cursor:pointer;box-shadow:0 10px 28px rgba(0, 0, 0, 0.3);}\n\n  @media (prefers-reduced-motion: reduce) {.app.svelte-13s71iz,\n    .scrubber.svelte-13s71iz,\n    .switch.svelte-13s71iz,\n    .knob.svelte-13s71iz,\n    .group.svelte-13s71iz,\n    .clock.svelte-13s71iz,\n    .foot.svelte-13s71iz {transition:none;}.aurora.svelte-13s71iz,\n    .setup-illu.svelte-13s71iz .planet:where(.svelte-13s71iz),\n    .setup-illu.svelte-13s71iz .ring:where(.svelte-13s71iz),\n    .setup-illu.svelte-13s71iz .moon:where(.svelte-13s71iz) {\n      animation: none;}\n  }'
 };
 
 function Home($$anchor, $$props) {
@@ -8468,7 +8478,12 @@ function Home($$anchor, $$props) {
 			if (!ok && !has) set(brokenWidgets, [...get(brokenWidgets), id], true); else if (ok && has) set(brokenWidgets, get(brokenWidgets).filter((x) => x !== id), true);
 		});
 
-		const onResize = () => void placeAppWidgets();
+		measurePager();
+
+		const onResize = () => {
+			measurePager();
+			void placeAppWidgets();
+		};
 
 		window.addEventListener('resize', onResize);
 
@@ -8941,123 +8956,106 @@ function Home($$anchor, $$props) {
 		}
 	}
 
-	// ─── Home pages (horizontal pager) ────────────────────────────────────────
-	// The launcher is a pager of pages. The first ('home') is the full screen
-	// (widgets + favourites + app list); extra pages are widget canvases or a
-	// card that opens a plugin view (SKWD Wall, a chat, …).
+	// ─── Home pages (2D grid; flick between neighbours) ───────────────────────
+	// Pages sit on a grid, home at (0,0). A straight flick in a direction jumps to
+	// the neighbour there; a drawn shape stays a gesture. The viewport translates
+	// in WHOLE pages (pixel-based), so it can never get stuck between pages.
 	let pages = state(proxy(manager().pages()));
 
-	let pageIndex = state(0);
+	let curCol = state(0);
+	let curRow = state(0);
 	let pagerEl;
-	let dragDX = state(0 // live px offset while swiping between pages
+	let pagerW = state(0);
+	let pagerH = state(0);
+	let navigating = state(false // true during a page transition (hides native widgets)
 	);
-	let pagerAnim = state(true // CSS transition on (snapping) / off (dragging)
-	);
-	const currentPage = user_derived(() => get(pages)[Math.min(get(pageIndex), get(pages).length - 1)] ?? get(pages)[0]);
+	let navTimer;
+
+	// All saved user-drawn gestures (reloaded when the creator changes them).
+	let customGestures = state(proxy(manager().customGestures()));
+
+	const GESTURE_MIN_SCORE = 0.82;
+	const currentPage = user_derived(() => manager().pageAt(get(curCol), get(curRow)) ?? get(pages).find((p) => p.type === 'home') ?? get(pages)[0]);
 	const onHomePage = user_derived(() => get(currentPage)?.type === 'home');
-	const paging = user_derived(() => get(dragDX) !== 0);
+
+	function measurePager() {
+		set(pagerW, pagerEl?.clientWidth || window.innerWidth, true);
+		set(pagerH, pagerEl?.clientHeight || window.innerHeight, true);
+	}
 
 	function reloadPages() {
 		set(pages, manager().pages(), true);
 
-		if (get(pageIndex) > get(pages).length - 1) set(pageIndex, Math.max(0, get(pages).length - 1), true);
+		if (!manager().pageAt(get(curCol), get(curRow))) {
+			set(curCol, 0);
+			set(curRow, 0 // we were on a cell that no longer exists
+			);
+		}
 	}
 
-	function goToPage(i) {
-		const next = Math.max(0, Math.min(get(pages).length - 1, i));
+	/** Jump to the page at a grid cell (must exist). Animated; widgets hidden briefly. */
+	function goToCell(col, row) {
+		if (!manager().pageAt(col, row)) return;
+		if ((col !== get(curCol) || row !== get(curRow)) && get(hapticsEnabled)) void haptics?.tick();
 
-		if (next !== get(pageIndex) && get(hapticsEnabled)) void haptics?.tick();
-
-		set(pageIndex, next, true);
-		set(dragDX, 0);
-		set(pagerAnim, true);
+		set(curCol, col, true);
+		set(curRow, row, true);
+		set(navigating, true);
+		clearTimeout(navTimer);
+		navTimer = setTimeout(() => set(navigating, false), 340);
 	}
 
-	// ─── Gesture engine ───────────────────────────────────────────────────────
-	// One pointer layer on the pager recognises: horizontal swipe → page change;
-	// circle / up / down / two-finger / double-tap → user-bound actions. It only
-	// ever preventDefaults once it has committed to a horizontal page-drag, so
-	// vertical scrolling of the app list is untouched.
+	function goToPageId(id) {
+		const p = get(pages).find((x) => x.id === id);
+
+		if (p) goToCell(p.col, p.row);
+	}
+
+	// ─── Flick + gesture engine ───────────────────────────────────────────────
+	// touch-action is locked on launcher pages (see CSS), so we fully own touches:
+	// a straight flick navigates to the neighbour; a drawn shape runs a gesture; a
+	// tap falls through to the app/button underneath.
 	const ptrs = new Map();
 
 	let gStartX = 0;
 	let gStartY = 0;
 	let gPath = [];
-	let gAxis = null;
-	let gTwo = false; // two fingers down during this stroke
-	let gIgnore = false; // started on the scrubber / an overlay → leave it alone
-	let gOnApp = false; // started on an app tile → no drawn-gesture match
-	let gDraw = false; // this vertical/diagonal stroke is a gesture-draw (home, at rest)
+	let gIgnore = false; // started on the scrubber / an input → leave it alone
+	let gOnApp = false; // started on an app tile → no flick/gesture (tap it)
+	let gMulti = false; // 2+ pointers this stroke → ignore (pinch/scroll)
 	let gActive = false;
 	let suppressClickUntil = 0;
 
 	function pagerDown(e) {
 		ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
-		if (ptrs.size === 1) {
-			const t = e.target;
+		if (ptrs.size > 1) {
+			gMulti = true;
 
-			gIgnore = !!t.closest('.scrubber, .edit-handle, input, textarea');
-			gOnApp = !!t.closest('.app');
-			gActive = true;
-			gTwo = false;
-			gDraw = false;
-			gAxis = null;
-			gStartX = e.clientX;
-			gStartY = e.clientY;
-			gPath = [{ x: e.clientX, y: e.clientY }];
-		} else if (ptrs.size === 2) {
-			gTwo = true;
-			gAxis = null;
-			set(dragDX, 0);
+			return;
 		}
+
+		const t = e.target;
+
+		gIgnore = !!t.closest('.scrubber, .edit-handle, input, textarea');
+		gOnApp = !!t.closest('.app');
+		gActive = !gIgnore;
+		gMulti = false;
+		gStartX = e.clientX;
+		gStartY = e.clientY;
+		gPath = [{ x: e.clientX, y: e.clientY }];
+
+		if (!gIgnore) pagerEl?.setPointerCapture?.(e.pointerId);
 	}
 
 	function pagerMove(e) {
-		if (!ptrs.has(e.pointerId)) return;
+		if (!ptrs.has(e.pointerId) || gIgnore || gMulti || !gActive) return;
 
 		ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
-		if (gIgnore || gTwo) return;
+		if (gPath.length < 600) gPath.push({ x: e.clientX, y: e.clientY });
 
-		const dx = e.clientX - gStartX;
-		const dy = e.clientY - gStartY;
-
-		if (gActive && gPath.length < 500) gPath.push({ x: e.clientX, y: e.clientY });
-
-		if (gAxis === null && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
-			const canPage = get(pages).length > 1 && !(get(onHomePage) && get(appsRevealed));
-
-			if (Math.abs(dx) > Math.abs(dy) && canPage) {
-				gAxis = 'h';
-				set(pagerAnim, false);
-				pagerEl?.setPointerCapture?.(e.pointerId);
-				suppressClickUntil = performance.now() + 700;
-			} else {
-				gAxis = 'v';
-
-				// A vertical/diagonal stroke on the home's free space (at rest, not on an
-				// app) is a drawn gesture: capture it and stop the browser from scrolling
-				// the list — otherwise it fires pointercancel and the stroke never lands.
-				gDraw = get(onHomePage) && !get(appsRevealed) && !gOnApp;
-
-				if (gDraw) pagerEl?.setPointerCapture?.(e.pointerId);
-			}
-		}
-
-		if (gAxis === 'h') {
-			e.preventDefault();
-
-			let d = dx;
-			const atStart = get(pageIndex) === 0 && d > 0;
-			const atEnd = get(pageIndex) === get(pages).length - 1 && d < 0;
-
-			if (atStart || atEnd) d *= 0.35; // rubber-band at the ends
-
-			set(dragDX, d, true);
-		} else if (gAxis === 'v' && gDraw) {
-			e.preventDefault(); // keep the stroke intact for recognition
-		}
+		e.preventDefault(); // we own the stroke (touch-action is locked)
 	}
 
 	function pagerUp(e) {
@@ -9069,84 +9067,76 @@ function Home($$anchor, $$props) {
 			return;
 		}
 
-		if (gTwo) {
-			// Two fingers = pinch/scroll, never a drawn gesture. Just settle.
+		if (gMulti) {
 			if (ptrs.size === 0) {
-				gTwo = false;
+				gMulti = false;
 				gActive = false;
 			}
 
 			return;
 		}
 
-		if (gAxis === 'h') {
-			set(pagerAnim, true);
+		if (ptrs.size !== 0 || !gActive) return;
 
-			const w = pagerEl?.clientWidth || window.innerWidth;
-
-			if (Math.abs(get(dragDX)) > w * 0.22) goToPage(get(pageIndex) - Math.sign(get(dragDX))); else set(dragDX, 0);
-
-			gActive = false;
-			gAxis = null;
-
-			return;
-		}
-
-		if (ptrs.size === 0 && gActive) {
-			gActive = false;
-
-			if (gDraw) matchDrawnGesture();
-
-			gDraw = false;
-		}
+		gActive = false;
+		endStroke();
 	}
 
 	function pagerCancel(e) {
 		ptrs.delete(e.pointerId);
 
-		if (gAxis === 'h') {
-			set(pagerAnim, true);
-			set(dragDX, 0);
-		}
-
 		if (ptrs.size === 0) {
 			gActive = false;
-			gAxis = null;
-			gTwo = false;
-			gDraw = false;
+			gMulti = false;
 		}
 	}
 
-	// All saved user-drawn gestures (reloaded when the creator changes them).
-	let customGestures = state(proxy(manager().customGestures()));
-
-	const GESTURE_MIN_SCORE = 0.8;
-
-	/** Match a finished single-finger stroke against the user's drawn gestures. */
-	function matchDrawnGesture() {
-		if (get(customGestures).length < 1 || gPath.length < 6) return;
-		if (gOnApp || get(onHomePage // free space only
-		) && get(appsRevealed)) return;
-
+	/** Classify a finished stroke: drawn shape → gesture; straight flick → navigate. */
+	function endStroke() {
+		const last = gPath[gPath.length - 1] ?? { x: gStartX, y: gStartY };
+		const dx = last.x - gStartX;
+		const dy = last.y - gStartY;
+		const reach = Math.hypot(dx, dy);
 		let plen = 0;
 
 		for (let i = 1; i < gPath.length; i++) plen += Math.hypot(gPath[i].x - gPath[i - 1].x, gPath[i].y - gPath[i - 1].y);
 
-		if (plen < 60) return; // a tap / tiny nudge is not a gesture
+		const straightness = plen > 0 ? reach / plen : 0;
 
-		const res = recognizeStroke(gPath, get(customGestures).map((g) => ({ id: g.id, points: g.points })));
+		// 1) Drawn shape → gesture: enough path, clearly not a straight flick.
+		if (!gOnApp && plen > 60 && straightness < 0.78 && get(customGestures).length > 0) {
+			const res = recognizeStroke(gPath, get(customGestures).map((g) => ({ id: g.id, points: g.points })));
 
-		if (!res || res.score < GESTURE_MIN_SCORE) return;
+			if (res && res.score >= GESTURE_MIN_SCORE) {
+				const g = get(customGestures).find((x) => x.id === res.id);
 
-		const g = get(customGestures).find((x) => x.id === res.id);
+				if (g) {
+					suppressClickUntil = performance.now() + 500;
 
-		if (!g) return;
+					if (get(hapticsEnabled)) void haptics?.tick();
 
-		suppressClickUntil = performance.now() + 500;
+					runAction(g.action);
 
-		if (get(hapticsEnabled)) void haptics?.tick();
+					return;
+				}
+			}
+		}
 
-		runAction(g.action);
+		// 2) Straight flick → neighbour in that direction (not while browsing apps).
+		if (!gOnApp && !(get(onHomePage) && get(appsRevealed)) && straightness > 0.8 && reach > 48) {
+			let dCol = 0;
+			let dRow = 0;
+
+			if (Math.abs(dx) > Math.abs(dy)) dCol = dx < 0 ? 1 : -1; else // swipe left → go right
+			dRow = dy < 0 ? 1 : -1; // swipe up → go down
+
+			if (manager().pageAt(get(curCol) + dCol, get(curRow) + dRow)) {
+				suppressClickUntil = performance.now() + 400;
+				goToCell(get(curCol) + dCol, get(curRow) + dRow);
+			}
+		}
+
+		// 3) Otherwise a tap / unrecognised stroke → nothing; the app's click handles taps.
 	}
 
 	function runAction(a) {
@@ -9160,13 +9150,8 @@ function Home($$anchor, $$props) {
 				break;
 
 			case 'page':
-				{
-					const i = get(pages).findIndex((p) => p.id === a.target);
-
-					if (i >= 0) goToPage(i);
-
-					break;
-				}
+				goToPageId(a.target ?? '');
+				break;
 
 			case 'orbit':
 				void openOrbitApp();
@@ -9179,23 +9164,42 @@ function Home($$anchor, $$props) {
 
 	let renameText = state('');
 	let viewAssignOpen = state(false);
+	let overviewOpen = state(false);
 
+	/** Add a page next to the current one (prefers a free neighbour: right, down,
+	 *  left, up) and jump to it. Used by the long-press menu. */
 	function addWidgetsPage() {
-		manager().addPage('Seite ' + get(pages).length);
+		const dirs = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+		const free = dirs.find(([c, r]) => !manager().pageAt(get(curCol) + c, get(curRow) + r));
+		const [c, r] = free ?? [1, 0];
+		const id = manager().addPageAt(get(curCol) + c, get(curRow) + r, 'Seite');
+
 		set(editMenuOpen, false);
 		reloadPages();
-		goToPage(get(pages).length - 1);
+
+		if (id) goToPageId(id);
+	}
+
+	/** Add a page at a specific empty cell (used by the overview's + buttons). */
+	function addPageAtCell(col, row) {
+		const id = manager().addPageAt(col, row, 'Seite');
+
+		reloadPages();
+
+		return id;
+	}
+
+	function removePageById(id) {
+		if (id === HOME_ID) return;
+
+		manager().removePage(id);
+		reloadPages();
 	}
 
 	function removeCurrentPage() {
-		if (get(currentPage).id === HOME_ID) return;
-
-		const idx = get(pageIndex);
-
-		manager().removePage(get(currentPage).id);
+		removePageById(get(currentPage).id);
 		set(editMenuOpen, false);
-		reloadPages();
-		goToPage(idx - 1);
+		goToCell(0, 0);
 	}
 
 	function startRename() {
@@ -9222,6 +9226,54 @@ function Home($$anchor, $$props) {
 	const VIEW_SELF = 'orbit-launcher-home';
 
 	const availableViews = user_derived(() => $$props.app.navigation.getAll().filter((v) => v.viewId !== VIEW_SELF).map((v) => ({ id: v.viewId, name: v.name })));
+
+	// Zoomed-out overview: the page grid plus one empty ring so "+" buttons for new
+	// edge pages are reachable in every direction.
+	const overviewGrid = user_derived(() => {
+		let minC = 0;
+		let maxC = 0;
+		let minR = 0;
+		let maxR = 0;
+
+		for (const p of get(pages)) {
+			minC = Math.min(minC, p.col);
+			maxC = Math.max(maxC, p.col);
+			minR = Math.min(minR, p.row);
+			maxR = Math.max(maxR, p.row);
+		}
+
+		minC--;
+		maxC++;
+		minR--;
+		maxR++;
+
+		const occ = new Set(get(pages).map((p) => `${p.col},${p.row}`));
+		const adj = (c, r) => occ.has(`${c - 1},${r}`) || occ.has(`${c + 1},${r}`) || occ.has(`${c},${r - 1}`) || occ.has(`${c},${r + 1}`);
+		const rows = [];
+
+		for (let r = minR; r <= maxR; r++) {
+			const row = [];
+
+			for (let c = minC; c <= maxC; c++) {
+				const page = get(pages).find((p) => p.col === c && p.row === r);
+
+				row.push({ c, r, page, canAdd: !page && adj(c, r) });
+			}
+
+			rows.push(row);
+		}
+
+		return rows;
+	});
+
+	function overviewGoTo(col, row) {
+		set(overviewOpen, false);
+		goToCell(col, row);
+	}
+
+	function overviewAdd(col, row) {
+		addPageAtCell(col, row);
+	}
 
 	// ─── Gesture creator (draw your own gesture, bind it to an action) ─────────
 	let gestureCreatorOpen = state(false);
@@ -9327,38 +9379,37 @@ function Home($$anchor, $$props) {
 	// Hosted native widgets must hide whenever something covers the home or the
 	// page isn't settled (they draw above the web layer). Declared last so it can
 	// see the pager/overlay state above.
-	const widgetsHidden = user_derived(() => get(appsRevealed) || get(settingsOpen) || get(editing) || get(widgetPickerOpen) || get(menuApp) !== null || get(widgetMenuId) !== null || get(editMenuOpen) || get(showDefaultPrompt) || get(paging) || get(renaming) !== null || get(viewAssignOpen) || get(gestureCreatorOpen));
+	const widgetsHidden = user_derived(() => get(appsRevealed) || get(settingsOpen) || get(editing) || get(widgetPickerOpen) || get(menuApp) !== null || get(widgetMenuId) !== null || get(editMenuOpen) || get(showDefaultPrompt) || get(navigating) || get(renaming) !== null || get(viewAssignOpen) || get(gestureCreatorOpen) || get(overviewOpen));
 
 	user_effect(() => {
-		// Re-place when the hosted set, the visible page, or the drag offset change.
+		// Re-place when the hosted set or the visible page changes.
 		void get(appWidgets);
 
-		void get(pageIndex);
-		void get(dragDX);
+		void get(curCol);
+		void get(curRow);
 
 		if (!appwidgets) return;
 		if (get(widgetsHidden)) void appwidgets.hideAll(); else void placeAppWidgets();
 	});
 
-	var fragment = root_64();
+	var fragment = root_73();
 	var div = first_child(fragment);
 	var div_1 = child(div);
-	let classes;
 
-	each(div_1, 23, () => get(pages), (pg) => pg.id, ($$anchor, pg) => {
+	each(div_1, 21, () => get(pages), (pg) => pg.id, ($$anchor, pg) => {
 		var div_2 = root_29();
 		var node_1 = child(div_2);
 
 		{
 			var consequent_18 = ($$anchor) => {
 				var div_3 = root_20();
-				let classes_1;
+				let classes;
 				var node_2 = child(div_3);
 
 				{
 					var consequent_7 = ($$anchor) => {
 						var header = root_7();
-						let classes_2;
+						let classes_1;
 
 						{
 							const widgetBody = ($$anchor, item = noop) => {
@@ -9392,7 +9443,7 @@ function Home($$anchor, $$props) {
 
 									var consequent_4 = ($$anchor) => {
 										var div_7 = root_4();
-										let classes_3;
+										let classes_2;
 										var node_4 = child(div_7);
 
 										{
@@ -9413,7 +9464,7 @@ function Home($$anchor, $$props) {
 
 										template_effect(
 											($0, $1) => {
-												classes_3 = set_class(div_7, 1, 'aw-slot svelte-13s71iz', null, classes_3, { broken: $0 });
+												classes_2 = set_class(div_7, 1, 'aw-slot svelte-13s71iz', null, classes_2, { broken: $0 });
 												set_attribute(div_7, 'data-aw', item().aw.widgetId);
 												set_style(div_7, `height: ${$1 ?? ''}px;`);
 											},
@@ -9491,7 +9542,7 @@ function Home($$anchor, $$props) {
 
 						template_effect(
 							($0) => {
-								classes_2 = set_class(header, 1, 'clock svelte-13s71iz', null, classes_2, { 'home-region': !get(appsRevealed) });
+								classes_1 = set_class(header, 1, 'clock svelte-13s71iz', null, classes_1, { 'home-region': !get(appsRevealed) });
 								set_style(header, $0);
 							},
 							[
@@ -9530,7 +9581,7 @@ function Home($$anchor, $$props) {
 							{
 								var consequent_14 = ($$anchor) => {
 									var section = root_15();
-									let classes_4;
+									let classes_3;
 									var node_13 = child(section);
 
 									{
@@ -9551,7 +9602,7 @@ function Home($$anchor, $$props) {
 
 									each(node_14, 19, () => get(s).apps, (a) => get(s).key + ':' + a.packageName, ($$anchor, a, ai) => {
 										var div_14 = root_14();
-										let classes_5;
+										let classes_4;
 										var node_15 = child(div_14);
 
 										{
@@ -9628,7 +9679,7 @@ function Home($$anchor, $$props) {
 											});
 										}
 										action(button_4, ($$node, $$action_arg) => longpress?.($$node, $$action_arg), () => () => set(menuApp, get(a), true));
-										template_effect(() => classes_5 = set_class(div_14, 1, 'approw svelte-13s71iz', null, classes_5, { 'fav-edit': get(editing) && get(s).key === '★' }));
+										template_effect(() => classes_4 = set_class(div_14, 1, 'approw svelte-13s71iz', null, classes_4, { 'fav-edit': get(editing) && get(s).key === '★' }));
 
 										delegated('click', button_4, () => {
 											if (!get(editing)) launch(get(a).packageName);
@@ -9640,7 +9691,7 @@ function Home($$anchor, $$props) {
 
 									template_effect(
 										($0) => {
-											classes_4 = set_class(section, 1, 'group svelte-13s71iz', null, classes_4, { active: get(scrubbing) && get(i) === get(activeIndex) });
+											classes_3 = set_class(section, 1, 'group svelte-13s71iz', null, classes_3, { active: get(scrubbing) && get(i) === get(activeIndex) });
 											set_style(section, `scroll-margin-top: ${$0 ?? ''}vh;`);
 										},
 										[() => Math.round(get(sectionAnchor) * 100)]
@@ -9703,7 +9754,7 @@ function Home($$anchor, $$props) {
 				bind_this(div_3, ($$value) => listEl = $$value, () => listEl);
 				action(div_3, ($$node) => homeLongpress?.($$node));
 
-				template_effect(() => classes_1 = set_class(div_3, 1, 'list svelte-13s71iz', null, classes_1, {
+				template_effect(() => classes = set_class(div_3, 1, 'list svelte-13s71iz', null, classes, {
 					focusing: get(scrubbing),
 					'touch-lock': !get(appsRevealed)
 				}));
@@ -9747,7 +9798,7 @@ function Home($$anchor, $$props) {
 
 						each(node_25, 19, () => resolveWidgets(get(pg).widgets), (item) => item.token, ($$anchor, item, i) => {
 							var div_19 = root_24();
-							let classes_6;
+							let classes_5;
 							var node_26 = child(div_19);
 
 							{
@@ -9806,7 +9857,7 @@ function Home($$anchor, $$props) {
 
 								var consequent_26 = ($$anchor) => {
 									var div_25 = root_4();
-									let classes_7;
+									let classes_6;
 									var node_28 = child(div_25);
 
 									{
@@ -9827,7 +9878,7 @@ function Home($$anchor, $$props) {
 
 									template_effect(
 										($0, $1) => {
-											classes_7 = set_class(div_25, 1, 'aw-slot svelte-13s71iz', null, classes_7, { broken: $0 });
+											classes_6 = set_class(div_25, 1, 'aw-slot svelte-13s71iz', null, classes_6, { broken: $0 });
 											set_attribute(div_25, 'data-aw', get(item).aw.widgetId);
 											set_style(div_25, `height: ${$1 ?? ''}px;`);
 										},
@@ -9844,7 +9895,7 @@ function Home($$anchor, $$props) {
 									if (get(item).kind === 'clock') $$render(consequent_22); else if (get(item).kind === 'date') $$render(consequent_23, 1); else if (get(item).kind === 'battery') $$render(consequent_24, 2); else if (get(item).kind === 'aw') $$render(consequent_26, 3);
 								});
 							}
-							template_effect(() => classes_6 = set_class(div_19, 1, 'wrow-edit svelte-13s71iz', null, classes_6, { plain: !get(editing) }));
+							template_effect(() => classes_5 = set_class(div_19, 1, 'wrow-edit svelte-13s71iz', null, classes_5, { plain: !get(editing) }));
 							append($$anchor, div_19);
 						});
 
@@ -9920,6 +9971,7 @@ function Home($$anchor, $$props) {
 				if (get(pg).type === 'home') $$render(consequent_18); else if (get(pg).type === 'widgets') $$render(consequent_28, 1); else $$render(alternate_5, -1);
 			});
 		}
+		template_effect(() => set_style(div_2, `left: ${get(pg).col * 100}%; top: ${get(pg).row * 100}%;`));
 		append($$anchor, div_2);
 	});
 	bind_this(div_1, ($$value) => pagerEl = $$value, () => pagerEl);
@@ -9929,17 +9981,17 @@ function Home($$anchor, $$props) {
 	{
 		var consequent_31 = ($$anchor) => {
 			var div_29 = root_32();
-			let classes_8;
+			let classes_7;
 			var node_35 = child(div_29);
 
 			each(node_35, 19, () => get(sections), (s) => s.key, ($$anchor, s, i) => {
 				var span_6 = root_30();
-				let classes_9;
+				let classes_8;
 				var text_12 = only_child(span_6, true);
 
 				template_effect(
 					($0) => {
-						classes_9 = set_class(span_6, 1, 'scrub-key svelte-13s71iz', null, classes_9, { active: get(scrubbing) && get(i) === get(activeIndex) });
+						classes_8 = set_class(span_6, 1, 'scrub-key svelte-13s71iz', null, classes_8, { active: get(scrubbing) && get(i) === get(activeIndex) });
 						set_style(span_6, $0);
 						set_text(text_12, get(s).key);
 					},
@@ -9975,7 +10027,7 @@ function Home($$anchor, $$props) {
 
 			template_effect(
 				($0) => {
-					classes_8 = set_class(div_29, 1, 'scrubber svelte-13s71iz', null, classes_8, { hidden: !get(railVisible) });
+					classes_7 = set_class(div_29, 1, 'scrubber svelte-13s71iz', null, classes_7, { hidden: !get(railVisible) });
 					set_style(div_29, `top: ${get(railPos) * 100}%; height: ${$0 ?? ''}%; right: ${get(railRight) ?? ''}px;`);
 				},
 				[() => Math.round(get(railHeightFrac) * 100)]
@@ -9996,101 +10048,157 @@ function Home($$anchor, $$props) {
 	var node_37 = sibling(node_34, 2);
 
 	{
-		var consequent_32 = ($$anchor) => {
-			var div_31 = root_34();
+		var consequent_36 = ($$anchor) => {
+			var fragment_9 = root_37();
+			var node_38 = first_child(fragment_9);
 
-			each(div_31, 23, () => get(pages), (pg) => pg.id, ($$anchor, pg, pi) => {
-				var button_12 = root_33();
-				let classes_10;
+			{
+				var consequent_32 = ($$anchor) => {
+					var div_31 = root_33();
 
-				template_effect(() => {
-					classes_10 = set_class(button_12, 1, 'dot svelte-13s71iz', null, classes_10, { on: get(pi) === get(pageIndex) });
-					set_attribute(button_12, 'aria-label', get(pg).name);
+					append($$anchor, div_31);
+				};
+
+				var d_4 = user_derived(() => manager().pageAt(get(curCol) - 1, get(curRow)));
+
+				if_block(node_38, ($$render) => {
+					if (get(d_4)) $$render(consequent_32);
 				});
+			}
 
-				delegated('click', button_12, () => goToPage(get(pi)));
-				append($$anchor, button_12);
-			});
-			append($$anchor, div_31);
-		};
+			var node_39 = sibling(node_38, 2);
 
-		if_block(node_37, ($$render) => {
-			if (get(pages).length > 1 && !(get(onHomePage) && get(appsRevealed)) && !get(editing)) $$render(consequent_32);
-		});
-	}
+			{
+				var consequent_33 = ($$anchor) => {
+					var div_32 = root_34();
 
-	var node_38 = sibling(div, 2);
+					append($$anchor, div_32);
+				};
 
-	{
-		var consequent_33 = ($$anchor) => {
-			var div_32 = root_35();
-			var div_33 = child(div_32);
-			var input = sibling(child(div_33), 2);
+				var d_5 = user_derived(() => manager().pageAt(get(curCol) + 1, get(curRow)));
 
-			var button_13 = sibling(input, 2);
-			var node_39 = child(button_13);
+				if_block(node_39, ($$render) => {
+					if (get(d_5)) $$render(consequent_33);
+				});
+			}
 
-			Icon(node_39, { name: 'check', size: 20 });
-			delegated('click', div_32, commitRename);
-			delegated('click', div_33, (e) => e.stopPropagation());
-			delegated('keydown', input, (e) => e.key === 'Enter' && commitRename());
-			bind_value(input, () => get(renameText), ($$value) => set(renameText, $$value));
-			delegated('click', button_13, commitRename);
-			append($$anchor, div_32);
-		};
-
-		if_block(node_38, ($$render) => {
-			if (get(renaming)) $$render(consequent_33);
-		});
-	}
-
-	var node_40 = sibling(node_38, 2);
-
-	{
-		var consequent_35 = ($$anchor) => {
-			var div_34 = root_37();
-			var div_35 = child(div_34);
-			var div_36 = child(div_35);
-			var text_14 = only_child(div_36, true);
-			var button_14 = sibling(div_36, 2);
-			var node_41 = child(button_14);
-
-			Icon(node_41, { name: 'star', size: 20 });
-
-			var text_15 = sibling(node_41);
-
-			var button_15 = sibling(button_14, 2);
-			var node_42 = child(button_15);
-
-			Icon(node_42, { name: 'close', size: 20 });
-
-			var node_43 = sibling(button_15, 2);
+			var node_40 = sibling(node_39, 2);
 
 			{
 				var consequent_34 = ($$anchor) => {
-					var fragment_9 = root_36();
-					var button_16 = first_child(fragment_9);
-					var node_44 = child(button_16);
+					var div_33 = root_35();
 
-					Icon(node_44, { name: 'settings', size: 20 });
-
-					var button_17 = sibling(button_16, 2);
-					var node_45 = child(button_17);
-
-					Icon(node_45, { name: 'trash', size: 20 });
-					delegated('click', button_16, () => get(menuApp) && appInfoApp(get(menuApp).packageName));
-					delegated('click', button_17, () => get(menuApp) && uninstallApp(get(menuApp).packageName));
-					append($$anchor, fragment_9);
+					append($$anchor, div_33);
 				};
 
-				if_block(node_43, ($$render) => {
-					if (get(menuApp).packageName !== manager().selfPackage) $$render(consequent_34);
+				var d_6 = user_derived(() => manager().pageAt(get(curCol), get(curRow) - 1));
+
+				if_block(node_40, ($$render) => {
+					if (get(d_6)) $$render(consequent_34);
+				});
+			}
+
+			var node_41 = sibling(node_40, 2);
+
+			{
+				var consequent_35 = ($$anchor) => {
+					var div_34 = root_36();
+
+					append($$anchor, div_34);
+				};
+
+				var d_7 = user_derived(() => manager().pageAt(get(curCol), get(curRow) + 1));
+
+				if_block(node_41, ($$render) => {
+					if (get(d_7)) $$render(consequent_35);
+				});
+			}
+
+			var button_12 = sibling(node_41, 2);
+			var node_42 = child(button_12);
+
+			Icon(node_42, { name: 'rows', size: 18 });
+			delegated('click', button_12, () => set(overviewOpen, true));
+			append($$anchor, fragment_9);
+		};
+
+		if_block(node_37, ($$render) => {
+			if (get(pages).length > 1 && !(get(onHomePage) && get(appsRevealed)) && !get(editing)) $$render(consequent_36);
+		});
+	}
+
+	var node_43 = sibling(div, 2);
+
+	{
+		var consequent_37 = ($$anchor) => {
+			var div_35 = root_38();
+			var div_36 = child(div_35);
+			var input = sibling(child(div_36), 2);
+
+			var button_13 = sibling(input, 2);
+			var node_44 = child(button_13);
+
+			Icon(node_44, { name: 'check', size: 20 });
+			delegated('click', div_35, commitRename);
+			delegated('click', div_36, (e) => e.stopPropagation());
+			delegated('keydown', input, (e) => e.key === 'Enter' && commitRename());
+			bind_value(input, () => get(renameText), ($$value) => set(renameText, $$value));
+			delegated('click', button_13, commitRename);
+			append($$anchor, div_35);
+		};
+
+		if_block(node_43, ($$render) => {
+			if (get(renaming)) $$render(consequent_37);
+		});
+	}
+
+	var node_45 = sibling(node_43, 2);
+
+	{
+		var consequent_39 = ($$anchor) => {
+			var div_37 = root_40();
+			var div_38 = child(div_37);
+			var div_39 = child(div_38);
+			var text_14 = only_child(div_39, true);
+			var button_14 = sibling(div_39, 2);
+			var node_46 = child(button_14);
+
+			Icon(node_46, { name: 'star', size: 20 });
+
+			var text_15 = sibling(node_46);
+
+			var button_15 = sibling(button_14, 2);
+			var node_47 = child(button_15);
+
+			Icon(node_47, { name: 'close', size: 20 });
+
+			var node_48 = sibling(button_15, 2);
+
+			{
+				var consequent_38 = ($$anchor) => {
+					var fragment_10 = root_39();
+					var button_16 = first_child(fragment_10);
+					var node_49 = child(button_16);
+
+					Icon(node_49, { name: 'settings', size: 20 });
+
+					var button_17 = sibling(button_16, 2);
+					var node_50 = child(button_17);
+
+					Icon(node_50, { name: 'trash', size: 20 });
+					delegated('click', button_16, () => get(menuApp) && appInfoApp(get(menuApp).packageName));
+					delegated('click', button_17, () => get(menuApp) && uninstallApp(get(menuApp).packageName));
+					append($$anchor, fragment_10);
+				};
+
+				if_block(node_48, ($$render) => {
+					if (get(menuApp).packageName !== manager().selfPackage) $$render(consequent_38);
 				});
 			}
 
 			template_effect(
 				($0) => {
-					set_attribute(div_35, 'aria-label', get(menuApp).label);
+					set_attribute(div_38, 'aria-label', get(menuApp).label);
 					set_text(text_14, get(menuApp).label);
 					set_text(text_15, ` ${$0 ?? ''}`);
 				},
@@ -10099,42 +10207,42 @@ function Home($$anchor, $$props) {
 				]
 			);
 
-			delegated('click', div_34, () => set(menuApp, null));
-			delegated('click', div_35, (e) => e.stopPropagation());
+			delegated('click', div_37, () => set(menuApp, null));
+			delegated('click', div_38, (e) => e.stopPropagation());
 			delegated('click', button_14, () => get(menuApp) && toggleFavorite(get(menuApp).packageName));
 			delegated('click', button_15, () => get(menuApp) && hideApp(get(menuApp).packageName));
-			append($$anchor, div_34);
+			append($$anchor, div_37);
 		};
 
-		if_block(node_40, ($$render) => {
-			if (get(menuApp)) $$render(consequent_35);
+		if_block(node_45, ($$render) => {
+			if (get(menuApp)) $$render(consequent_39);
 		});
 	}
 
-	var node_46 = sibling(node_40, 2);
+	var node_51 = sibling(node_45, 2);
 
 	{
-		var consequent_38 = ($$anchor) => {
-			var div_37 = root_40();
-			var div_38 = child(div_37);
-			var button_18 = child(div_38);
-			var node_47 = child(button_18);
+		var consequent_42 = ($$anchor) => {
+			var div_40 = root_43();
+			var div_41 = child(div_40);
+			var button_18 = child(div_41);
+			var node_52 = child(button_18);
 
-			Icon(node_47, { name: 'rows', size: 20 });
+			Icon(node_52, { name: 'rows', size: 20 });
 
 			var button_19 = sibling(button_18, 2);
-			var node_48 = child(button_19);
+			var node_53 = child(button_19);
 
-			Icon(node_48, { name: 'settings', size: 20 });
+			Icon(node_53, { name: 'settings', size: 20 });
 
-			var node_49 = sibling(button_19, 2);
+			var node_54 = sibling(button_19, 2);
 
 			{
-				var consequent_36 = ($$anchor) => {
-					var button_20 = root_38();
-					var node_50 = child(button_20);
+				var consequent_40 = ($$anchor) => {
+					var button_20 = root_41();
+					var node_55 = child(button_20);
 
-					Icon(node_50, { name: 'trash', size: 20 });
+					Icon(node_55, { name: 'trash', size: 20 });
 
 					delegated('click', button_20, () => {
 						const id = get(widgetMenuId);
@@ -10148,63 +10256,68 @@ function Home($$anchor, $$props) {
 					append($$anchor, button_20);
 				};
 
-				if_block(node_49, ($$render) => {
-					if (get(widgetMenuId) !== null) $$render(consequent_36);
+				if_block(node_54, ($$render) => {
+					if (get(widgetMenuId) !== null) $$render(consequent_40);
 				});
 			}
 
-			var button_21 = sibling(node_49, 4);
-			var node_51 = child(button_21);
+			var button_21 = sibling(node_54, 4);
+			var node_56 = child(button_21);
 
-			Icon(node_51, { name: 'plus', size: 20 });
+			Icon(node_56, { name: 'rows', size: 20 });
 
 			var button_22 = sibling(button_21, 2);
-			var node_52 = child(button_22);
+			var node_57 = child(button_22);
 
-			Icon(node_52, { name: 'plus', size: 20 });
+			Icon(node_57, { name: 'plus', size: 20 });
 
-			var node_53 = sibling(button_22, 2);
+			var button_23 = sibling(button_22, 2);
+			var node_58 = child(button_23);
+
+			Icon(node_58, { name: 'plus', size: 20 });
+
+			var node_59 = sibling(button_23, 2);
 
 			{
-				var consequent_37 = ($$anchor) => {
-					var fragment_10 = root_39();
-					var button_23 = first_child(fragment_10);
-					var node_54 = child(button_23);
+				var consequent_41 = ($$anchor) => {
+					var fragment_11 = root_42();
+					var button_24 = first_child(fragment_11);
+					var node_60 = child(button_24);
 
-					Icon(node_54, { name: 'rows', size: 20 });
-
-					var button_24 = sibling(button_23, 2);
-					var node_55 = child(button_24);
-
-					Icon(node_55, { name: 'plugin', size: 20 });
+					Icon(node_60, { name: 'rows', size: 20 });
 
 					var button_25 = sibling(button_24, 2);
-					var node_56 = child(button_25);
+					var node_61 = child(button_25);
 
-					Icon(node_56, { name: 'trash', size: 20 });
-					delegated('click', button_23, startRename);
+					Icon(node_61, { name: 'plugin', size: 20 });
 
-					delegated('click', button_24, () => {
+					var button_26 = sibling(button_25, 2);
+					var node_62 = child(button_26);
+
+					Icon(node_62, { name: 'trash', size: 20 });
+					delegated('click', button_24, startRename);
+
+					delegated('click', button_25, () => {
 						set(editMenuOpen, false);
 						void ensureFavForBind();
 						set(viewAssignOpen, true);
 					});
 
-					delegated('click', button_25, removeCurrentPage);
-					append($$anchor, fragment_10);
+					delegated('click', button_26, removeCurrentPage);
+					append($$anchor, fragment_11);
 				};
 
-				if_block(node_53, ($$render) => {
-					if (get(currentPage).id !== HOME_ID) $$render(consequent_37);
+				if_block(node_59, ($$render) => {
+					if (get(currentPage).id !== HOME_ID) $$render(consequent_41);
 				});
 			}
 
-			delegated('click', div_37, () => {
+			delegated('click', div_40, () => {
 				set(editMenuOpen, false);
 				set(widgetMenuId, null);
 			});
 
-			delegated('click', div_38, (e) => e.stopPropagation());
+			delegated('click', div_41, (e) => e.stopPropagation());
 
 			delegated('click', button_18, () => {
 				set(editMenuOpen, false);
@@ -10218,110 +10331,213 @@ function Home($$anchor, $$props) {
 				set(settingsOpen, true);
 			});
 
-			delegated('click', button_21, addWidgetsPage);
-			delegated('click', button_22, openGestureCreator);
-			append($$anchor, div_37);
+			delegated('click', button_21, () => {
+				set(editMenuOpen, false);
+				set(overviewOpen, true);
+			});
+
+			delegated('click', button_22, addWidgetsPage);
+			delegated('click', button_23, openGestureCreator);
+			append($$anchor, div_40);
 		};
 
-		if_block(node_46, ($$render) => {
-			if (get(editMenuOpen)) $$render(consequent_38);
+		if_block(node_51, ($$render) => {
+			if (get(editMenuOpen)) $$render(consequent_42);
 		});
 	}
 
-	var node_57 = sibling(node_46, 2);
+	var node_63 = sibling(node_51, 2);
 
 	{
-		var consequent_39 = ($$anchor) => {
-			var div_39 = root_42();
-			var div_40 = child(div_39);
-			var div_41 = child(div_40);
-			var text_16 = only_child(div_41);
-			var div_42 = sibling(div_41, 2);
-			var button_26 = child(div_42);
-			let classes_11;
-			var node_58 = sibling(button_26, 2);
+		var consequent_43 = ($$anchor) => {
+			var div_42 = root_45();
+			var div_43 = child(div_42);
+			var div_44 = child(div_43);
+			var text_16 = only_child(div_44);
+			var div_45 = sibling(div_44, 2);
+			var button_27 = child(div_45);
+			let classes_9;
+			var node_64 = sibling(button_27, 2);
 
-			each(node_58, 17, () => get(availableViews), (v) => v.id, ($$anchor, v) => {
-				var button_27 = root_41();
-				let classes_12;
-				var text_17 = only_child(button_27, true);
+			each(node_64, 17, () => get(availableViews), (v) => v.id, ($$anchor, v) => {
+				var button_28 = root_44();
+				let classes_10;
+				var text_17 = only_child(button_28, true);
 
 				template_effect(() => {
-					classes_12 = set_class(button_27, 1, 'chip svelte-13s71iz', null, classes_12, {
+					classes_10 = set_class(button_28, 1, 'chip svelte-13s71iz', null, classes_10, {
 						on: get(currentPage).type === 'view' && get(currentPage).view === get(v).id
 					});
 
 					set_text(text_17, get(v).name);
 				});
 
-				delegated('click', button_27, () => {
+				delegated('click', button_28, () => {
 					assignPageView(get(v).id);
 					set(viewAssignOpen, false);
 				});
 
-				append($$anchor, button_27);
+				append($$anchor, button_28);
 			});
 
 			template_effect(() => {
 				set_text(text_16, `„${get(currentPage).name ?? ''}" öffnet …`);
-				classes_11 = set_class(button_26, 1, 'chip svelte-13s71iz', null, classes_11, { on: get(currentPage).type === 'widgets' });
+				classes_9 = set_class(button_27, 1, 'chip svelte-13s71iz', null, classes_9, { on: get(currentPage).type === 'widgets' });
 			});
 
-			delegated('click', div_39, () => set(viewAssignOpen, false));
-			delegated('click', div_40, (e) => e.stopPropagation());
+			delegated('click', div_42, () => set(viewAssignOpen, false));
+			delegated('click', div_43, (e) => e.stopPropagation());
 
-			delegated('click', button_26, () => {
+			delegated('click', button_27, () => {
 				assignPageView(undefined);
 				set(viewAssignOpen, false);
 			});
 
-			append($$anchor, div_39);
+			append($$anchor, div_42);
 		};
 
-		if_block(node_57, ($$render) => {
-			if (get(viewAssignOpen)) $$render(consequent_39);
+		if_block(node_63, ($$render) => {
+			if (get(viewAssignOpen)) $$render(consequent_43);
 		});
 	}
 
-	var node_59 = sibling(node_57, 2);
+	var node_65 = sibling(node_63, 2);
 
 	{
-		var consequent_43 = ($$anchor) => {
-			var div_43 = root_46();
-			var div_44 = child(div_43);
-			var button_28 = child(div_44);
-			var node_60 = child(button_28);
+		var consequent_47 = ($$anchor) => {
+			var div_46 = root_51();
+			var div_47 = child(div_46);
+			var button_29 = child(div_47);
+			var node_66 = child(button_29);
 
-			Icon(node_60, { name: 'close', size: 24 });
+			Icon(node_66, { name: 'close', size: 24 });
 
-			var div_45 = sibling(div_44, 2);
-			var node_61 = child(div_45);
+			var div_48 = sibling(div_47, 2);
+			var div_49 = child(div_48);
+
+			each(div_49, 21, () => get(overviewGrid), index, ($$anchor, row) => {
+				var div_50 = root_50();
+
+				each(div_50, 21, () => get(row), (cell) => cell.c + ',' + cell.r, ($$anchor, cell) => {
+					var fragment_12 = comment();
+					var node_67 = first_child(fragment_12);
+
+					{
+						var consequent_45 = ($$anchor) => {
+							const pg = user_derived(() => get(cell).page);
+							var div_51 = root_47();
+							let classes_11;
+							var button_30 = child(div_51);
+							var span_7 = child(button_30);
+							var text_18 = only_child(span_7, true);
+							var span_8 = sibling(span_7, 2);
+							var text_19 = only_child(span_8, true);
+
+							var node_68 = sibling(button_30, 2);
+
+							{
+								var consequent_44 = ($$anchor) => {
+									var button_31 = root_46();
+									var node_69 = child(button_31);
+
+									Icon(node_69, { name: 'trash', size: 16 });
+									delegated('click', button_31, () => removePageById(get(pg).id));
+									append($$anchor, button_31);
+								};
+
+								if_block(node_68, ($$render) => {
+									if (get(pg).id !== HOME_ID) $$render(consequent_44);
+								});
+							}
+
+							template_effect(() => {
+								classes_11 = set_class(div_51, 1, 'ov-cell ov-page svelte-13s71iz', null, classes_11, {
+									current: get(cell).c === get(curCol) && get(cell).r === get(curRow)
+								});
+
+								set_text(text_18, get(pg).name);
+
+								set_text(text_19, get(pg).type === 'home'
+									? 'Start'
+									: get(pg).type === 'view' ? 'Ansicht' : 'Widgets');
+							});
+
+							delegated('click', button_30, () => overviewGoTo(get(cell).c, get(cell).r));
+							append($$anchor, div_51);
+						};
+
+						var consequent_46 = ($$anchor) => {
+							var button_32 = root_48();
+							var node_70 = child(button_32);
+
+							Icon(node_70, { name: 'plus', size: 22 });
+							delegated('click', button_32, () => overviewAdd(get(cell).c, get(cell).r));
+							append($$anchor, button_32);
+						};
+
+						var alternate_6 = ($$anchor) => {
+							var div_52 = root_49();
+
+							append($$anchor, div_52);
+						};
+
+						if_block(node_67, ($$render) => {
+							if (get(cell).page) $$render(consequent_45); else if (get(cell).canAdd) $$render(consequent_46, 1); else $$render(alternate_6, -1);
+						});
+					}
+
+					append($$anchor, fragment_12);
+				});
+				append($$anchor, div_50);
+			});
+			delegated('click', button_29, () => set(overviewOpen, false));
+			append($$anchor, div_46);
+		};
+
+		if_block(node_65, ($$render) => {
+			if (get(overviewOpen)) $$render(consequent_47);
+		});
+	}
+
+	var node_71 = sibling(node_65, 2);
+
+	{
+		var consequent_51 = ($$anchor) => {
+			var div_53 = root_55();
+			var div_54 = child(div_53);
+			var button_33 = child(div_54);
+			var node_72 = child(button_33);
+
+			Icon(node_72, { name: 'close', size: 24 });
+
+			var div_55 = sibling(div_54, 2);
+			var node_73 = child(div_55);
 
 			{
-				var consequent_40 = ($$anchor) => {
-					var div_46 = root_44();
-					var node_62 = sibling(child(div_46), 2);
+				var consequent_48 = ($$anchor) => {
+					var div_56 = root_53();
+					var node_74 = sibling(child(div_56), 2);
 
-					each(node_62, 17, () => get(customGestures), (g) => g.id, ($$anchor, g) => {
-						var div_47 = root_43();
-						var svg = child(div_47);
+					each(node_74, 17, () => get(customGestures), (g) => g.id, ($$anchor, g) => {
+						var div_57 = root_52();
+						var svg = child(div_57);
 						var path = only_child(svg);
-						var span_7 = sibling(svg, 2);
-						var span_8 = child(span_7);
-						var text_18 = only_child(span_8, true);
-						var span_9 = sibling(span_8, 2);
-						var text_19 = only_child(span_9, true);
+						var span_9 = sibling(svg, 2);
+						var span_10 = child(span_9);
+						var text_20 = only_child(span_10, true);
+						var span_11 = sibling(span_10, 2);
+						var text_21 = only_child(span_11, true);
 
-						var button_29 = sibling(span_7, 2);
-						var node_63 = child(button_29);
+						var button_34 = sibling(span_9, 2);
+						var node_75 = child(button_34);
 
-						Icon(node_63, { name: 'trash', size: 18 });
+						Icon(node_75, { name: 'trash', size: 18 });
 
 						template_effect(
 							($0, $1) => {
 								set_attribute(path, 'd', $0);
-								set_text(text_18, get(g).name);
-								set_text(text_19, $1);
+								set_text(text_20, get(g).name);
+								set_text(text_21, $1);
 							},
 							[
 								() => templatePath(get(g).points),
@@ -10329,80 +10545,80 @@ function Home($$anchor, $$props) {
 							]
 						);
 
-						delegated('click', button_29, () => deleteGesture(get(g).id));
-						append($$anchor, div_47);
+						delegated('click', button_34, () => deleteGesture(get(g).id));
+						append($$anchor, div_57);
 					});
-					append($$anchor, div_46);
+					append($$anchor, div_56);
 				};
 
-				if_block(node_61, ($$render) => {
-					if (get(customGestures).length > 0) $$render(consequent_40);
+				if_block(node_73, ($$render) => {
+					if (get(customGestures).length > 0) $$render(consequent_48);
 				});
 			}
 
-			var div_48 = sibling(node_61, 2);
-			var svg_1 = sibling(child(div_48), 2);
-			var node_64 = sibling(child(svg_1));
+			var div_58 = sibling(node_73, 2);
+			var svg_1 = sibling(child(div_58), 2);
+			var node_76 = sibling(child(svg_1));
 
 			{
-				var consequent_41 = ($$anchor) => {
-					var path_1 = root_45();
+				var consequent_49 = ($$anchor) => {
+					var path_1 = root_54();
 
 					template_effect(() => set_attribute(path_1, 'd', get(drawPath)));
 					append($$anchor, path_1);
 				};
 
-				if_block(node_64, ($$render) => {
-					if (get(drawPath)) $$render(consequent_41);
+				if_block(node_76, ($$render) => {
+					if (get(drawPath)) $$render(consequent_49);
 				});
 			}
 			bind_this(svg_1, ($$value) => drawEl = $$value, () => drawEl);
 
-			var div_49 = sibling(svg_1, 2);
-			var span_10 = child(div_49);
-			var text_20 = only_child(span_10, true);
-			var button_30 = sibling(span_10, 2);
+			var div_59 = sibling(svg_1, 2);
+			var span_12 = child(div_59);
+			var text_22 = only_child(span_12, true);
+			var button_35 = sibling(span_12, 2);
 
-			var div_50 = sibling(div_48, 2);
-			var input_1 = sibling(child(div_50), 2);
+			var div_60 = sibling(div_58, 2);
+			var input_1 = sibling(child(div_60), 2);
 
-			var div_51 = sibling(div_50, 2);
-			var div_52 = sibling(child(div_51), 2);
-			var node_65 = child(div_52);
+			var div_61 = sibling(div_60, 2);
+			var div_62 = sibling(child(div_61), 2);
+			var node_77 = child(div_62);
 
-			each(node_65, 17, () => get(availableViews), (v) => v.id, ($$anchor, v) => {
-				var button_31 = root_41();
-				let classes_13;
-				var text_21 = only_child(button_31, true);
+			each(node_77, 17, () => get(availableViews), (v) => v.id, ($$anchor, v) => {
+				var button_36 = root_44();
+				let classes_12;
+				var text_23 = only_child(button_36, true);
 
 				template_effect(() => {
-					classes_13 = set_class(button_31, 1, 'chip svelte-13s71iz', null, classes_13, {
+					classes_12 = set_class(button_36, 1, 'chip svelte-13s71iz', null, classes_12, {
 						on: get(newGestureAction).type === 'view' && get(newGestureAction).target === get(v).id
 					});
 
-					set_text(text_21, get(v).name);
+					set_text(text_23, get(v).name);
 				});
 
-				delegated('click', button_31, () => set(newGestureAction, { type: 'view', target: get(v).id, label: get(v).name }, true));
-				append($$anchor, button_31);
+				delegated('click', button_36, () => set(newGestureAction, { type: 'view', target: get(v).id, label: get(v).name }, true));
+				append($$anchor, button_36);
 			});
 
-			var node_66 = sibling(node_65, 2);
+			var node_78 = sibling(node_77, 2);
 
-			each(node_66, 17, () => get(favForBind), (a) => a.packageName, ($$anchor, a) => {
-				var button_32 = root_41();
-				let classes_14;
-				var text_22 = only_child(button_32, true);
+			each(node_78, 17, () => get(favForBind), (a) => a.packageName, ($$anchor, a) => {
+				var button_37 = root_44();
+				let classes_13;
+				var text_24 = only_child(button_37, true);
 
 				template_effect(() => {
-					classes_14 = set_class(button_32, 1, 'chip svelte-13s71iz', null, classes_14, {
+					classes_13 = set_class(button_37, 1, 'chip svelte-13s71iz', null, classes_13, {
 						on: get(newGestureAction).type === 'app' && get(newGestureAction).target === get(a).packageName
 					});
 
-					set_text(text_22, get(a).label);
+					set_text(text_24, get(a).label);
 				});
 
-				delegated('click', button_32, () => set(
+				delegated('click', button_37, () => set(
 					newGestureAction,
 					{
 						type: 'app',
@@ -10412,235 +10628,235 @@ function Home($$anchor, $$props) {
 					true
 				));
 
-				append($$anchor, button_32);
+				append($$anchor, button_37);
 			});
 
-			var node_67 = sibling(node_66, 2);
+			var node_79 = sibling(node_78, 2);
 
-			each(node_67, 17, () => get(pages), (p) => p.id, ($$anchor, p) => {
-				var fragment_11 = comment();
-				var node_68 = first_child(fragment_11);
+			each(node_79, 17, () => get(pages), (p) => p.id, ($$anchor, p) => {
+				var fragment_13 = comment();
+				var node_80 = first_child(fragment_13);
 
 				{
-					var consequent_42 = ($$anchor) => {
-						var button_33 = root_41();
-						let classes_15;
-						var text_23 = only_child(button_33);
+					var consequent_50 = ($$anchor) => {
+						var button_38 = root_44();
+						let classes_14;
+						var text_25 = only_child(button_38);
 
 						template_effect(() => {
-							classes_15 = set_class(button_33, 1, 'chip svelte-13s71iz', null, classes_15, {
+							classes_14 = set_class(button_38, 1, 'chip svelte-13s71iz', null, classes_14, {
 								on: get(newGestureAction).type === 'page' && get(newGestureAction).target === get(p).id
 							});
 
-							set_text(text_23, `↦ ${get(p).name ?? ''}`);
+							set_text(text_25, `↦ ${get(p).name ?? ''}`);
 						});
 
-						delegated('click', button_33, () => set(newGestureAction, { type: 'page', target: get(p).id, label: get(p).name }, true));
-						append($$anchor, button_33);
+						delegated('click', button_38, () => set(newGestureAction, { type: 'page', target: get(p).id, label: get(p).name }, true));
+						append($$anchor, button_38);
 					};
 
-					if_block(node_68, ($$render) => {
-						if (get(p).id !== HOME_ID) $$render(consequent_42);
+					if_block(node_80, ($$render) => {
+						if (get(p).id !== HOME_ID) $$render(consequent_50);
 					});
 				}
 
-				append($$anchor, fragment_11);
+				append($$anchor, fragment_13);
 			});
 
-			var button_34 = sibling(node_67, 2);
+			var button_39 = sibling(node_79, 2);
+			let classes_15;
+
+			var button_40 = sibling(div_61, 2);
 			let classes_16;
+			var node_81 = child(button_40);
 
-			var button_35 = sibling(div_51, 2);
-			let classes_17;
-			var node_69 = child(button_35);
-
-			Icon(node_69, { name: 'check', size: 20 });
+			Icon(node_81, { name: 'check', size: 20 });
 
 			template_effect(() => {
-				set_text(text_20, get(drawPts).length >= 6
+				set_text(text_22, get(drawPts).length >= 6
 					? 'Sieht gut aus — jetzt Name + Aktion wählen.'
 					: 'Zeichne mit dem Finger eine Form (Kreis, Haken, Buchstabe …).');
 
-				classes_16 = set_class(button_34, 1, 'chip svelte-13s71iz', null, classes_16, { on: get(newGestureAction).type === 'orbit' });
-				classes_17 = set_class(button_35, 1, 'sheet-item svelte-13s71iz', null, classes_17, { disabled: !get(canSaveGesture) });
-				button_35.disabled = !get(canSaveGesture);
+				classes_15 = set_class(button_39, 1, 'chip svelte-13s71iz', null, classes_15, { on: get(newGestureAction).type === 'orbit' });
+				classes_16 = set_class(button_40, 1, 'sheet-item svelte-13s71iz', null, classes_16, { disabled: !get(canSaveGesture) });
+				button_40.disabled = !get(canSaveGesture);
 			});
 
-			delegated('click', button_28, () => set(gestureCreatorOpen, false));
+			delegated('click', button_33, () => set(gestureCreatorOpen, false));
 			delegated('pointerdown', svg_1, drawDown);
 			delegated('pointermove', svg_1, drawMove);
 			delegated('pointerup', svg_1, drawUp);
 			event('pointercancel', svg_1, drawUp);
-			delegated('click', button_30, () => set(drawPts, [], true));
+			delegated('click', button_35, () => set(drawPts, [], true));
 			bind_value(input_1, () => get(newGestureName), ($$value) => set(newGestureName, $$value));
-			delegated('click', button_34, () => set(newGestureAction, { type: 'orbit' }, true));
-			delegated('click', button_35, saveGesture);
-			append($$anchor, div_43);
+			delegated('click', button_39, () => set(newGestureAction, { type: 'orbit' }, true));
+			delegated('click', button_40, saveGesture);
+			append($$anchor, div_53);
 		};
 
-		if_block(node_59, ($$render) => {
-			if (get(gestureCreatorOpen)) $$render(consequent_43);
+		if_block(node_71, ($$render) => {
+			if (get(gestureCreatorOpen)) $$render(consequent_51);
 		});
 	}
 
-	var node_70 = sibling(node_59, 2);
+	var node_82 = sibling(node_71, 2);
 
 	{
-		var consequent_45 = ($$anchor) => {
-			var div_53 = root_48();
-			var div_54 = child(div_53);
-			var button_36 = only_child(div_54);
-			var div_55 = sibling(div_54, 2);
-			var button_37 = only_child(div_55);
-			var node_71 = sibling(div_55, 2);
+		var consequent_53 = ($$anchor) => {
+			var div_63 = root_57();
+			var div_64 = child(div_63);
+			var button_41 = only_child(div_64);
+			var div_65 = sibling(div_64, 2);
+			var button_42 = only_child(div_65);
+			var node_83 = sibling(div_65, 2);
 
 			{
-				var consequent_44 = ($$anchor) => {
-					var button_38 = root_47();
-					var node_72 = child(button_38);
+				var consequent_52 = ($$anchor) => {
+					var button_43 = root_56();
+					var node_84 = child(button_43);
 
-					Icon(node_72, { name: 'plus', size: 20 });
+					Icon(node_84, { name: 'plus', size: 20 });
 
-					delegated('click', button_38, () => {
+					delegated('click', button_43, () => {
 						set(editing, false);
 						void openWidgetPicker();
 					});
 
-					append($$anchor, button_38);
+					append($$anchor, button_43);
 				};
 
-				if_block(node_71, ($$render) => {
-					if (appwidgets) $$render(consequent_44);
+				if_block(node_83, ($$render) => {
+					if (appwidgets) $$render(consequent_52);
 				});
 			}
 
-			var button_39 = sibling(node_71, 2);
+			var button_44 = sibling(node_83, 2);
 
 			template_effect(() => {
-				set_style(div_54, `top: ${get(homeSplit) * 100}%;`);
-				set_style(div_55, `top: calc(${get(railPos) * 100}% - ${get(railHeightFrac) * 50}%);`);
+				set_style(div_64, `top: ${get(homeSplit) * 100}%;`);
+				set_style(div_65, `top: calc(${get(railPos) * 100}% - ${get(railHeightFrac) * 50}%);`);
 			});
 
-			delegated('pointermove', div_53, onDragMove);
-			delegated('pointerup', div_53, onDragEnd);
-			event('pointercancel', div_53, onDragEnd);
-			delegated('pointerdown', button_36, (e) => startDrag(e, 'split'));
-			delegated('pointerdown', button_37, (e) => startDrag(e, 'rail'));
-			delegated('click', button_39, () => set(editing, false));
-			append($$anchor, div_53);
+			delegated('pointermove', div_63, onDragMove);
+			delegated('pointerup', div_63, onDragEnd);
+			event('pointercancel', div_63, onDragEnd);
+			delegated('pointerdown', button_41, (e) => startDrag(e, 'split'));
+			delegated('pointerdown', button_42, (e) => startDrag(e, 'rail'));
+			delegated('click', button_44, () => set(editing, false));
+			append($$anchor, div_63);
 		};
 
-		if_block(node_70, ($$render) => {
-			if (get(editing)) $$render(consequent_45);
+		if_block(node_82, ($$render) => {
+			if (get(editing)) $$render(consequent_53);
 		});
 	}
 
-	var node_73 = sibling(node_70, 2);
+	var node_85 = sibling(node_82, 2);
 
 	{
-		var consequent_49 = ($$anchor) => {
-			var div_56 = root_57();
-			var div_57 = child(div_56);
-			var node_74 = child(div_57);
+		var consequent_57 = ($$anchor) => {
+			var div_66 = root_66();
+			var div_67 = child(div_66);
+			var node_86 = child(div_67);
 
-			Icon(node_74, { name: 'search', size: 18 });
+			Icon(node_86, { name: 'search', size: 18 });
 
-			var input_2 = sibling(node_74, 2);
+			var input_2 = sibling(node_86, 2);
 
-			var button_40 = sibling(input_2, 2);
-			var node_75 = child(button_40);
+			var button_45 = sibling(input_2, 2);
+			var node_87 = child(button_45);
 
-			Icon(node_75, { name: 'close', size: 20 });
+			Icon(node_87, { name: 'close', size: 20 });
 
-			var div_58 = sibling(div_57, 2);
+			var div_68 = sibling(div_67, 2);
 
-			each(div_58, 21, () => get(widgetApps), (sec) => sec.key, ($$anchor, sec) => {
-				var fragment_12 = root_56();
-				var div_59 = first_child(fragment_12);
-				var text_24 = only_child(div_59, true);
-				var node_76 = sibling(div_59, 2);
+			each(div_68, 21, () => get(widgetApps), (sec) => sec.key, ($$anchor, sec) => {
+				var fragment_14 = root_65();
+				var div_69 = first_child(fragment_14);
+				var text_26 = only_child(div_69, true);
+				var node_88 = sibling(div_69, 2);
 
-				each(node_76, 17, () => get(sec).apps, (a) => a.pkg, ($$anchor, a) => {
-					var fragment_13 = root_55();
-					var button_41 = first_child(fragment_13);
-					var node_77 = child(button_41);
+				each(node_88, 17, () => get(sec).apps, (a) => a.pkg, ($$anchor, a) => {
+					var fragment_15 = root_64();
+					var button_46 = first_child(fragment_15);
+					var node_89 = child(button_46);
 
 					{
-						var consequent_46 = ($$anchor) => {
-							var img_1 = root_49();
+						var consequent_54 = ($$anchor) => {
+							var img_1 = root_58();
 
 							template_effect(() => set_attribute(img_1, 'src', get(widgetAppIcons)[get(a).pkg]));
 							append($$anchor, img_1);
 						};
 
-						var alternate_6 = ($$anchor) => {
-							var span_11 = root_50();
-							var text_25 = only_child(span_11, true);
+						var alternate_7 = ($$anchor) => {
+							var span_13 = root_59();
+							var text_27 = only_child(span_13, true);
 
-							template_effect(($0) => set_text(text_25, $0), [() => get(a).appLabel.charAt(0)]);
-							append($$anchor, span_11);
+							template_effect(($0) => set_text(text_27, $0), [() => get(a).appLabel.charAt(0)]);
+							append($$anchor, span_13);
 						};
 
-						if_block(node_77, ($$render) => {
-							if (get(widgetAppIcons)[get(a).pkg]) $$render(consequent_46); else $$render(alternate_6, -1);
+						if_block(node_89, ($$render) => {
+							if (get(widgetAppIcons)[get(a).pkg]) $$render(consequent_54); else $$render(alternate_7, -1);
 						});
 					}
 
-					var span_12 = sibling(node_77, 2);
-					var span_13 = child(span_12);
-					var text_26 = only_child(span_13, true);
-					var span_14 = sibling(span_13, 2);
-					var text_27 = only_child(span_14);
+					var span_14 = sibling(node_89, 2);
+					var span_15 = child(span_14);
+					var text_28 = only_child(span_15, true);
+					var span_16 = sibling(span_15, 2);
+					var text_29 = only_child(span_16);
 
-					var node_78 = sibling(button_41, 2);
+					var node_90 = sibling(button_46, 2);
 
 					{
-						var consequent_48 = ($$anchor) => {
-							var div_60 = root_54();
+						var consequent_56 = ($$anchor) => {
+							var div_70 = root_63();
 
-							each(div_60, 21, () => get(a).widgets, (w) => w.cls, ($$anchor, w) => {
-								var button_42 = root_53();
-								var node_79 = child(button_42);
+							each(div_70, 21, () => get(a).widgets, (w) => w.cls, ($$anchor, w) => {
+								var button_47 = root_62();
+								var node_91 = child(button_47);
 
 								{
-									var consequent_47 = ($$anchor) => {
-										var img_2 = root_51();
+									var consequent_55 = ($$anchor) => {
+										var img_2 = root_60();
 
 										template_effect(() => set_attribute(img_2, 'src', get(widgetPreviews)[`${get(w).pkg}|${get(w).cls}`]));
 										append($$anchor, img_2);
 									};
 
-									var alternate_7 = ($$anchor) => {
-										var div_61 = root_52();
+									var alternate_8 = ($$anchor) => {
+										var div_71 = root_61();
 
-										append($$anchor, div_61);
+										append($$anchor, div_71);
 									};
 
-									if_block(node_79, ($$render) => {
-										if (get(widgetPreviews)[`${get(w).pkg}|${get(w).cls}`]) $$render(consequent_47); else $$render(alternate_7, -1);
+									if_block(node_91, ($$render) => {
+										if (get(widgetPreviews)[`${get(w).pkg}|${get(w).cls}`]) $$render(consequent_55); else $$render(alternate_8, -1);
 									});
 								}
 
-								var span_15 = sibling(node_79, 2);
-								var text_28 = only_child(span_15, true);
-								template_effect(() => set_text(text_28, get(w).label));
-								delegated('click', button_42, () => chooseProvider(get(w).pkg, get(w).cls));
-								append($$anchor, button_42);
+								var span_17 = sibling(node_91, 2);
+								var text_30 = only_child(span_17, true);
+								template_effect(() => set_text(text_30, get(w).label));
+								delegated('click', button_47, () => chooseProvider(get(w).pkg, get(w).cls));
+								append($$anchor, button_47);
 							});
-							append($$anchor, div_60);
+							append($$anchor, div_70);
 						};
 
-						if_block(node_78, ($$render) => {
-							if (get(expandedApp) === get(a).pkg) $$render(consequent_48);
+						if_block(node_90, ($$render) => {
+							if (get(expandedApp) === get(a).pkg) $$render(consequent_56);
 						});
 					}
 
 					template_effect(() => {
-						set_text(text_26, get(a).appLabel);
-						set_text(text_27, `${get(a).widgets.length ?? ''} Widget${get(a).widgets.length === 1 ? '' : 's'}`);
+						set_text(text_28, get(a).appLabel);
+						set_text(text_29, `${get(a).widgets.length ?? ''} Widget${get(a).widgets.length === 1 ? '' : 's'}`);
 					});
 
-					delegated('click', button_41, () => {
+					delegated('click', button_46, () => {
 						const next = get(expandedApp) === get(a).pkg ? null : get(a).pkg;
 
 						set(expandedApp, next, true);
@@ -10648,210 +10864,210 @@ function Home($$anchor, $$props) {
 						if (next) void loadPreviewsFor(next);
 					});
 
-					append($$anchor, fragment_13);
+					append($$anchor, fragment_15);
 				});
 
-				template_effect(() => set_text(text_24, get(sec).key));
-				append($$anchor, fragment_12);
+				template_effect(() => set_text(text_26, get(sec).key));
+				append($$anchor, fragment_14);
 			});
 			bind_value(input_2, () => get(widgetSearch), ($$value) => set(widgetSearch, $$value));
-			delegated('click', button_40, () => set(widgetPickerOpen, false));
-			append($$anchor, div_56);
+			delegated('click', button_45, () => set(widgetPickerOpen, false));
+			append($$anchor, div_66);
 		};
 
-		if_block(node_73, ($$render) => {
-			if (get(widgetPickerOpen)) $$render(consequent_49);
+		if_block(node_85, ($$render) => {
+			if (get(widgetPickerOpen)) $$render(consequent_57);
 		});
 	}
 
-	var node_80 = sibling(node_73, 2);
+	var node_92 = sibling(node_85, 2);
 
 	{
-		var consequent_54 = ($$anchor) => {
-			var div_62 = root_62();
-			var div_63 = child(div_62);
-			var button_43 = child(div_63);
-			var node_81 = child(button_43);
+		var consequent_62 = ($$anchor) => {
+			var div_72 = root_71();
+			var div_73 = child(div_72);
+			var button_48 = child(div_73);
+			var node_93 = child(button_48);
 
-			Icon(node_81, { name: 'close', size: 24 });
+			Icon(node_93, { name: 'close', size: 24 });
 
-			var div_64 = sibling(div_63, 2);
-			var button_44 = child(div_64);
-			var span_16 = sibling(child(button_44), 2);
-			let classes_18;
+			var div_74 = sibling(div_73, 2);
+			var button_49 = child(div_74);
+			var span_18 = sibling(child(button_49), 2);
+			let classes_17;
 
-			var node_82 = sibling(button_44, 2);
+			var node_94 = sibling(button_49, 2);
 
 			{
-				var consequent_51 = ($$anchor) => {
-					var fragment_14 = root_60();
-					var div_65 = first_child(fragment_14);
-					var div_66 = sibling(child(div_65), 2);
+				var consequent_59 = ($$anchor) => {
+					var fragment_16 = root_69();
+					var div_75 = first_child(fragment_16);
+					var div_76 = sibling(child(div_75), 2);
 
-					each(div_66, 21, () => AVAILABLE_WIDGETS, (w) => w.id, ($$anchor, w) => {
-						var button_45 = root_41();
-						let classes_19;
-						var text_29 = only_child(button_45, true);
+					each(div_76, 21, () => AVAILABLE_WIDGETS, (w) => w.id, ($$anchor, w) => {
+						var button_50 = root_44();
+						let classes_18;
+						var text_31 = only_child(button_50, true);
 
 						template_effect(
 							($0) => {
-								classes_19 = set_class(button_45, 1, 'chip svelte-13s71iz', null, classes_19, { on: $0 });
-								set_text(text_29, get(w).label);
+								classes_18 = set_class(button_50, 1, 'chip svelte-13s71iz', null, classes_18, { on: $0 });
+								set_text(text_31, get(w).label);
 							},
 							[() => get(widgets).includes(get(w).id)]
 						);
 
-						delegated('click', button_45, () => toggleWidget(get(w).id));
-						append($$anchor, button_45);
+						delegated('click', button_50, () => toggleWidget(get(w).id));
+						append($$anchor, button_50);
 					});
 
-					var node_83 = sibling(div_65, 2);
+					var node_95 = sibling(div_75, 2);
 
 					{
-						var consequent_50 = ($$anchor) => {
-							var div_67 = root_59();
-							var node_84 = sibling(child(div_67), 2);
+						var consequent_58 = ($$anchor) => {
+							var div_77 = root_68();
+							var node_96 = sibling(child(div_77), 2);
 
-							each(node_84, 17, () => get(appWidgets), (aw) => aw.widgetId, ($$anchor, aw) => {
-								var div_68 = root_58();
-								var span_17 = child(div_68);
-								var text_30 = only_child(span_17, true);
-								var button_46 = sibling(span_17, 2);
-								var node_85 = child(button_46);
+							each(node_96, 17, () => get(appWidgets), (aw) => aw.widgetId, ($$anchor, aw) => {
+								var div_78 = root_67();
+								var span_19 = child(div_78);
+								var text_32 = only_child(span_19, true);
+								var button_51 = sibling(span_19, 2);
+								var node_97 = child(button_51);
 
-								Icon(node_85, { name: 'trash', size: 18 });
-								template_effect(() => set_text(text_30, get(aw).label));
-								delegated('click', button_46, () => removeAppWidget(get(aw).widgetId));
-								append($$anchor, div_68);
+								Icon(node_97, { name: 'trash', size: 18 });
+								template_effect(() => set_text(text_32, get(aw).label));
+								delegated('click', button_51, () => removeAppWidget(get(aw).widgetId));
+								append($$anchor, div_78);
 							});
-							append($$anchor, div_67);
+							append($$anchor, div_77);
 						};
 
-						if_block(node_83, ($$render) => {
-							if (appwidgets) $$render(consequent_50);
+						if_block(node_95, ($$render) => {
+							if (appwidgets) $$render(consequent_58);
 						});
 					}
 
-					append($$anchor, fragment_14);
+					append($$anchor, fragment_16);
 				};
 
-				if_block(node_82, ($$render) => {
-					if (get(showWidgets)) $$render(consequent_51);
+				if_block(node_94, ($$render) => {
+					if (get(showWidgets)) $$render(consequent_59);
 				});
 			}
 
-			var button_47 = sibling(node_82, 2);
-			var span_18 = sibling(child(button_47), 2);
+			var button_52 = sibling(node_94, 2);
+			var span_20 = sibling(child(button_52), 2);
+			let classes_19;
+
+			var button_53 = sibling(button_52, 2);
+			var span_21 = sibling(child(button_53), 2);
 			let classes_20;
 
-			var button_48 = sibling(button_47, 2);
-			var span_19 = sibling(child(button_48), 2);
-			let classes_21;
-
-			var div_69 = sibling(button_48, 2);
-			var div_70 = child(div_69);
-			var span_20 = sibling(child(div_70), 2);
-			var text_31 = only_child(span_20);
-
-			var input_3 = sibling(div_70, 2);
-
-			var div_71 = sibling(div_69, 2);
-			var div_72 = child(div_71);
-			var span_21 = sibling(child(div_72), 2);
-			var text_32 = only_child(span_21);
-
-			var input_4 = sibling(div_72, 2);
-
-			var div_73 = sibling(div_71, 2);
-			var div_74 = child(div_73);
-			var span_22 = sibling(child(div_74), 2);
+			var div_79 = sibling(button_53, 2);
+			var div_80 = child(div_79);
+			var span_22 = sibling(child(div_80), 2);
 			var text_33 = only_child(span_22);
 
-			var input_5 = sibling(div_74, 2);
-
-			var div_75 = sibling(div_73, 2);
-			var div_76 = child(div_75);
-			var span_23 = sibling(child(div_76), 2);
-			var text_34 = only_child(span_23);
-
-			var input_6 = sibling(div_76, 2);
-
-			var div_77 = sibling(div_75, 2);
-			var div_78 = child(div_77);
-			var span_24 = sibling(child(div_78), 2);
-			var text_35 = only_child(span_24);
-
-			var input_7 = sibling(div_78, 2);
-
-			var button_49 = sibling(div_77, 2);
-			var span_25 = sibling(child(button_49), 2);
-			let classes_22;
-
-			var div_79 = sibling(button_49, 2);
-			var div_80 = child(div_79);
-			var span_26 = sibling(child(div_80), 2);
-			var text_36 = only_child(span_26);
-
-			var input_8 = sibling(div_80, 2);
+			var input_3 = sibling(div_80, 2);
 
 			var div_81 = sibling(div_79, 2);
 			var div_82 = child(div_81);
-			var span_27 = sibling(child(div_82), 2);
-			var text_37 = only_child(span_27);
+			var span_23 = sibling(child(div_82), 2);
+			var text_34 = only_child(span_23);
 
-			var input_9 = sibling(div_82, 2);
+			var input_4 = sibling(div_82, 2);
 
-			var button_50 = sibling(div_81, 2);
-			var span_28 = sibling(child(button_50), 2);
-			let classes_23;
-
-			var button_51 = sibling(button_50, 2);
-			var span_29 = sibling(child(button_51), 2);
-			let classes_24;
-
-			var div_83 = sibling(button_51, 2);
+			var div_83 = sibling(div_81, 2);
 			var div_84 = child(div_83);
-			var span_30 = sibling(child(div_84), 2);
-			var text_38 = only_child(span_30);
+			var span_24 = sibling(child(div_84), 2);
+			var text_35 = only_child(span_24);
 
-			var input_10 = sibling(div_84, 2);
+			var input_5 = sibling(div_84, 2);
 
 			var div_85 = sibling(div_83, 2);
 			var div_86 = child(div_85);
-			var span_31 = sibling(child(div_86), 2);
-			var text_39 = only_child(span_31);
+			var span_25 = sibling(child(div_86), 2);
+			var text_36 = only_child(span_25);
 
-			var input_11 = sibling(div_86, 2);
+			var input_6 = sibling(div_86, 2);
 
 			var div_87 = sibling(div_85, 2);
 			var div_88 = child(div_87);
-			var span_32 = sibling(child(div_88), 2);
-			var text_40 = only_child(span_32);
+			var span_26 = sibling(child(div_88), 2);
+			var text_37 = only_child(span_26);
 
-			var input_12 = sibling(div_88, 2);
+			var input_7 = sibling(div_88, 2);
 
-			var div_89 = sibling(div_87, 2);
-			var div_90 = sibling(child(div_89), 2);
+			var button_54 = sibling(div_87, 2);
+			var span_27 = sibling(child(button_54), 2);
+			let classes_21;
 
-			each(div_90, 21, () => FONTS, (f) => f.label, ($$anchor, f) => {
-				var button_52 = root_41();
-				let classes_25;
-				var text_41 = only_child(button_52, true);
+			var div_89 = sibling(button_54, 2);
+			var div_90 = child(div_89);
+			var span_28 = sibling(child(div_90), 2);
+			var text_38 = only_child(span_28);
 
-				template_effect(() => {
-					classes_25 = set_class(button_52, 1, 'chip svelte-13s71iz', null, classes_25, { on: get(fontFamily) === get(f).value });
-					set_style(button_52, get(f).value ? `font-family: ${get(f).value};` : '');
-					set_text(text_41, get(f).label);
-				});
-
-				delegated('click', button_52, () => setFont(get(f).value));
-				append($$anchor, button_52);
-			});
+			var input_8 = sibling(div_90, 2);
 
 			var div_91 = sibling(div_89, 2);
-			var node_86 = sibling(child(div_91), 2);
+			var div_92 = child(div_91);
+			var span_29 = sibling(child(div_92), 2);
+			var text_39 = only_child(span_29);
 
-			ColorMenu(node_86, {
+			var input_9 = sibling(div_92, 2);
+
+			var button_55 = sibling(div_91, 2);
+			var span_30 = sibling(child(button_55), 2);
+			let classes_22;
+
+			var button_56 = sibling(button_55, 2);
+			var span_31 = sibling(child(button_56), 2);
+			let classes_23;
+
+			var div_93 = sibling(button_56, 2);
+			var div_94 = child(div_93);
+			var span_32 = sibling(child(div_94), 2);
+			var text_40 = only_child(span_32);
+
+			var input_10 = sibling(div_94, 2);
+
+			var div_95 = sibling(div_93, 2);
+			var div_96 = child(div_95);
+			var span_33 = sibling(child(div_96), 2);
+			var text_41 = only_child(span_33);
+
+			var input_11 = sibling(div_96, 2);
+
+			var div_97 = sibling(div_95, 2);
+			var div_98 = child(div_97);
+			var span_34 = sibling(child(div_98), 2);
+			var text_42 = only_child(span_34);
+
+			var input_12 = sibling(div_98, 2);
+
+			var div_99 = sibling(div_97, 2);
+			var div_100 = sibling(child(div_99), 2);
+
+			each(div_100, 21, () => FONTS, (f) => f.label, ($$anchor, f) => {
+				var button_57 = root_44();
+				let classes_24;
+				var text_43 = only_child(button_57, true);
+
+				template_effect(() => {
+					classes_24 = set_class(button_57, 1, 'chip svelte-13s71iz', null, classes_24, { on: get(fontFamily) === get(f).value });
+					set_style(button_57, get(f).value ? `font-family: ${get(f).value};` : '');
+					set_text(text_43, get(f).label);
+				});
+
+				delegated('click', button_57, () => setFont(get(f).value));
+				append($$anchor, button_57);
+			});
+
+			var div_101 = sibling(div_99, 2);
+			var node_98 = sibling(child(div_101), 2);
+
+			ColorMenu(node_98, {
 				get roles() {
 					return colorRoles;
 				},
@@ -10863,89 +11079,89 @@ function Home($$anchor, $$props) {
 				autoLabel: 'Auto'
 			});
 
-			var span_33 = sibling(node_86, 2);
-			var node_87 = sibling(child(span_33));
+			var span_35 = sibling(node_98, 2);
+			var node_99 = sibling(child(span_35));
 
 			{
-				var consequent_52 = ($$anchor) => {
-					var text_42 = text('· SKWD = Wallpaper-Farben');
+				var consequent_60 = ($$anchor) => {
+					var text_44 = text('· SKWD = Wallpaper-Farben');
 
-					append($$anchor, text_42);
+					append($$anchor, text_44);
 				};
 
-				if_block(node_87, ($$render) => {
-					if (skwdAvailable) $$render(consequent_52);
+				if_block(node_99, ($$render) => {
+					if (skwdAvailable) $$render(consequent_60);
 				});
 			}
 
-			var div_92 = sibling(div_91, 2);
-			var div_93 = child(div_92);
-			var span_34 = sibling(child(div_93), 2);
-			var text_43 = only_child(span_34);
+			var div_102 = sibling(div_101, 2);
+			var div_103 = child(div_102);
+			var span_36 = sibling(child(div_103), 2);
+			var text_45 = only_child(span_36);
 
-			var input_13 = sibling(div_93, 2);
+			var input_13 = sibling(div_103, 2);
 
-			var node_88 = sibling(div_92, 2);
+			var node_100 = sibling(div_102, 2);
 
 			{
-				var consequent_53 = ($$anchor) => {
-					var button_53 = root_61();
-					var node_89 = child(button_53);
+				var consequent_61 = ($$anchor) => {
+					var button_58 = root_70();
+					var node_101 = child(button_58);
 
-					Icon(node_89, { name: 'home', size: 20 });
-					delegated('click', button_53, makeDefault);
-					append($$anchor, button_53);
+					Icon(node_101, { name: 'home', size: 20 });
+					delegated('click', button_58, makeDefault);
+					append($$anchor, button_58);
 				};
 
-				if_block(node_88, ($$render) => {
-					if (hasLauncher && !get(isDefault)) $$render(consequent_53);
+				if_block(node_100, ($$render) => {
+					if (hasLauncher && !get(isDefault)) $$render(consequent_61);
 				});
 			}
 
-			var button_54 = sibling(node_88, 2);
-			var node_90 = child(button_54);
+			var button_59 = sibling(node_100, 2);
+			var node_102 = child(button_59);
 
-			Icon(node_90, { name: 'check', size: 20 });
+			Icon(node_102, { name: 'check', size: 20 });
 
-			var text_44 = sibling(node_90);
+			var text_46 = sibling(node_102);
 
-			var button_55 = sibling(button_54, 2);
-			var node_91 = child(button_55);
+			var button_60 = sibling(button_59, 2);
+			var node_103 = child(button_60);
 
-			Icon(node_91, { name: 'plugin', size: 20 });
+			Icon(node_103, { name: 'plugin', size: 20 });
 
 			template_effect(
 				($0, $1, $2, $3, $4, $5) => {
-					classes_18 = set_class(span_16, 1, 'switch svelte-13s71iz', null, classes_18, { on: get(showWidgets) });
-					classes_20 = set_class(span_18, 1, 'switch svelte-13s71iz', null, classes_20, { on: get(hapticsEnabled) });
-					classes_21 = set_class(span_19, 1, 'switch svelte-13s71iz', null, classes_21, { on: get(railAlways) });
-					set_text(text_31, `${$0 ?? ''}%`);
+					classes_17 = set_class(span_18, 1, 'switch svelte-13s71iz', null, classes_17, { on: get(showWidgets) });
+					classes_19 = set_class(span_20, 1, 'switch svelte-13s71iz', null, classes_19, { on: get(hapticsEnabled) });
+					classes_20 = set_class(span_21, 1, 'switch svelte-13s71iz', null, classes_20, { on: get(railAlways) });
+					set_text(text_33, `${$0 ?? ''}%`);
 					set_value(input_3, get(sectionAnchor));
-					set_text(text_32, `${$1 ?? ''}%`);
+					set_text(text_34, `${$1 ?? ''}%`);
 					set_value(input_4, get(railHeightFrac));
-					set_text(text_33, `${get(railRight) ?? ''}px`);
+					set_text(text_35, `${get(railRight) ?? ''}px`);
 					set_value(input_5, get(railRight));
-					set_text(text_34, `${$2 ?? ''}%`);
+					set_text(text_36, `${$2 ?? ''}%`);
 					set_value(input_6, get(waveStrength));
-					set_text(text_35, `${$3 ?? ''}%`);
+					set_text(text_37, `${$3 ?? ''}%`);
 					set_value(input_7, get(verticalSpread));
-					classes_22 = set_class(span_25, 1, 'switch svelte-13s71iz', null, classes_22, { on: get(bubbleVisible) });
-					set_text(text_36, `${get(bubbleSize) ?? ''}px`);
+					classes_21 = set_class(span_27, 1, 'switch svelte-13s71iz', null, classes_21, { on: get(bubbleVisible) });
+					set_text(text_38, `${get(bubbleSize) ?? ''}px`);
 					set_value(input_8, get(bubbleSize));
-					set_text(text_37, `${get(bubbleRight) ?? ''}px`);
+					set_text(text_39, `${get(bubbleRight) ?? ''}px`);
 					set_value(input_9, get(bubbleRight));
-					classes_23 = set_class(span_28, 1, 'switch svelte-13s71iz', null, classes_23, { on: get(showIcons) });
-					classes_24 = set_class(span_29, 1, 'switch svelte-13s71iz', null, classes_24, { on: get(showLabels) });
-					set_text(text_38, `${get(iconSize) ?? ''}px`);
+					classes_22 = set_class(span_30, 1, 'switch svelte-13s71iz', null, classes_22, { on: get(showIcons) });
+					classes_23 = set_class(span_31, 1, 'switch svelte-13s71iz', null, classes_23, { on: get(showLabels) });
+					set_text(text_40, `${get(iconSize) ?? ''}px`);
 					set_value(input_10, get(iconSize));
-					set_text(text_39, `${$4 ?? ''}%`);
+					set_text(text_41, `${$4 ?? ''}%`);
 					set_value(input_11, get(labelScale));
-					set_text(text_40, `${$5 ?? ''}%`);
+					set_text(text_42, `${$5 ?? ''}%`);
 					set_value(input_12, get(railLabelScale));
-					set_text(text_43, `${get(leftPad) ?? ''}px`);
+					set_text(text_45, `${get(leftPad) ?? ''}px`);
 					set_value(input_13, get(leftPad));
 
-					set_text(text_44, ` ${get(copied)
+					set_text(text_46, ` ${get(copied)
 						? 'Gesendet ✓'
 						: 'Aktuelle Optik an Sojus senden (als Standard)'}`);
 				},
@@ -10959,65 +11175,64 @@ function Home($$anchor, $$props) {
 				]
 			);
 
-			delegated('click', button_43, () => set(settingsOpen, false));
-			delegated('click', button_44, () => setShowWidgets(!get(showWidgets)));
-			delegated('click', button_47, () => setHaptics(!get(hapticsEnabled)));
-			delegated('click', button_48, () => setRailAlways(!get(railAlways)));
+			delegated('click', button_48, () => set(settingsOpen, false));
+			delegated('click', button_49, () => setShowWidgets(!get(showWidgets)));
+			delegated('click', button_52, () => setHaptics(!get(hapticsEnabled)));
+			delegated('click', button_53, () => setRailAlways(!get(railAlways)));
 			delegated('input', input_3, (e) => setAnchor(+e.currentTarget.value));
 			delegated('input', input_4, (e) => setRailHeight(+e.currentTarget.value));
 			delegated('input', input_5, (e) => setRailRight(+e.currentTarget.value));
 			delegated('input', input_6, (e) => setWave(+e.currentTarget.value));
 			delegated('input', input_7, (e) => setVerticalSpread(+e.currentTarget.value));
-			delegated('click', button_49, () => setBubbleVisible(!get(bubbleVisible)));
+			delegated('click', button_54, () => setBubbleVisible(!get(bubbleVisible)));
 			delegated('input', input_8, (e) => setBubbleSize(+e.currentTarget.value));
 			delegated('input', input_9, (e) => setBubbleRight(+e.currentTarget.value));
-			delegated('click', button_50, () => setShowIcons(!get(showIcons)));
-			delegated('click', button_51, () => setShowLabels(!get(showLabels)));
+			delegated('click', button_55, () => setShowIcons(!get(showIcons)));
+			delegated('click', button_56, () => setShowLabels(!get(showLabels)));
 			delegated('input', input_10, (e) => setIconSize(+e.currentTarget.value));
 			delegated('input', input_11, (e) => setLabelScale(+e.currentTarget.value));
 			delegated('input', input_12, (e) => setRailLabelScale(+e.currentTarget.value));
 			delegated('input', input_13, (e) => setLeftPad(+e.currentTarget.value));
-			delegated('click', button_54, copyAppearance);
-			delegated('click', button_55, openOrbitApp);
-			append($$anchor, div_62);
+			delegated('click', button_59, copyAppearance);
+			delegated('click', button_60, openOrbitApp);
+			append($$anchor, div_72);
 		};
 
-		if_block(node_80, ($$render) => {
-			if (get(settingsOpen)) $$render(consequent_54);
+		if_block(node_92, ($$render) => {
+			if (get(settingsOpen)) $$render(consequent_62);
 		});
 	}
 
-	var node_92 = sibling(node_80, 2);
+	var node_104 = sibling(node_92, 2);
 
 	{
-		var consequent_55 = ($$anchor) => {
-			var div_94 = root_63();
-			var button_56 = sibling(child(div_94), 4);
-			var node_93 = child(button_56);
+		var consequent_63 = ($$anchor) => {
+			var div_104 = root_72();
+			var button_61 = sibling(child(div_104), 4);
+			var node_105 = child(button_61);
 
-			Icon(node_93, { name: 'close', size: 24 });
+			Icon(node_105, { name: 'close', size: 24 });
 
-			var div_95 = sibling(button_56, 2);
-			var button_57 = sibling(child(div_95), 8);
-			delegated('click', button_56, () => set(showDefaultPrompt, false));
+			var div_105 = sibling(button_61, 2);
+			var button_62 = sibling(child(div_105), 8);
+			delegated('click', button_61, () => set(showDefaultPrompt, false));
 
-			delegated('click', button_57, () => {
+			delegated('click', button_62, () => {
 				void makeDefault();
 				set(showDefaultPrompt, false);
 			});
 
-			append($$anchor, div_94);
+			append($$anchor, div_104);
 		};
 
-		if_block(node_92, ($$render) => {
-			if (get(showDefaultPrompt)) $$render(consequent_55);
+		if_block(node_104, ($$render) => {
+			if (get(showDefaultPrompt)) $$render(consequent_63);
 		});
 	}
 
 	template_effect(() => {
 		set_style(div, `--app-icon: ${get(iconSize) ?? ''}px; --app-label-scale: ${get(labelScale) ?? ''}; --rail-label-scale: ${get(railLabelScale) ?? ''}; --list-pad: ${get(leftPad) ?? ''}px; --app-font: ${(get(fontFamily) || 'var(--font-ui)') ?? ''}; ${get(colorVars) ?? ''}`);
-		classes = set_class(div_1, 1, 'pager svelte-13s71iz', null, classes, { anim: get(pagerAnim) && !get(paging) });
-		set_style(div_1, `transform: translateX(calc(${-get(pageIndex) * 100}% + ${get(dragDX) ?? ''}px));`);
+		set_style(div_1, `transform: translate3d(${-get(curCol) * get(pagerW)}px, ${-get(curRow) * get(pagerH)}px, 0);`);
 	});
 
 	delegated('pointerdown', div_1, pagerDown);
@@ -11040,7 +11255,7 @@ delegate([
 const manifest = {
   id: "orbit-launcher",
   name: "Orbit Launcher",
-  version: "0.3.1",
+  version: "0.4.0",
   description: "Orbit als Startbildschirm: eine minimalistische, wallpaper-forward Startseite mit Uhr, Datum und Favoriten, einer A–Z-Wellen-Leiste zum Scrubben durch alle Apps, Android-Widgets und vielen Feineinstellungen. Mehrere Startseiten (seitlich wischbar), Seiten als Plugin-Ansicht, und frei zeichenbare Gesten. Nutzt die nativen launcher-/widget-Capabilities; voll nur in der Android-App.",
   author: "Sojus",
   main: "index.ts",
@@ -11050,6 +11265,11 @@ const manifest = {
   platforms: ["mobile", "desktop", "web"],
   capabilities: ["launcher", "wallpaper", "appwidgets", "haptics", "orientation"],
   news: [
+    {
+      version: "0.4.0",
+      date: "2026-10-15",
+      text: 'Seiten sind jetzt ein 2D-Raster: wische in jede Richtung zur Nachbarseite (sauberes Einrasten, kein Hängenbleiben mehr zwischen Seiten). Neue Zoom-Übersicht (lange halten → „Seitenübersicht"): alle Seiten als Kacheln, „+" legt eine Seite in jede Richtung an, Mülleimer löscht sie, Tippen springt hin. Gesten und Wischen sind sauber getrennt (gerader Wisch = Seite, gezeichnete Form = Geste). Öffnet eine Geste ein Plugin (z.B. SKWD Wall), gibt es oben neben dem Menü ein ✕ zurück zum Launcher.'
+    },
     {
       version: "0.3.1",
       date: "2026-10-15",

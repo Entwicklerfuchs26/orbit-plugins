@@ -1,7 +1,7 @@
 {
   "id": "orbit-launcher",
   "name": "Orbit Launcher",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Orbit als Startbildschirm: eine minimalistische, wallpaper-forward Startseite mit Uhr, Datum und Favoriten, einer A–Z-Wellen-Leiste zum Scrubben durch alle Apps, Android-Widgets und vielen Feineinstellungen. Mehrere Startseiten (seitlich wischbar), Seiten als Plugin-Ansicht, und frei zeichenbare Gesten. Nutzt die nativen launcher-/widget-Capabilities; voll nur in der Android-App.",
   "author": "Sojus",
   "main": "main.js",
@@ -19,6 +19,11 @@
     "orientation"
   ],
   "news": [
+    {
+      "version": "0.4.0",
+      "date": "2026-10-15",
+      "text": "Seiten sind jetzt ein 2D-Raster: wische in jede Richtung zur Nachbarseite (sauberes Einrasten, kein Hängenbleiben mehr zwischen Seiten). Neue Zoom-Übersicht (lange halten → „Seitenübersicht\"): alle Seiten als Kacheln, „+\" legt eine Seite in jede Richtung an, Mülleimer löscht sie, Tippen springt hin. Gesten und Wischen sind sauber getrennt (gerader Wisch = Seite, gezeichnete Form = Geste). Öffnet eine Geste ein Plugin (z.B. SKWD Wall), gibt es oben neben dem Menü ein ✕ zurück zum Launcher."
+    },
     {
       "version": "0.3.1",
       "date": "2026-10-15",
