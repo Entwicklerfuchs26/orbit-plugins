@@ -1,8 +1,8 @@
 {
   "id": "orbit-launcher",
   "name": "Orbit Launcher",
-  "version": "0.2.0",
-  "description": "Orbit als Startbildschirm: eine minimalistische, wallpaper-forward Startseite mit Uhr, Datum und Favoriten, einer A–Z-Wellen-Leiste zum Scrubben durch alle Apps, Android-Widgets und vielen Feineinstellungen. Nutzt die nativen launcher-/widget-Capabilities; voll nur in der Android-App.",
+  "version": "0.3.0",
+  "description": "Orbit als Startbildschirm: eine minimalistische, wallpaper-forward Startseite mit Uhr, Datum und Favoriten, einer A–Z-Wellen-Leiste zum Scrubben durch alle Apps, Android-Widgets und vielen Feineinstellungen. Mehrere Startseiten (seitlich wischbar), Seiten als Plugin-Ansicht, und frei zeichenbare Gesten. Nutzt die nativen launcher-/widget-Capabilities; voll nur in der Android-App.",
   "author": "Sojus",
   "main": "main.js",
   "type": "gui",
@@ -19,6 +19,11 @@
     "orientation"
   ],
   "news": [
+    {
+      "version": "0.3.0",
+      "date": "2026-10-15",
+      "text": "Mehrere Startseiten: seitlich wischen blättert durch eigene Widget-Seiten (Seiten-Punkte unten). Eine Seite lässt sich einer Plugin-Ansicht zuweisen (z.B. SKWD Wall). Frei zeichenbare Gesten ($1-Erkennung): im Lange-halten-Menü „Gesten hinzufügen\" → Form zeichnen, benennen, einer Aktion zuordnen (Ansicht/App/Seite/Orbit). Neue Menüpunkte „Weitere Startseite hinzufügen\" + „Gesten hinzufügen\". Neu installierte Apps erscheinen jetzt sofort beim Zurückkehren zum Launcher (App-Liste wird aufgefrischt)."
+    },
     {
       "version": "0.2.0",
       "date": "2026-10-11",
