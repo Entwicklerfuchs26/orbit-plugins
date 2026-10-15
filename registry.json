@@ -139,7 +139,7 @@
       "name": "Orbit Launcher",
       "description": "Orbit als Startbildschirm: eine minimalistische, wallpaper-forward Startseite mit Uhr, Datum und Favoriten, einer A–Z-Wellen-Leiste zum Scrubben durch alle Apps, Android-Widgets und vielen Feineinstellungen. Mehrere Startseiten (seitlich wischbar), Seiten als Plugin-Ansicht, und frei zeichenbare Gesten. Nutzt die nativen launcher-/widget-Capabilities; voll nur in der Android-App.",
       "author": "Sojus",
-      "version": "0.3.0",
+      "version": "0.3.1",
       "type": "gui",
       "platforms": [
         "mobile",
@@ -154,6 +154,11 @@
         "orientation"
       ],
       "news": [
+        {
+          "version": "0.3.1",
+          "date": "2026-10-15",
+          "text": "Bugfix: Seitenwischen und gezeichnete Gesten funktionieren jetzt zuverlässig — die Startseite übernimmt in Ruhe die Fingersteuerung, statt dass der Browser-Scroll den Zug abbricht. Gesten werden auf freier Fläche der Startseite erkannt."
+        },
         {
           "version": "0.3.0",
           "date": "2026-10-15",
@@ -170,9 +175,15 @@
           "text": "Erste Version: wallpaper-forward Startseite mit Uhr, Datum und Favoriten; A–Z-Wellen-Leiste zum Scrubben durch alle Apps; Apps anheften/starten/deinstallieren; Android-Widgets hinzufügen & entfernen; Haptik, Farben/Schrift und Layout fein einstellbar; Orbit als Standard-Startbildschirm festlegbar."
         }
       ],
-      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/f47f89688ad7cc14c71a1df1552c989238f162c5/test/orbit-launcher/main.js",
+      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/51611478c7f8bf722ecc7465f785530b0509fd01/test/orbit-launcher/main.js",
       "channel": "test",
       "versions": [
+        {
+          "label": "0.3.1+5161147",
+          "version": "0.3.1",
+          "built": "5161147",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/51611478c7f8bf722ecc7465f785530b0509fd01/test/orbit-launcher/main.js"
+        },
         {
           "label": "0.3.0+f47f896",
           "version": "0.3.0",
