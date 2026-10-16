@@ -9045,7 +9045,10 @@ function Home($$anchor, $$props) {
 		gStartY = e.clientY;
 		gPath = [{ x: e.clientX, y: e.clientY }];
 
-		if (!gIgnore) pagerEl?.setPointerCapture?.(e.pointerId);
+		// NB: deliberately NO setPointerCapture — capturing would steal pointermove
+		// from the page's long-press handler (use:homeLongpress), so its "cancel on
+		// move" never runs and the edit menu pops open mid-swipe. The pager fills the
+		// screen, so bubbled move/up events reach us without capture anyway.
 	}
 
 	function pagerMove(e) {
@@ -11255,7 +11258,7 @@ delegate([
 const manifest = {
   id: "orbit-launcher",
   name: "Orbit Launcher",
-  version: "0.4.0",
+  version: "0.4.1",
   description: "Orbit als Startbildschirm: eine minimalistische, wallpaper-forward Startseite mit Uhr, Datum und Favoriten, einer A–Z-Wellen-Leiste zum Scrubben durch alle Apps, Android-Widgets und vielen Feineinstellungen. Mehrere Startseiten (seitlich wischbar), Seiten als Plugin-Ansicht, und frei zeichenbare Gesten. Nutzt die nativen launcher-/widget-Capabilities; voll nur in der Android-App.",
   author: "Sojus",
   main: "index.ts",
@@ -11265,6 +11268,11 @@ const manifest = {
   platforms: ["mobile", "desktop", "web"],
   capabilities: ["launcher", "wallpaper", "appwidgets", "haptics", "orientation"],
   news: [
+    {
+      version: "0.4.1",
+      date: "2026-10-16",
+      text: "Bugfix: Beim Wischen zwischen Seiten ging fälschlich das Lange-halten-Menü auf, sodass man nicht zurückwischen konnte — behoben (der Pager nimmt dem Seiten-Langdruck die Finger-Events nicht mehr weg)."
+    },
     {
       version: "0.4.0",
       date: "2026-10-15",
