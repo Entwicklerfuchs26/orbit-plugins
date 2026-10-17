@@ -139,7 +139,7 @@
       "name": "Orbit Launcher",
       "description": "Orbit als Startbildschirm: eine minimalistische, wallpaper-forward Startseite mit Uhr, Datum und Favoriten, einer A–Z-Wellen-Leiste zum Scrubben durch alle Apps, Android-Widgets und vielen Feineinstellungen. Mehrere Startseiten (seitlich wischbar), Seiten als Plugin-Ansicht, und frei zeichenbare Gesten. Nutzt die nativen launcher-/widget-Capabilities; voll nur in der Android-App.",
       "author": "Sojus",
-      "version": "0.4.3",
+      "version": "0.4.4",
       "type": "gui",
       "platforms": [
         "mobile",
@@ -155,7 +155,7 @@
       ],
       "news": [
         {
-          "version": "0.4.3",
+          "version": "0.4.4",
           "date": "2026-10-16",
           "text": "Diagnose-Build: kleiner Debug-Streifen oben zeigt, was beim Wischen passiert (Koordinaten/Weg/Entscheidung), um das Zurückwischen-Problem einzukreisen. Pointer-Capture wieder aktiv."
         },
@@ -195,9 +195,15 @@
           "text": "Erste Version: wallpaper-forward Startseite mit Uhr, Datum und Favoriten; A–Z-Wellen-Leiste zum Scrubben durch alle Apps; Apps anheften/starten/deinstallieren; Android-Widgets hinzufügen & entfernen; Haptik, Farben/Schrift und Layout fein einstellbar; Orbit als Standard-Startbildschirm festlegbar."
         }
       ],
-      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/b6c70e888420ca2437706da61d59a2a1dccdbb82/test/orbit-launcher/main.js",
+      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/0f149bcf720da9e7955b5d7e0b0d8237b1060c04/test/orbit-launcher/main.js",
       "channel": "test",
       "versions": [
+        {
+          "label": "0.4.4+0f149bc",
+          "version": "0.4.4",
+          "built": "0f149bc",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/0f149bcf720da9e7955b5d7e0b0d8237b1060c04/test/orbit-launcher/main.js"
+        },
         {
           "label": "0.4.3+b6c70e8",
           "version": "0.4.3",
