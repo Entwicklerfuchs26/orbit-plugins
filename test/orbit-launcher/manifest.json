@@ -1,7 +1,7 @@
 {
   "id": "orbit-launcher",
   "name": "Orbit Launcher",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "Orbit als Startbildschirm: eine minimalistische, wallpaper-forward Startseite mit Uhr, Datum und Favoriten, einer A–Z-Wellen-Leiste zum Scrubben durch alle Apps, Android-Widgets und vielen Feineinstellungen. Mehrere Startseiten (seitlich wischbar), Seiten als Plugin-Ansicht, und frei zeichenbare Gesten. Nutzt die nativen launcher-/widget-Capabilities; voll nur in der Android-App.",
   "author": "Sojus",
   "main": "main.js",
@@ -20,7 +20,7 @@
   ],
   "news": [
     {
-      "version": "0.4.3",
+      "version": "0.4.4",
       "date": "2026-10-16",
       "text": "Diagnose-Build: kleiner Debug-Streifen oben zeigt, was beim Wischen passiert (Koordinaten/Weg/Entscheidung), um das Zurückwischen-Problem einzukreisen. Pointer-Capture wieder aktiv."
     },
