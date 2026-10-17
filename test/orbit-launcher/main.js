@@ -8841,49 +8841,8 @@ function Home($$anchor, $$props) {
 	}
 
 	// ---- Home edit mode (drag rail position + widgets/favourites divider) ----
-	/** Long-press on empty home area (not an app) opens the edit menu. */
-	function homeLongpress(node) {
-		let timer;
-		let sx = 0;
-		let sy = 0;
-
-		const down = (e) => {
-			if (e.target?.closest('.app, button, input, a')) return;
-
-			sx = e.clientX;
-			sy = e.clientY;
-			timer = setTimeout(() => set(editMenuOpen, true), 550);
-		};
-
-		const move = (e) => {
-			if (timer && (Math.abs(e.clientX - sx) > 10 || Math.abs(e.clientY - sy) > 10)) {
-				clearTimeout(timer);
-				timer = undefined;
-			}
-		};
-
-		const cancel = () => {
-			if (timer) {
-				clearTimeout(timer);
-				timer = undefined;
-			}
-		};
-
-		node.addEventListener('pointerdown', down);
-		node.addEventListener('pointermove', move);
-		node.addEventListener('pointerup', cancel);
-		node.addEventListener('pointercancel', cancel);
-
-		return {
-			destroy() {
-				node.removeEventListener('pointerdown', down);
-				node.removeEventListener('pointermove', move);
-				node.removeEventListener('pointerup', cancel);
-				node.removeEventListener('pointercancel', cancel);
-			}
-		};
-	}
-
+	// (The long-press that opens the edit menu is handled inside the pager engine
+	//  below, so a swipe reliably cancels it — see lpTimer in pagerDown/Move.)
 	function startDrag(e, which) {
 		e.preventDefault();
 		e.stopPropagation();
@@ -9025,12 +8984,22 @@ function Home($$anchor, $$props) {
 	let gMulti = false; // 2+ pointers this stroke → ignore (pinch/scroll)
 	let gActive = false;
 	let suppressClickUntil = 0;
+	let lpTimer; // long-press → edit menu
+	let lpFired = false;
+
+	function clearLp() {
+		if (lpTimer) {
+			clearTimeout(lpTimer);
+			lpTimer = undefined;
+		}
+	}
 
 	function pagerDown(e) {
 		ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
 		if (ptrs.size > 1) {
 			gMulti = true;
+			clearLp();
 
 			return;
 		}
@@ -9041,14 +9010,26 @@ function Home($$anchor, $$props) {
 		gOnApp = !!t.closest('.app');
 		gActive = !gIgnore;
 		gMulti = false;
+		lpFired = false;
 		gStartX = e.clientX;
 		gStartY = e.clientY;
 		gPath = [{ x: e.clientX, y: e.clientY }];
 
-		// NB: deliberately NO setPointerCapture — capturing would steal pointermove
-		// from the page's long-press handler (use:homeLongpress), so its "cancel on
-		// move" never runs and the edit menu pops open mid-swipe. The pager fills the
-		// screen, so bubbled move/up events reach us without capture anyway.
+		// Long-press on empty space → edit menu. Owned by the pager (not a separate
+		// use: action) so ANY movement cancels it — otherwise it popped open mid-swipe
+		// and ate the page-navigation. No setPointerCapture for the same reason.
+		clearLp();
+
+		if (!gIgnore && !t.closest('.app, button, input, a')) {
+			lpTimer = setTimeout(
+				() => {
+					lpTimer = undefined;
+					lpFired = true;
+					set(editMenuOpen, true);
+				},
+				500
+			);
+		}
 	}
 
 	function pagerMove(e) {
@@ -9057,12 +9038,14 @@ function Home($$anchor, $$props) {
 		ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
 		if (gPath.length < 600) gPath.push({ x: e.clientX, y: e.clientY });
+		if (Math.abs(e.clientX - gStartX) > 10 || Math.abs(e.clientY - gStartY) > 10) clearLp();
 
 		e.preventDefault(); // we own the stroke (touch-action is locked)
 	}
 
 	function pagerUp(e) {
 		ptrs.delete(e.pointerId);
+		clearLp();
 
 		if (gIgnore) {
 			if (ptrs.size === 0) gActive = false;
@@ -9082,11 +9065,19 @@ function Home($$anchor, $$props) {
 		if (ptrs.size !== 0 || !gActive) return;
 
 		gActive = false;
+
+		if (lpFired) {
+			lpFired = false; // the long-press already opened the edit menu
+
+			return;
+		}
+
 		endStroke();
 	}
 
 	function pagerCancel(e) {
 		ptrs.delete(e.pointerId);
+		clearLp();
 
 		if (ptrs.size === 0) {
 			gActive = false;
@@ -9094,8 +9085,10 @@ function Home($$anchor, $$props) {
 		}
 	}
 
-	/** Classify a finished stroke: drawn shape → gesture; straight flick → navigate. */
+	/** Classify a finished stroke: straight flick → navigate; drawn shape → gesture. */
 	function endStroke() {
+		if (gOnApp) return; // taps/holds on apps are handled by the app tile itself
+
 		const last = gPath[gPath.length - 1] ?? { x: gStartX, y: gStartY };
 		const dx = last.x - gStartX;
 		const dy = last.y - gStartY;
@@ -9106,8 +9099,25 @@ function Home($$anchor, $$props) {
 
 		const straightness = plen > 0 ? reach / plen : 0;
 
-		// 1) Drawn shape → gesture: enough path, clearly not a straight flick.
-		if (!gOnApp && plen > 60 && straightness < 0.78 && get(customGestures).length > 0) {
+		// Straight flick → the neighbour page in that direction. Single split with the
+		// gesture path (no dead zone): >=0.75 straight = flick, else a drawn shape.
+		if (reach > 40 && straightness >= 0.75 && !(get(onHomePage) && get(appsRevealed))) {
+			const horizontal = Math.abs(dx) > Math.abs(dy);
+			const dCol = horizontal ? dx < 0 ? 1 : -1 : 0; // swipe left → go right
+			const dRow = horizontal ? 0 : dy < 0 ? 1 : -1; // swipe up → go down
+
+			if (manager().pageAt(get(curCol) + dCol, get(curRow) + dRow)) {
+				suppressClickUntil = performance.now() + 400;
+				goToCell(get(curCol) + dCol, get(curRow) + dRow);
+
+				return;
+			}
+
+			// flick with no page there → fall through (might still be a drawn gesture)
+		}
+
+		// Drawn shape → gesture.
+		if (plen > 60 && get(customGestures).length > 0) {
 			const res = recognizeStroke(gPath, get(customGestures).map((g) => ({ id: g.id, points: g.points })));
 
 			if (res && res.score >= GESTURE_MIN_SCORE) {
@@ -9119,27 +9129,9 @@ function Home($$anchor, $$props) {
 					if (get(hapticsEnabled)) void haptics?.tick();
 
 					runAction(g.action);
-
-					return;
 				}
 			}
 		}
-
-		// 2) Straight flick → neighbour in that direction (not while browsing apps).
-		if (!gOnApp && !(get(onHomePage) && get(appsRevealed)) && straightness > 0.8 && reach > 48) {
-			let dCol = 0;
-			let dRow = 0;
-
-			if (Math.abs(dx) > Math.abs(dy)) dCol = dx < 0 ? 1 : -1; else // swipe left → go right
-			dRow = dy < 0 ? 1 : -1; // swipe up → go down
-
-			if (manager().pageAt(get(curCol) + dCol, get(curRow) + dRow)) {
-				suppressClickUntil = performance.now() + 400;
-				goToCell(get(curCol) + dCol, get(curRow) + dRow);
-			}
-		}
-
-		// 3) Otherwise a tap / unrecognised stroke → nothing; the app's click handles taps.
 	}
 
 	function runAction(a) {
@@ -9755,7 +9747,6 @@ function Home($$anchor, $$props) {
 					});
 				}
 				bind_this(div_3, ($$value) => listEl = $$value, () => listEl);
-				action(div_3, ($$node) => homeLongpress?.($$node));
 
 				template_effect(() => classes = set_class(div_3, 1, 'list svelte-13s71iz', null, classes, {
 					focusing: get(scrubbing),
@@ -9926,7 +9917,6 @@ function Home($$anchor, $$props) {
 						if (get(d_2)) $$render(consequent_20); else $$render(alternate_3, -1);
 					});
 				}
-				action(div_16, ($$node) => homeLongpress?.($$node));
 				template_effect(() => set_text(text_6, get(pg).name));
 				append($$anchor, div_16);
 			};
@@ -9965,7 +9955,6 @@ function Home($$anchor, $$props) {
 						if (get(v)) $$render(consequent_29); else $$render(alternate_4, -1);
 					});
 				}
-				action(div_26, ($$node) => homeLongpress?.($$node));
 				template_effect(() => set_text(text_10, get(v)?.name ?? get(pg).name));
 				append($$anchor, div_26);
 			};
@@ -11258,7 +11247,7 @@ delegate([
 const manifest = {
   id: "orbit-launcher",
   name: "Orbit Launcher",
-  version: "0.4.1",
+  version: "0.4.2",
   description: "Orbit als Startbildschirm: eine minimalistische, wallpaper-forward Startseite mit Uhr, Datum und Favoriten, einer A–Z-Wellen-Leiste zum Scrubben durch alle Apps, Android-Widgets und vielen Feineinstellungen. Mehrere Startseiten (seitlich wischbar), Seiten als Plugin-Ansicht, und frei zeichenbare Gesten. Nutzt die nativen launcher-/widget-Capabilities; voll nur in der Android-App.",
   author: "Sojus",
   main: "index.ts",
@@ -11268,6 +11257,11 @@ const manifest = {
   platforms: ["mobile", "desktop", "web"],
   capabilities: ["launcher", "wallpaper", "appwidgets", "haptics", "orientation"],
   news: [
+    {
+      version: "0.4.2",
+      date: "2026-10-16",
+      text: 'Zurückwischen zwischen Seiten endlich zuverlässig: der Langdruck fürs „Seiten & Gesten"-Menü sitzt jetzt direkt im Pager und bricht bei jeder Wischbewegung ab, statt mitten im Wisch aufzupoppen. Flick-Erkennung vereinfacht (keine tote Zone mehr zwischen Wisch und gezeichneter Geste).'
+    },
     {
       version: "0.4.1",
       date: "2026-10-16",
