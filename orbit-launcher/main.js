@@ -8987,6 +8987,15 @@ function Home($$anchor, $$props) {
 	let lpTimer; // long-press → edit menu
 	let lpFired = false;
 
+	// A widget/view page that overflows scrolls vertically like Apple's widget list,
+	// while horizontal strokes still flip pages. Set when a stroke starts on such a
+	// scrollable canvas; axis-locked on first real movement so vertical = scroll and
+	// horizontal = page-flick never fight each other.
+	let gScroller = null;
+
+	let gAxis = '';
+	let gScrolled = false;
+
 	function clearLp() {
 		if (lpTimer) {
 			clearTimeout(lpTimer);
@@ -9011,6 +9020,14 @@ function Home($$anchor, $$props) {
 		gActive = !gIgnore;
 		gMulti = false;
 		lpFired = false;
+		gAxis = '';
+		gScrolled = false;
+
+		// Did the stroke start on a widget/view page that has more content than fits?
+		// If so, a vertical drag scrolls it instead of flicking to the neighbour page.
+		const sc = gIgnore || gOnApp ? null : t.closest('.page-canvas, .page-view');
+
+		gScroller = sc && sc.scrollHeight - sc.clientHeight > 4 ? sc : null;
 		gStartX = e.clientX;
 		gStartY = e.clientY;
 		gPath = [{ x: e.clientX, y: e.clientY }];
@@ -9047,10 +9064,30 @@ function Home($$anchor, $$props) {
 		// don't preventDefault over it — that would fight the native app-list scroll.
 		if (gOnApp) return;
 
+		const prev = ptrs.get(e.pointerId) ?? { x: e.clientX, y: e.clientY };
+		const stepY = e.clientY - prev.y;
+
 		ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
 		if (gPath.length < 600) gPath.push({ x: e.clientX, y: e.clientY });
-		if (Math.abs(e.clientX - gStartX) > 10 || Math.abs(e.clientY - gStartY) > 10) clearLp();
+
+		const totX = Math.abs(e.clientX - gStartX);
+		const totY = Math.abs(e.clientY - gStartY);
+
+		if (totX > 10 || totY > 10) clearLp();
+
+		// Lock the axis once the finger has clearly committed to a direction.
+		if (!gAxis && (totX > 8 || totY > 8)) gAxis = totY > totX ? 'v' : 'h';
+
+		// Vertical drag on an overflowing widget/view page → scroll it 1:1 with the
+		// finger; never let it turn into a page-flick.
+		if (gScroller && gAxis === 'v') {
+			gScroller.scrollTop -= stepY;
+			gScrolled = true;
+			e.preventDefault();
+
+			return;
+		}
 
 		e.preventDefault(); // we own the stroke (touch-action is locked)
 	}
@@ -9100,6 +9137,14 @@ function Home($$anchor, $$props) {
 	/** Classify a finished stroke: straight flick → navigate; drawn shape → gesture. */
 	function endStroke() {
 		if (gOnApp) return; // taps/holds on apps are handled by the app tile itself
+
+		if (gScrolled) {
+			// We scrolled a widget page; don't also flick to a neighbour, and swallow the
+			// click so we don't poke whatever widget ended up under the finger.
+			suppressClickUntil = performance.now() + 250;
+
+			return;
+		}
 
 		const last = gPath[gPath.length - 1] ?? { x: gStartX, y: gStartY };
 		const dx = last.x - gStartX;
@@ -9918,7 +9963,7 @@ function Home($$anchor, $$props) {
 							};
 
 							if_block(node_30, ($$render) => {
-								if (appwidgets && get(editing)) $$render(consequent_27);
+								if (appwidgets) $$render(consequent_27);
 							});
 						}
 
