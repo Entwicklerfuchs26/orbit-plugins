@@ -153,80 +153,37 @@
           "text": "Erste Version: wallpaper-forward Startseite mit Uhr, Datum und Favoriten; A–Z-Wellen-Leiste zum Scrubben durch alle Apps; Apps anheften/starten/deinstallieren; Android-Widgets hinzufügen & entfernen; Haptik, Farben/Schrift und Layout fein einstellbar; Orbit als Standard-Startbildschirm festlegbar."
         }
       ],
-      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/165918c4b4d0b9895ea61b4ca692f19cd54d1ed8/test/orbit-launcher/main.js",
-      "channel": "test",
+      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/ee205a87a87fdc7bb74a13d37146898952eeddeb/orbit-launcher/main.js",
       "versions": [
         {
-          "label": "0.4.5+165918c",
+          "label": "0.4.5+ee205a8",
           "version": "0.4.5",
-          "built": "165918c",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/165918c4b4d0b9895ea61b4ca692f19cd54d1ed8/test/orbit-launcher/main.js"
+          "built": "ee205a8",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/ee205a87a87fdc7bb74a13d37146898952eeddeb/orbit-launcher/main.js"
         },
         {
-          "label": "0.4.5+3bac9bb",
+          "label": "0.4.5+8d67813",
           "version": "0.4.5",
-          "built": "3bac9bb",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/3bac9bb881fce0d04a209bd9351a6feed17d93ec/test/orbit-launcher/main.js"
+          "built": "8d67813",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/8d678135d5aaf7bc905393a04a30467f9ca2170a/orbit-launcher/main.js"
         },
         {
-          "label": "0.4.5+65e8aec",
+          "label": "0.4.5+a6524cc",
           "version": "0.4.5",
-          "built": "65e8aec",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/65e8aec9b67ce5d3c216552ead9a248fe4b1d6e8/test/orbit-launcher/main.js"
+          "built": "a6524cc",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/a6524cc5cf7040f212c85e4db6fc775ced9d068b/orbit-launcher/main.js"
         },
         {
-          "label": "0.4.5+3a78b62",
-          "version": "0.4.5",
-          "built": "3a78b62",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/3a78b62110365605332af79893748566e9ad04cc/test/orbit-launcher/main.js"
-        },
-        {
-          "label": "0.4.4+0f149bc",
-          "version": "0.4.4",
-          "built": "0f149bc",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/0f149bcf720da9e7955b5d7e0b0d8237b1060c04/test/orbit-launcher/main.js"
-        },
-        {
-          "label": "0.4.3+b6c70e8",
-          "version": "0.4.3",
-          "built": "b6c70e8",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/b6c70e888420ca2437706da61d59a2a1dccdbb82/test/orbit-launcher/main.js"
-        },
-        {
-          "label": "0.4.2+88f1c9b",
-          "version": "0.4.2",
-          "built": "88f1c9b",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/88f1c9b85f66e5baad0d69ceb88a03635e0bb37b/test/orbit-launcher/main.js"
-        },
-        {
-          "label": "0.4.1+5c41bcd",
-          "version": "0.4.1",
-          "built": "5c41bcd",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/5c41bcd29def136aa4aac51db12154ae66c00852/test/orbit-launcher/main.js"
-        },
-        {
-          "label": "0.4.0+05d0d7b",
-          "version": "0.4.0",
-          "built": "05d0d7b",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/05d0d7be3c0bb2ff21c5cab53bbcfdd373eba354/test/orbit-launcher/main.js"
-        },
-        {
-          "label": "0.3.1+5161147",
-          "version": "0.3.1",
-          "built": "5161147",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/51611478c7f8bf722ecc7465f785530b0509fd01/test/orbit-launcher/main.js"
-        },
-        {
-          "label": "0.3.0+f47f896",
-          "version": "0.3.0",
-          "built": "f47f896",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/f47f89688ad7cc14c71a1df1552c989238f162c5/test/orbit-launcher/main.js"
-        },
-        {
-          "label": "0.2.0+c4221c8",
+          "label": "0.2.0+e650eb3",
           "version": "0.2.0",
-          "built": "c4221c8",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/c4221c8d86cb7492ec1670e7fe49fa47abc5800b/test/orbit-launcher/main.js"
+          "built": "e650eb3",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/e650eb335feece432214d39f89f6da917e8f2932/orbit-launcher/main.js"
+        },
+        {
+          "label": "0.1.0+56f4f4c",
+          "version": "0.1.0",
+          "built": "56f4f4c",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/56f4f4c9bfb45a5c0332e0e4291946cb82cb8c98/orbit-launcher/main.js"
         }
       ]
     },
@@ -296,37 +253,80 @@
           "text": "Erste Version: wallpaper-forward Startseite mit Uhr, Datum und Favoriten; A–Z-Wellen-Leiste zum Scrubben durch alle Apps; Apps anheften/starten/deinstallieren; Android-Widgets hinzufügen & entfernen; Haptik, Farben/Schrift und Layout fein einstellbar; Orbit als Standard-Startbildschirm festlegbar."
         }
       ],
-      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/ee205a87a87fdc7bb74a13d37146898952eeddeb/orbit-launcher/main.js",
+      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/bf43e86067eca1ca1e42f7e538fc371f1049be59/test/orbit-launcher/main.js",
+      "channel": "test",
       "versions": [
         {
-          "label": "0.4.5+ee205a8",
+          "label": "0.4.5+bf43e86",
           "version": "0.4.5",
-          "built": "ee205a8",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/ee205a87a87fdc7bb74a13d37146898952eeddeb/orbit-launcher/main.js"
+          "built": "bf43e86",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/bf43e86067eca1ca1e42f7e538fc371f1049be59/test/orbit-launcher/main.js"
         },
         {
-          "label": "0.4.5+8d67813",
+          "label": "0.4.5+165918c",
           "version": "0.4.5",
-          "built": "8d67813",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/8d678135d5aaf7bc905393a04a30467f9ca2170a/orbit-launcher/main.js"
+          "built": "165918c",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/165918c4b4d0b9895ea61b4ca692f19cd54d1ed8/test/orbit-launcher/main.js"
         },
         {
-          "label": "0.4.5+a6524cc",
+          "label": "0.4.5+3bac9bb",
           "version": "0.4.5",
-          "built": "a6524cc",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/a6524cc5cf7040f212c85e4db6fc775ced9d068b/orbit-launcher/main.js"
+          "built": "3bac9bb",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/3bac9bb881fce0d04a209bd9351a6feed17d93ec/test/orbit-launcher/main.js"
         },
         {
-          "label": "0.2.0+e650eb3",
-          "version": "0.2.0",
-          "built": "e650eb3",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/e650eb335feece432214d39f89f6da917e8f2932/orbit-launcher/main.js"
+          "label": "0.4.5+65e8aec",
+          "version": "0.4.5",
+          "built": "65e8aec",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/65e8aec9b67ce5d3c216552ead9a248fe4b1d6e8/test/orbit-launcher/main.js"
         },
         {
-          "label": "0.1.0+56f4f4c",
-          "version": "0.1.0",
-          "built": "56f4f4c",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/56f4f4c9bfb45a5c0332e0e4291946cb82cb8c98/orbit-launcher/main.js"
+          "label": "0.4.5+3a78b62",
+          "version": "0.4.5",
+          "built": "3a78b62",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/3a78b62110365605332af79893748566e9ad04cc/test/orbit-launcher/main.js"
+        },
+        {
+          "label": "0.4.4+0f149bc",
+          "version": "0.4.4",
+          "built": "0f149bc",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/0f149bcf720da9e7955b5d7e0b0d8237b1060c04/test/orbit-launcher/main.js"
+        },
+        {
+          "label": "0.4.3+b6c70e8",
+          "version": "0.4.3",
+          "built": "b6c70e8",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/b6c70e888420ca2437706da61d59a2a1dccdbb82/test/orbit-launcher/main.js"
+        },
+        {
+          "label": "0.4.2+88f1c9b",
+          "version": "0.4.2",
+          "built": "88f1c9b",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/88f1c9b85f66e5baad0d69ceb88a03635e0bb37b/test/orbit-launcher/main.js"
+        },
+        {
+          "label": "0.4.1+5c41bcd",
+          "version": "0.4.1",
+          "built": "5c41bcd",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/5c41bcd29def136aa4aac51db12154ae66c00852/test/orbit-launcher/main.js"
+        },
+        {
+          "label": "0.4.0+05d0d7b",
+          "version": "0.4.0",
+          "built": "05d0d7b",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/05d0d7be3c0bb2ff21c5cab53bbcfdd373eba354/test/orbit-launcher/main.js"
+        },
+        {
+          "label": "0.3.1+5161147",
+          "version": "0.3.1",
+          "built": "5161147",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/51611478c7f8bf722ecc7465f785530b0509fd01/test/orbit-launcher/main.js"
+        },
+        {
+          "label": "0.3.0+f47f896",
+          "version": "0.3.0",
+          "built": "f47f896",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/f47f89688ad7cc14c71a1df1552c989238f162c5/test/orbit-launcher/main.js"
         }
       ]
     }
