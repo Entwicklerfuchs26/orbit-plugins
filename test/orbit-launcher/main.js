@@ -9031,11 +9031,21 @@ function Home($$anchor, $$props) {
 			);
 		}
 
-		if (!gIgnore) pagerEl?.setPointerCapture?.(e.pointerId);
+		// Don't capture when the touch started on an app tile: the tile owns its own
+		// tap/long-press, and capturing here would retarget pointermove/up/cancel to
+		// the pager, so the tile's long-press timer never gets cancelled on a scroll
+		// → the context sheet popped open mid-scroll. Let the tile keep its pointer
+		// and let the list scroll natively (.app is touch-action: pan-y).
+		if (!gIgnore && !gOnApp) pagerEl?.setPointerCapture?.(e.pointerId);
 	}
 
 	function pagerMove(e) {
 		if (!ptrs.has(e.pointerId) || gIgnore || gMulti || !gActive) return;
+
+		// A stroke that began on an app tile is the tile's business (tap / long-press /
+		// native vertical scroll of the list). Don't record it as a flick/gesture and
+		// don't preventDefault over it — that would fight the native app-list scroll.
+		if (gOnApp) return;
 
 		ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
