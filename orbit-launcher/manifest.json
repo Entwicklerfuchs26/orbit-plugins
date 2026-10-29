@@ -1,8 +1,8 @@
 {
   "id": "orbit-launcher",
   "name": "Orbit Launcher",
-  "version": "0.2.0",
-  "description": "Orbit als Startbildschirm: eine minimalistische, wallpaper-forward Startseite mit Uhr, Datum und Favoriten, einer A–Z-Wellen-Leiste zum Scrubben durch alle Apps, Android-Widgets und vielen Feineinstellungen. Nutzt die nativen launcher-/widget-Capabilities; voll nur in der Android-App.",
+  "version": "0.4.5",
+  "description": "Orbit als Startbildschirm: eine minimalistische, wallpaper-forward Startseite mit Uhr, Datum und Favoriten, einer A–Z-Wellen-Leiste zum Scrubben durch alle Apps, Android-Widgets und vielen Feineinstellungen. Mehrere Startseiten (seitlich wischbar), Seiten als Plugin-Ansicht, und frei zeichenbare Gesten. Nutzt die nativen launcher-/widget-Capabilities; voll nur in der Android-App.",
   "author": "Sojus",
   "main": "main.js",
   "type": "gui",
@@ -19,6 +19,41 @@
     "orientation"
   ],
   "news": [
+    {
+      "version": "0.4.5",
+      "date": "2026-10-17",
+      "text": "Zurückwischen zwischen Seiten funktioniert zuverlässig (Finger-Zug wird auch bei pointercancel abgeschlossen, touch-action auf Seiten gesperrt). Diagnose-Streifen wieder entfernt."
+    },
+    {
+      "version": "0.4.4",
+      "date": "2026-10-16",
+      "text": "Stroke wird auch bei pointercancel abgeschlossen (Android-WebView feuert das bei Swipes) → Navigation greift jetzt. touch-action:none auf Extra-Seiten."
+    },
+    {
+      "version": "0.4.2",
+      "date": "2026-10-16",
+      "text": "Zurückwischen: der Langdruck fürs „Seiten & Gesten\"-Menü sitzt jetzt direkt im Pager und bricht bei jeder Wischbewegung ab. Flick-Erkennung vereinfacht."
+    },
+    {
+      "version": "0.4.1",
+      "date": "2026-10-16",
+      "text": "Bugfix: Beim Wischen zwischen Seiten ging fälschlich das Lange-halten-Menü auf, sodass man nicht zurückwischen konnte — behoben (der Pager nimmt dem Seiten-Langdruck die Finger-Events nicht mehr weg)."
+    },
+    {
+      "version": "0.4.0",
+      "date": "2026-10-15",
+      "text": "Seiten sind jetzt ein 2D-Raster: wische in jede Richtung zur Nachbarseite (sauberes Einrasten, kein Hängenbleiben mehr zwischen Seiten). Neue Zoom-Übersicht (lange halten → „Seitenübersicht\"): alle Seiten als Kacheln, „+\" legt eine Seite in jede Richtung an, Mülleimer löscht sie, Tippen springt hin. Gesten und Wischen sind sauber getrennt (gerader Wisch = Seite, gezeichnete Form = Geste). Öffnet eine Geste ein Plugin (z.B. SKWD Wall), gibt es oben neben dem Menü ein ✕ zurück zum Launcher."
+    },
+    {
+      "version": "0.3.1",
+      "date": "2026-10-15",
+      "text": "Bugfix: Seitenwischen und gezeichnete Gesten funktionieren jetzt zuverlässig — die Startseite übernimmt in Ruhe die Fingersteuerung, statt dass der Browser-Scroll den Zug abbricht. Gesten werden auf freier Fläche der Startseite erkannt."
+    },
+    {
+      "version": "0.3.0",
+      "date": "2026-10-15",
+      "text": "Mehrere Startseiten: seitlich wischen blättert durch eigene Widget-Seiten (Seiten-Punkte unten). Eine Seite lässt sich einer Plugin-Ansicht zuweisen (z.B. SKWD Wall). Frei zeichenbare Gesten ($1-Erkennung): im Lange-halten-Menü „Gesten hinzufügen\" → Form zeichnen, benennen, einer Aktion zuordnen (Ansicht/App/Seite/Orbit). Neue Menüpunkte „Weitere Startseite hinzufügen\" + „Gesten hinzufügen\". Neu installierte Apps erscheinen jetzt sofort beim Zurückkehren zum Launcher (App-Liste wird aufgefrischt)."
+    },
     {
       "version": "0.2.0",
       "date": "2026-10-11",
