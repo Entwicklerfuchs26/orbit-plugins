@@ -8482,6 +8482,12 @@ function Home($$anchor, $$props) {
 		void loadAppWidgets();
 
 		appwidgets?.onLongPress((id) => {
+			// Ignore the native widget long-press while (or just after) scrolling the
+			// page: because we re-place the native view to follow the scroll, the finger
+			// looks stationary to the widget's own GestureDetector and it would fire a
+			// long-press mid-scroll — popping the menu open on the lightest touch.
+			if (performance.now() - lastWidgetScrollT < 400) return;
+
 			set(widgetMenuId, id, true);
 			set(editMenuOpen, true);
 		});
@@ -9009,6 +9015,7 @@ function Home($$anchor, $$props) {
 
 	let gAxis = '';
 	let gScrolled = false;
+	let lastWidgetScrollT = 0; // performance.now() of the last widget-page scroll step
 
 	function clearLp() {
 		if (lpTimer) {
@@ -9098,6 +9105,7 @@ function Home($$anchor, $$props) {
 		if (gScroller && gAxis === 'v') {
 			gScroller.scrollTop -= stepY;
 			gScrolled = true;
+			lastWidgetScrollT = performance.now(); // suppress the native widget long-press
 			schedulePlaceWidgets(); // keep native widget views glued to their slots
 			e.preventDefault();
 
