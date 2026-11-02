@@ -71,6 +71,7 @@ def _info_links(ids: dict, website: str | None) -> dict:
 
 # Stufen aus MyDubList; fuer die Mehrsprachen-Liste zaehlt wie bisher "high" und besser
 DUB_LANG_TIERS = ("very-high", "high")
+DUB_DE_TIERS = ("very-high", "high", "normal")
 DUB_ATTRIBUTION = "Dub data © MyDubList - https://mydublist.com - (CC BY 4.0)"
 
 
@@ -81,7 +82,8 @@ def _dub_fields(r: dict) -> dict:
         return {}
     de = langs.get("german")
     return {
-        "dub_de": 1 if de else 0,
+        # "low" = nur 1 Quelle bei MyDubList (unsicher, bei H oft falsch) -> kein DE-Abzeichen; ab "normal" (>= 2 Quellen) ja
+        "dub_de": 1 if de in DUB_DE_TIERS else 0,
         "dub_tier": de,
         "dub_languages": sorted(l for l, t in langs.items() if t in DUB_LANG_TIERS),
     }
