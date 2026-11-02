@@ -36,7 +36,9 @@ export function setNet(g: NetGet) { netGet = g }
 function loadPrefs(defaultCatalog: string) {
   let s: any = {}
   try { s = JSON.parse(localStorage.getItem(LS) || '{}') } catch {}
-  emb.catalogUrl = s.catalogUrl || defaultCatalog
+  // Nur eine bewusst geaenderte Adresse behalten; die alte Test-Adresse (Animus, Klartext-HTTP) verfaellt.
+  const saved = typeof s.catalogUrl === 'string' && !s.catalogUrl.includes('10.10.0.2:8787') ? s.catalogUrl : ''
+  emb.catalogUrl = saved || defaultCatalog
 }
 export function saveCatalogUrl(u: string) {
   emb.catalogUrl = u.trim()
