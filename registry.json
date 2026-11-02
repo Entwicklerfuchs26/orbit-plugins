@@ -358,6 +358,29 @@
           "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/2909aedea49d35cfb6706c35778052bfa2b5fe91/test/anime-liste/main.js"
         }
       ]
+    },
+    {
+      "id": "anime-liste-animus",
+      "name": "Anime-Liste · Animus (Test)",
+      "description": "Anime-Tracker, vorverbunden mit dem Heim-Backend auf Animus (Adresse vorbelegt, nur das Passwort eingeben). Braucht den WireGuard-Tunnel.",
+      "author": "Entwicklerfuchs",
+      "version": "0.1.0",
+      "type": "gui",
+      "platforms": [
+        "desktop",
+        "mobile",
+        "web"
+      ],
+      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/129d0b4f28e67f1bc96134730e3b408cd86c9b98/test/anime-liste-animus/main.js",
+      "channel": "test",
+      "versions": [
+        {
+          "label": "0.1.0+129d0b4",
+          "version": "0.1.0",
+          "built": "129d0b4",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/129d0b4f28e67f1bc96134730e3b408cd86c9b98/test/anime-liste-animus/main.js"
+        }
+      ]
     }
   ]
 }
