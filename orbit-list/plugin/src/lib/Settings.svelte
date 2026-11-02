@@ -2,6 +2,7 @@
   import { api, downloadExport, importUserData } from '../api'
   import { conn, disconnect } from './conn.svelte'
   import { checkCatalogUpdate } from './embedded.svelte'
+  import AniSync from './AniSync.svelte'
   let catMsg = $state('')
   async function checkCat() {
     catMsg = 'Prüfe …'
@@ -106,40 +107,6 @@
       aiMsg = aiSt.indexing?.error ? `Fehler: ${aiSt.indexing.error}` : 'Index fertig.'
       ai = await api.aiConfig(); await refreshAi()
     } catch { aiMsg = 'Index konnte nicht gestartet werden (Modell erreichbar?).' }
-  }
-
-  // Import-Reiter: Upload der eigenen Liste zu AniList (Token-pflichtig, nur Vorschau ohne Token)
-  let syncInfo = $state<any>(null)
-  let syncMsg = $state('')
-  let syncBusy = $state(false)
-  async function loadPreview() {
-    syncBusy = true; syncMsg = ''
-    try { syncInfo = await api.syncPreview() } catch { syncMsg = 'Vorschau fehlgeschlagen.' }
-    syncBusy = false
-  }
-  async function runSync() {
-    syncBusy = true; syncMsg = ''
-    try {
-      const r = await api.syncRun()
-      syncMsg = r.status === 'stub' ? `Kein AniList-Token hinterlegt — nichts gesendet (${r.would_sync} Einträge würden synchronisiert).`
-        : `${r.synced} Einträge zu AniList übertragen.${r.errors?.length ? ' Fehler: ' + r.errors.join('; ') : ''}`
-    } catch { syncMsg = 'Sync fehlgeschlagen.' }
-    syncBusy = false
-  }
-
-  // AniList-Datenimport (öffentliches Profil, tokenfrei)
-  let aniUser = $state('')
-  let impMsg = $state('')
-  let impBusy = $state(false)
-  $effect(() => { if (cat === 'import' && !aniUser) api.anilistUsername().then((d) => { if (d?.username) aniUser = d.username }).catch(() => {}) })
-  async function runImport() {
-    if (!aniUser.trim()) return
-    impBusy = true; impMsg = ''
-    try {
-      const r = await api.anilistImport(aniUser.trim())
-      impMsg = `${r.enriched} Titel angereichert (Tags, Studios, Saison, Land, Quelle, Daten), ${r.favorites_added} neue Favoriten übernommen${r.not_in_catalog ? `, ${r.not_in_catalog} nicht im Katalog` : ''}.`
-    } catch { impMsg = 'Import fehlgeschlagen (Benutzername prüfen / AniList erreichbar?).' }
-    impBusy = false
   }
 
   // Apps-Reiter: Pairing-Token + MCP
@@ -305,21 +272,7 @@
       </section>
     {:else if cat === 'import'}
       <section class="card">
-        <div class="field">
-          <label>Zu AniList hochsynchronisieren</label>
-          <p class="hint" style="margin-top:0">Überträgt Status, Wertung und Fortschritt deiner Anime-Liste (nie H). Ohne hinterlegten AniList-Token wird nichts gesendet — die Vorschau zeigt, was übertragen würde.</p>
-          <button class="big" onclick={loadPreview} disabled={syncBusy}>Vorschau laden</button>
-          {#if syncInfo}<p class="hint">{syncInfo.count} Einträge würden synchronisiert.</p>{/if}
-          <button class="big" onclick={runSync} disabled={syncBusy}>Jetzt synchronisieren</button>
-          {#if syncMsg}<p class="msg">{syncMsg}</p>{/if}
-        </div>
-        <div class="field last">
-          <label>Daten von AniList importieren</label>
-          <p class="hint" style="margin-top:0">Liest dein <b>öffentliches</b> AniList-Profil (kein Token nötig) und ergänzt Tags, Studios, Saison, Land, Quelle, Start-/Enddatum, Rewatches und Favoriten. Status, Wertung und Fortschritt bleiben unverändert.</p>
-          <input placeholder="AniList-Benutzername" bind:value={aniUser} onkeydown={(e) => e.key === 'Enter' && runImport()} />
-          <button class="big" onclick={runImport} disabled={impBusy || !aniUser.trim()}>{impBusy ? 'Importiere …' : 'Von AniList importieren'}</button>
-          {#if impMsg}<p class="msg">{impMsg}</p>{/if}
-        </div>
+        <AniSync />
       </section>
     {:else if cat === 'export'}
       <section class="card">

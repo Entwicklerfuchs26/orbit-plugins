@@ -44,6 +44,8 @@
   const SORTS: { key: string; label: string }[] = [
     { key: 'popularity', label: 'Beliebtheit' },
     { key: 'score', label: 'Wertung' },
+    { key: 'date_desc', label: 'Erscheinungsdatum (neueste zuerst)' },
+    { key: 'date_asc', label: 'Erscheinungsdatum (älteste zuerst)' },
     { key: 'title', label: 'Titel' },
     { key: 'recent', label: 'Zuletzt hinzugefügt' },
   ]

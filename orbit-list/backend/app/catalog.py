@@ -116,6 +116,7 @@ def _row_from_record(r: dict) -> dict:
     titles = [t.get("romaji"), t.get("en"), t.get("ja")]
     return {
         "oadb_id": r["id"],
+        "start_date": r.get("start_date"),
         "space": "h" if adult else "normal",
         "is_adult": adult,
         "anilist_id": ids.get("anilist"),
@@ -184,7 +185,7 @@ def run(jsonl: Path = DEFAULT_JSONL, db: Path | None = None, progress=print) -> 
     stats = {"matched": 0, "created": 0, "created_h": 0, "skipped_dup": 0, "status_refreshed": 0, "dubs": 0}
 
     fill_cols = ["title_romaji", "title_english", "title_native", "format", "episodes", "season_year", "season",
-                 "description_en", "mal_id", "anisearch_id", "kitsu_id", "popularity"]
+                 "description_en", "mal_id", "anisearch_id", "kitsu_id", "popularity", "start_date"]
     fill_json = ["synonyms", "genres", "tags", "studios", "info_links"]
 
     n = 0
@@ -233,7 +234,7 @@ def run(jsonl: Path = DEFAULT_JSONL, db: Path | None = None, progress=print) -> 
             cols = ["oadb_id", "space", "media_type", "is_adult", "anilist_id", "mal_id", "anisearch_id", "kitsu_id",
                     "title_romaji", "title_english", "title_native", "synonyms", "format", "status", "episodes",
                     "season_year", "season", "genres", "tags", "studios", "description_en", "info_links", "search_blob",
-                    "dub_de", "dub_tier", "dub_languages", "popularity"]
+                    "dub_de", "dub_tier", "dub_languages", "popularity", "start_date"]
             vals = [_j(row.get(c)) if c != "media_type" else "anime" for c in cols]
             vals[cols.index("dub_de")] = row.get("dub_de", 0)
             try:

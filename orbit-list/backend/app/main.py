@@ -754,6 +754,76 @@ def anilist_username() -> dict:
     return {"username": repo.meta_get("anilist_username")}
 
 
+@app.get("/sync/local")
+def sync_local() -> dict:
+    """Lokale Liste (nur Normalbereich) fuer den Abgleich mit AniList, der im Plugin laeuft."""
+    con = db.connect()
+    try:
+        rows = con.execute(
+            "SELECT m.id, m.anilist_id, m.mal_id, m.title_romaji, u.watch_status, u.rating, u.progress, u.updated_at, "
+            "u.favorite, u.started_at, u.completed_at, u.rewatches "
+            "FROM media m JOIN user_entry u ON u.media_id=m.id "
+            "WHERE m.space='normal' AND (m.anilist_id IS NOT NULL OR m.mal_id IS NOT NULL) "
+            "AND (u.watch_status<>'none' OR u.rating IS NOT NULL)").fetchall()
+        return {"entries": [dict(r) for r in rows]}
+    finally:
+        con.close()
+
+
+class SyncApply(BaseModel):
+    entries: list[dict]   # [{anilist_id, mal_id, watch_status, rating, progress, started_at, completed_at, rewatches, updated_at}]
+    favorites: list[int] = []  # AniList-IDs
+
+
+@app.post("/sync/apply")
+def sync_apply(body: SyncApply) -> dict:
+    """Von AniList uebernommene Eintraege anlegen/aktualisieren. Loescht NIE etwas (weder Eintraege noch Felder)."""
+    con = db.connect()
+    updated = missing = 0
+    try:
+        def find(e):
+            for col in ("anilist_id", "mal_id"):
+                v = e.get(col)
+                if v:
+                    r = con.execute(f"SELECT id FROM media WHERE {col}=? AND space='normal' LIMIT 1", (v,)).fetchone()
+                    if r:
+                        return r["id"]
+            return None
+        for e in body.entries:
+            mid = find(e)
+            if not mid:
+                missing += 1
+                continue
+            con.execute("INSERT OR IGNORE INTO user_entry (media_id) VALUES (?)", (mid,))
+            sets, vals = [], []
+            for col in ("watch_status", "rating", "progress", "started_at", "completed_at", "rewatches"):
+                if e.get(col) is not None:   # nur uebernehmen, was AniList wirklich liefert
+                    sets.append(f"{col}=?")
+                    vals.append(e[col])
+            if sets:
+                upd = e.get("updated_at") or None
+                sets.append("updated_at=COALESCE(?, datetime('now'))")
+                vals.append(upd)
+                con.execute(f"UPDATE user_entry SET {', '.join(sets)} WHERE media_id=?", vals + [mid])
+                updated += 1
+        fav_new = 0
+        nxt = con.execute("SELECT COALESCE(MAX(favorite_order),-1)+1 n FROM user_entry WHERE favorite=1").fetchone()["n"]
+        for aid in body.favorites:
+            r = con.execute("SELECT id FROM media WHERE anilist_id=? AND space='normal'", (aid,)).fetchone()
+            if not r:
+                continue
+            con.execute("INSERT OR IGNORE INTO user_entry (media_id) VALUES (?)", (r["id"],))
+            cur = con.execute("SELECT favorite FROM user_entry WHERE media_id=?", (r["id"],)).fetchone()
+            if not cur["favorite"]:
+                con.execute("UPDATE user_entry SET favorite=1, favorite_order=? WHERE media_id=?", (nxt, r["id"]))
+                nxt += 1
+                fav_new += 1
+        con.commit()
+        return {"updated": updated, "not_in_catalog": missing, "favorites_added": fav_new}
+    finally:
+        con.close()
+
+
 @app.post("/sync/anilist/run")
 def sync_run() -> dict:
     return sync_anilist.run()

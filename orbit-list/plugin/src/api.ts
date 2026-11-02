@@ -88,6 +88,8 @@ export const api = {
   streamingOf: (id: number) => j(`/media/${id}/streaming`),
   putStreaming: (id: number, items: unknown[]) => j(`/media/${id}/streaming`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ items }) }),
   putScores: (items: { anilist_id: number; score: number }[]) => j('/scores', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ items }) }),
+  syncLocal: () => j('/sync/local'),
+  syncApply: (body: Record<string, unknown>) => j('/sync/apply', jsonBody(body)),
   streamingMap: (ids: number[]) => j('/streaming' + qs({ ids: ids.join(',') })),
   reorderFavorites: (ids: number[]) => j('/favorites/reorder', jsonBody({ ids })),
   services: (config = 'anime') => j('/services' + qs({ config })),

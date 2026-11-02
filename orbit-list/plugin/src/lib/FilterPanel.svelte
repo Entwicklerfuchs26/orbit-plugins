@@ -86,6 +86,8 @@
       <label>Sortierung</label>
       <select bind:value={filters.sort}>
         <option value="popularity">Beliebtheit</option>
+          <option value="date_desc">Erscheinungsdatum (neueste zuerst)</option>
+          <option value="date_asc">Erscheinungsdatum (älteste zuerst)</option>
         <option value="score">Wertung</option>
         <option value="title">Titel A–Z</option>
         <option value="recent">Zuletzt aktualisiert</option>

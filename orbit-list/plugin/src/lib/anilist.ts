@@ -71,6 +71,8 @@ const makeNative = (): AlHttp | null => {
 }
 
 let nativeHttp: AlHttp | null | undefined
+/** Der gemeinsame HTTP-Zugang (nativ oder fetch) — auch fuer den AniList-Abgleich (anilist-sync.ts). */
+export const alHttp = (): AlHttp => http()
 const http = (): AlHttp => {
   if (transport) return transport
   if (nativeHttp === undefined) nativeHttp = makeNative() // erst beim ersten Aufruf: Capacitor ist dann sicher da

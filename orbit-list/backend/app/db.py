@@ -111,6 +111,9 @@ CREATE TABLE IF NOT EXISTS media_types (
 );
 """
 
+# Erscheinungsdatum zum Sortieren: genaues Startdatum, sonst Jahr (Titel ohne Angabe kommen immer zuletzt)
+_DATE_KEY = "COALESCE(m.start_date, CASE WHEN m.season_year IS NOT NULL THEN printf('%04d', m.season_year) END)"
+
 JSON_FIELDS = {"synonyms", "genres", "tags", "studios", "info_links", "dub_languages"}
 
 
@@ -161,7 +164,7 @@ def init_db() -> None:
     # AniList-Zusatzdaten (Import ueber /sync/anilist/import) — rein additiv
     for tbl, col, typ in [
         ("media", "season", "TEXT"), ("media", "country", "TEXT"), ("media", "source", "TEXT"),
-        ("media", "studios", "TEXT"), ("media", "oadb_id", "TEXT"), ("services", "search_schema", "TEXT"), ("media", "kitsu_id", "INTEGER"), ("media", "next_airing_ep", "INTEGER"), ("media", "next_airing_at", "INTEGER"),
+        ("media", "studios", "TEXT"), ("media", "oadb_id", "TEXT"), ("media", "start_date", "TEXT"), ("services", "search_schema", "TEXT"), ("media", "kitsu_id", "INTEGER"), ("media", "next_airing_ep", "INTEGER"), ("media", "next_airing_at", "INTEGER"),
         ("user_entry", "started_at", "TEXT"), ("user_entry", "completed_at", "TEXT"), ("user_entry", "rewatches", "INTEGER"),
     ]:
         try:
@@ -353,7 +356,8 @@ class SqliteRepo(MediaRepo):
         where, args = self._where(f)
         order = {"popularity": "m.average_score IS NULL, m.average_score DESC, m.popularity DESC, m.id", "score": "m.average_score IS NULL, m.average_score DESC, m.popularity DESC, m.id",
                  "title": "m.search_blob ASC", "recent": "m.updated_at DESC",
-                 "favorite": "u.favorite_order IS NULL, u.favorite_order ASC"}.get(f.get("sort", "popularity"), "m.average_score IS NULL, m.average_score DESC, m.popularity DESC, m.id")
+                 "favorite": "u.favorite_order IS NULL, u.favorite_order ASC",
+                 "date_desc": f"{_DATE_KEY} IS NULL, {_DATE_KEY} DESC, m.id", "date_asc": f"{_DATE_KEY} IS NULL, {_DATE_KEY} ASC, m.id"}.get(f.get("sort", "popularity"), "m.average_score IS NULL, m.average_score DESC, m.popularity DESC, m.id")
         limit = int(f.get("limit", 60)); offset = int(f.get("offset", 0))
         sql = (
             "SELECT m.*, u.rating, u.note, u.watch_status, u.progress, u.collection, u.lent_to, u.lent_since, u.favorite, u.started_at, u.completed_at, u.rewatches "
