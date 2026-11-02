@@ -9110,7 +9110,7 @@ var root_12$6 = from_html(`<div class="svelte-90l7ri"><dt class="svelte-90l7ri">
 var root_13$6 = from_html(`<div class="svelte-90l7ri"><dt class="svelte-90l7ri">Quelle</dt><dd class="svelte-90l7ri"> </dd></div>`);
 var root_14$4 = from_html(`<div class="svelte-90l7ri"><dt class="svelte-90l7ri">Herkunftsland</dt><dd class="svelte-90l7ri"> </dd></div>`);
 var root_15$4 = from_html(`<div class="svelte-90l7ri"><dt class="svelte-90l7ri">Begonnen</dt><dd class="svelte-90l7ri"> </dd></div>`);
-var root_16$3 = from_html(`<div class="svelte-90l7ri"><dt class="svelte-90l7ri">Abgeschlossen</dt><dd class="svelte-90l7ri"> </dd></div>`);
+var root_16$4 = from_html(`<div class="svelte-90l7ri"><dt class="svelte-90l7ri">Abgeschlossen</dt><dd class="svelte-90l7ri"> </dd></div>`);
 var root_17$3 = from_html(`<div class="svelte-90l7ri"><dt class="svelte-90l7ri">Wiederholt</dt><dd class="svelte-90l7ri"> </dd></div>`);
 var root_18$3 = from_html(`<div class="svelte-90l7ri"><dt class="svelte-90l7ri">Nächste Folge</dt><dd class="svelte-90l7ri"> </dd></div>`);
 var root_19$2 = from_html(`<div class="svelte-90l7ri"><dt class="svelte-90l7ri">Ø Wertung</dt><dd class="score svelte-90l7ri"> </dd></div>`);
@@ -9728,7 +9728,7 @@ function Detail($$anchor, $$props) {
 
 	{
 		var consequent_15 = ($$anchor) => {
-			var div_21 = root_16$3();
+			var div_21 = root_16$4();
 			var dd_8 = sibling(child(div_21));
 			var text_18 = only_child(dd_8, true);
 			template_effect(() => set_text(text_18, m.completed_at));
@@ -12365,7 +12365,7 @@ var root_12$4 = from_html(`<div class="field svelte-lqmuci"><label class="svelte
 var root_13$4 = from_html(`<section class="card svelte-lqmuci"><!></section>`);
 var root_14$3 = from_html(`<p class="hint svelte-lqmuci"> </p>`);
 var root_15$3 = from_html(`<section class="card svelte-lqmuci"><div class="field svelte-lqmuci"><label class="svelte-lqmuci">Zu AniList hochsynchronisieren</label> <p class="hint svelte-lqmuci" style="margin-top:0">Überträgt Status, Wertung und Fortschritt deiner Anime-Liste (nie H). Ohne hinterlegten AniList-Token wird nichts gesendet — die Vorschau zeigt, was übertragen würde.</p> <button class="big svelte-lqmuci">Vorschau laden</button> <!> <button class="big svelte-lqmuci">Jetzt synchronisieren</button> <!></div> <div class="field last svelte-lqmuci"><label class="svelte-lqmuci">Daten von AniList importieren</label> <p class="hint svelte-lqmuci" style="margin-top:0">Liest dein <b>öffentliches</b> AniList-Profil (kein Token nötig) und ergänzt Tags, Studios, Saison, Land, Quelle, Start-/Enddatum, Rewatches und Favoriten. Status, Wertung und Fortschritt bleiben unverändert.</p> <input placeholder="AniList-Benutzername" class="svelte-lqmuci"/> <button class="big svelte-lqmuci"> </button> <!></div></section>`);
-var root_16$2 = from_html(`<section class="card svelte-lqmuci"><div class="field last svelte-lqmuci"><label class="svelte-lqmuci">Export / Backup</label> <button class="big svelte-lqmuci">Als MAL-XML exportieren (Standard)</button> <button class="big svelte-lqmuci">Als JSON-Vollbackup exportieren</button> <input type="file" accept=".json,.xml" style="display:none" class="svelte-lqmuci"/> <button class="big svelte-lqmuci">Liste importieren (Orbitlist-JSON oder MAL-XML)</button> <!> <p class="hint svelte-lqmuci">MAL-XML importieren AniList/Kitsu/Simkl/MAL. JSON enthält zusätzlich Notizen, Regal &amp; Favoriten.</p></div></section>`);
+var root_16$3 = from_html(`<section class="card svelte-lqmuci"><div class="field last svelte-lqmuci"><label class="svelte-lqmuci">Export / Backup</label> <button class="big svelte-lqmuci">Als MAL-XML exportieren (Standard)</button> <button class="big svelte-lqmuci">Als JSON-Vollbackup exportieren</button> <input type="file" accept=".json,.xml" style="display:none" class="svelte-lqmuci"/> <button class="big svelte-lqmuci">Liste importieren (Orbitlist-JSON oder MAL-XML)</button> <!> <p class="hint svelte-lqmuci">MAL-XML importieren AniList/Kitsu/Simkl/MAL. JSON enthält zusätzlich Notizen, Regal &amp; Favoriten.</p></div></section>`);
 var root_17$2 = from_html(`<p class="hint svelte-lqmuci" style="margin-top:0">API: <code class="svelte-lqmuci"> </code></p> <p class="hint svelte-lqmuci">Pair-Token: <code class="svelte-lqmuci"> </code></p> <p class="hint svelte-lqmuci"> </p>`, 1);
 var root_18$2 = from_html(`<p class="hint svelte-lqmuci" style="margin-top:0">Pairing-Info nicht erreichbar.</p>`);
 var root_19$1 = from_html(`<p class="hint svelte-lqmuci" style="margin-top:0">Lade …</p>`);
@@ -13168,7 +13168,7 @@ function Settings($$anchor, $$props) {
 		};
 
 		var consequent_18 = ($$anchor) => {
-			var section_5 = root_16$2();
+			var section_5 = root_16$3();
 			var div_18 = child(section_5);
 			var button_19 = sibling(child(div_18), 2);
 			var button_20 = sibling(button_19, 2);
@@ -13670,7 +13670,7 @@ var root_12$2 = from_html(`<span class="svelte-cjprq"> </span>`);
 var root_13$2 = from_html(`<div class="line-wrap svelte-cjprq"><svg preserveAspectRatio="none" class="line svelte-cjprq" role="img" aria-label="Erscheinungsjahre"><polygon class="line-area svelte-cjprq"></polygon><polyline class="line-stroke svelte-cjprq"></polyline><!></svg> <div class="line-x svelte-cjprq"></div></div>`);
 var root_14$2 = from_html(`<div class="tiles svelte-cjprq"><div class="tile svelte-cjprq"><span class="n svelte-cjprq"> </span><span class="l svelte-cjprq">Titel gesamt</span></div> <div class="tile svelte-cjprq"><span class="n svelte-cjprq"> </span><span class="l svelte-cjprq">Folgen gesehen</span></div> <div class="tile svelte-cjprq"><span class="n svelte-cjprq"> </span><span class="l svelte-cjprq">Tage geschaut</span></div> <div class="tile svelte-cjprq"><span class="n svelte-cjprq"> </span><span class="l svelte-cjprq">Tage geplant</span></div> <div class="tile svelte-cjprq"><span class="n svelte-cjprq"> </span><span class="l svelte-cjprq">Ø Wertung</span></div> <div class="tile svelte-cjprq"><span class="n svelte-cjprq"> </span><span class="l svelte-cjprq">Std-Abweichung</span></div></div> <section class="block svelte-cjprq"><div class="bhead svelte-cjprq"><h2 class="svelte-cjprq">Wertungen</h2> <div class="toggle svelte-cjprq"><button>Titel</button> <button>Stunden</button></div></div> <div class="chart svelte-cjprq"></div></section> <section class="block svelte-cjprq"><h2 class="svelte-cjprq">Folgen-Umfang</h2> <!></section> <div class="duo svelte-cjprq"><section class="block svelte-cjprq"><h2 class="svelte-cjprq">Status-Verteilung</h2> <!></section> <section class="block svelte-cjprq"><h2 class="svelte-cjprq">Format-Verteilung</h2> <!></section></div> <section class="block svelte-cjprq"><h2 class="svelte-cjprq">Erscheinungsjahre</h2> <!></section>`, 1);
 var root_15$2 = from_html(`<div class="loading svelte-cjprq"> </div>`);
-var root_16$1 = from_html(`<div class="empty svelte-cjprq">AniList ist gerade nicht erreichbar — später erneut öffnen.</div>`);
+var root_16$2 = from_html(`<div class="empty svelte-cjprq">AniList ist gerade nicht erreichbar — später erneut öffnen.</div>`);
 var root_17$1 = from_html(`<div class="empty svelte-cjprq">Noch keine Daten — füge Titel mit AniList-ID zu deiner Liste hinzu.</div>`);
 var root_18$1 = from_html(`<div class="gfoot svelte-cjprq"> </div>`);
 var root_19 = from_html(`<div class="gcard svelte-cjprq"><div class="gtop svelte-cjprq"><span class="rank svelte-cjprq"> </span> <span class="gname svelte-cjprq"> </span></div> <div class="gstats svelte-cjprq"><div class="gstat svelte-cjprq"><span class="gv svelte-cjprq"> </span><span class="gl svelte-cjprq">Titel in deiner Liste</span></div></div> <!></div>`);
@@ -14321,7 +14321,7 @@ function Stats($$anchor, $$props) {
 				};
 
 				var consequent_9 = ($$anchor) => {
-					var div_31 = root_16$1();
+					var div_31 = root_16$2();
 
 					append($$anchor, div_31);
 				};
@@ -14553,15 +14553,16 @@ var root_7$2 = from_html(`<div class="panel svelte-1mrhfs9"><button><span class=
 var root_8$2 = from_html(`<div class="panel svelte-1mrhfs9"></div>`);
 var root_9$2 = from_html(`<div class="state svelte-1mrhfs9">lädt…</div>`);
 var root_10$2 = from_html(`<div class="state svelte-1mrhfs9">Nichts gefunden.</div>`);
-var root_11$2 = from_html(`<div class="grid svelte-1mrhfs9"></div>`);
-var root_12$1 = from_html(`<section class="result svelte-1mrhfs9"><div class="result-head svelte-1mrhfs9"><h2 class="svelte-1mrhfs9">Ergebnisse<!></h2> <button class="all svelte-1mrhfs9">Filter zurücksetzen</button></div> <!></section>`);
-var root_13$1 = from_html(`<div class="state svelte-1mrhfs9">Noch nichts zu entdecken — importiere Titel über die Einstellungen.</div>`);
-var root_14$1 = from_html(`<section class="row svelte-1mrhfs9"><div class="head svelte-1mrhfs9"><h2 class="svelte-1mrhfs9"> </h2> <button class="all svelte-1mrhfs9">Alle ansehen</button></div> <div class="grid svelte-1mrhfs9"></div></section>`);
-var root_15$1 = from_html(`<div class="browse svelte-1mrhfs9"><div class="filterbar svelte-1mrhfs9"><div class="field search svelte-1mrhfs9"><label for="browse-search" class="svelte-1mrhfs9">Suche</label> <div class="searchbox svelte-1mrhfs9"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" class="svelte-1mrhfs9"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg> <input id="browse-search" type="text" class="svelte-1mrhfs9"/> <!></div></div> <div class="field svelte-1mrhfs9"><span class="lbl svelte-1mrhfs9">Genres &amp; Tags</span> <button><span class="val svelte-1mrhfs9"> </span> <i class="arr svelte-1mrhfs9">▾</i></button> <!></div> <div class="field narrow svelte-1mrhfs9"><span class="lbl svelte-1mrhfs9">Jahr</span> <button><span class="val svelte-1mrhfs9"> </span> <i class="arr svelte-1mrhfs9">▾</i></button> <!></div> <div class="field narrow svelte-1mrhfs9"><span class="lbl svelte-1mrhfs9">Saison</span> <button><span class="val svelte-1mrhfs9"> </span> <i class="arr svelte-1mrhfs9">▾</i></button> <!></div> <div class="field narrow svelte-1mrhfs9"><span class="lbl svelte-1mrhfs9">Format</span> <button><span class="val svelte-1mrhfs9"> </span> <i class="arr svelte-1mrhfs9">▾</i></button> <!></div> <div class="field narrow svelte-1mrhfs9"><span class="lbl svelte-1mrhfs9">Synchro-Sprache</span> <button><span class="val svelte-1mrhfs9"> </span> <i class="arr svelte-1mrhfs9">▾</i></button> <!></div> <div class="field narrow svelte-1mrhfs9"><span class="lbl svelte-1mrhfs9">Gesehen</span> <button><span class="val svelte-1mrhfs9"> </span> <i class="arr svelte-1mrhfs9">▾</i></button> <!></div> <div class="field narrow svelte-1mrhfs9"><span class="lbl svelte-1mrhfs9">Airing-Status</span> <button class="drop disabled svelte-1mrhfs9" disabled="" title="Noch keine Daten importiert"><span class="val svelte-1mrhfs9">🔒 Alle</span> <i class="arr svelte-1mrhfs9">▾</i></button></div> <div class="field narrow svelte-1mrhfs9"><span class="lbl svelte-1mrhfs9">Sortierung</span> <button><span class="val svelte-1mrhfs9"> </span> <i class="arr svelte-1mrhfs9">▾</i></button> <!></div></div> <!></div>`);
+var root_11$2 = from_html(`<div class="more svelte-1mrhfs9"><button class="all svelte-1mrhfs9"> </button></div>`);
+var root_12$1 = from_html(`<div class="grid svelte-1mrhfs9"></div> <!>`, 1);
+var root_13$1 = from_html(`<section class="result svelte-1mrhfs9"><div class="result-head svelte-1mrhfs9"><h2 class="svelte-1mrhfs9">Ergebnisse<!></h2> <button class="all svelte-1mrhfs9">Filter zurücksetzen</button></div> <!></section>`);
+var root_14$1 = from_html(`<div class="state svelte-1mrhfs9">Noch nichts zu entdecken — importiere Titel über die Einstellungen.</div>`);
+var root_15$1 = from_html(`<section class="row svelte-1mrhfs9"><div class="head svelte-1mrhfs9"><h2 class="svelte-1mrhfs9"> </h2> <button class="all svelte-1mrhfs9">Alle ansehen</button></div> <div class="grid svelte-1mrhfs9"></div></section>`);
+var root_16$1 = from_html(`<div class="browse svelte-1mrhfs9"><div class="filterbar svelte-1mrhfs9"><div class="field search svelte-1mrhfs9"><label for="browse-search" class="svelte-1mrhfs9">Suche</label> <div class="searchbox svelte-1mrhfs9"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" class="svelte-1mrhfs9"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg> <input id="browse-search" type="text" class="svelte-1mrhfs9"/> <!></div></div> <div class="field svelte-1mrhfs9"><span class="lbl svelte-1mrhfs9">Genres &amp; Tags</span> <button><span class="val svelte-1mrhfs9"> </span> <i class="arr svelte-1mrhfs9">▾</i></button> <!></div> <div class="field narrow svelte-1mrhfs9"><span class="lbl svelte-1mrhfs9">Jahr</span> <button><span class="val svelte-1mrhfs9"> </span> <i class="arr svelte-1mrhfs9">▾</i></button> <!></div> <div class="field narrow svelte-1mrhfs9"><span class="lbl svelte-1mrhfs9">Saison</span> <button><span class="val svelte-1mrhfs9"> </span> <i class="arr svelte-1mrhfs9">▾</i></button> <!></div> <div class="field narrow svelte-1mrhfs9"><span class="lbl svelte-1mrhfs9">Format</span> <button><span class="val svelte-1mrhfs9"> </span> <i class="arr svelte-1mrhfs9">▾</i></button> <!></div> <div class="field narrow svelte-1mrhfs9"><span class="lbl svelte-1mrhfs9">Synchro-Sprache</span> <button><span class="val svelte-1mrhfs9"> </span> <i class="arr svelte-1mrhfs9">▾</i></button> <!></div> <div class="field narrow svelte-1mrhfs9"><span class="lbl svelte-1mrhfs9">Gesehen</span> <button><span class="val svelte-1mrhfs9"> </span> <i class="arr svelte-1mrhfs9">▾</i></button> <!></div> <div class="field narrow svelte-1mrhfs9"><span class="lbl svelte-1mrhfs9">Airing-Status</span> <button class="drop disabled svelte-1mrhfs9" disabled="" title="Noch keine Daten importiert"><span class="val svelte-1mrhfs9">🔒 Alle</span> <i class="arr svelte-1mrhfs9">▾</i></button></div> <div class="field narrow svelte-1mrhfs9"><span class="lbl svelte-1mrhfs9">Sortierung</span> <button><span class="val svelte-1mrhfs9"> </span> <i class="arr svelte-1mrhfs9">▾</i></button> <!></div></div> <!></div>`);
 
 const $$css$6 = {
 	hash: 'svelte-1mrhfs9',
-	code: '.browse.svelte-1mrhfs9 {max-width:var(--maxw);margin:0 auto;padding:24px var(--pad) 48px;display:flex;flex-direction:column;gap:34px;}\n\n  /* ---- Filterleiste ---- */.filterbar.svelte-1mrhfs9 {display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;}.field.svelte-1mrhfs9 {position:relative;display:flex;flex-direction:column;gap:4px;min-width:130px;}.field.narrow.svelte-1mrhfs9 {min-width:110px;}.field.search.svelte-1mrhfs9 {flex:1 1 220px;min-width:180px;}.field.svelte-1mrhfs9 label:where(.svelte-1mrhfs9),\n  .lbl.svelte-1mrhfs9 {font-size:0.72rem;font-weight:600;color:var(--text-muted);padding-left:2px;}.searchbox.svelte-1mrhfs9 {display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:0 10px;height:38px;transition:border-color 0.15s ease;}.searchbox.svelte-1mrhfs9:focus-within {border-color:var(--accent);}.searchbox.svelte-1mrhfs9 svg:where(.svelte-1mrhfs9) {width:16px;height:16px;color:var(--text-muted);flex:0 0 auto;}.searchbox.svelte-1mrhfs9 input:where(.svelte-1mrhfs9) {border:0;background:none;outline:none;color:var(--text-strong);font-family:inherit;font-size:0.86rem;width:100%;}.searchbox.svelte-1mrhfs9 input:where(.svelte-1mrhfs9)::placeholder {color:var(--text-muted);}.searchbox.svelte-1mrhfs9 .ki:where(.svelte-1mrhfs9) {flex:0 0 auto;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);border-radius:var(--radius-sm);padding:3px 9px;font-size:0.74rem;font-weight:700;cursor:pointer;}.searchbox.svelte-1mrhfs9 .ki.on:where(.svelte-1mrhfs9) {background:var(--accent);color:var(--on-accent);border-color:var(--accent);}.drop.svelte-1mrhfs9 {display:flex;align-items:center;justify-content:space-between;gap:8px;height:38px;width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:0 10px;color:var(--text);font-size:0.86rem;cursor:pointer;transition:border-color 0.15s ease, color 0.15s ease;}.drop.svelte-1mrhfs9:hover:not(.disabled) {border-color:var(--accent);}.drop.filled.svelte-1mrhfs9 {color:var(--text-strong);border-color:var(--accent);}.drop.svelte-1mrhfs9 .val:where(.svelte-1mrhfs9) {overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;}.drop.svelte-1mrhfs9 .arr:where(.svelte-1mrhfs9) {font-style:normal;font-size:0.7rem;color:var(--text-muted);flex:0 0 auto;}.drop.disabled.svelte-1mrhfs9 {cursor:not-allowed;opacity:0.55;}.panel.svelte-1mrhfs9 {position:absolute;top:calc(100% + 4px);left:0;min-width:100%;max-width:260px;z-index:30;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:4px;display:flex;flex-direction:column;gap:1px;}.panel.scroll.svelte-1mrhfs9 {max-height:280px;overflow-y:auto;}.panel-empty.svelte-1mrhfs9 {padding:8px 10px;font-size:0.8rem;color:var(--text-muted);}.opt.svelte-1mrhfs9 {display:flex;align-items:center;gap:6px;border:0;background:none;color:var(--text);font-size:0.84rem;text-align:left;padding:7px 8px;border-radius:var(--radius-sm);cursor:pointer;white-space:nowrap;transition:background 0.12s ease, color 0.12s ease;}.opt.svelte-1mrhfs9:hover {background:var(--surface-2);}.opt.sel.svelte-1mrhfs9 {color:var(--accent);font-weight:600;}.opt.svelte-1mrhfs9 .tick:where(.svelte-1mrhfs9) {width:12px;flex:0 0 auto;color:var(--accent);font-size:0.78rem;}\n\n  /* ---- Reihen / Raster ---- */.row.svelte-1mrhfs9,\n  .result.svelte-1mrhfs9 {display:flex;flex-direction:column;gap:14px;}.head.svelte-1mrhfs9,\n  .result-head.svelte-1mrhfs9 {display:flex;align-items:baseline;justify-content:space-between;gap:12px;}.head.svelte-1mrhfs9 h2:where(.svelte-1mrhfs9),\n  .result-head.svelte-1mrhfs9 h2:where(.svelte-1mrhfs9) {margin:0;font-size:0.82rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:var(--text-strong);}.all.svelte-1mrhfs9 {border:0;background:none;color:var(--text-muted);font-size:0.78rem;cursor:pointer;padding:0;transition:color 0.15s ease;}.all.svelte-1mrhfs9:hover {color:var(--accent);}.grid.svelte-1mrhfs9 {display:grid;grid-template-columns:repeat(6, 1fr);gap:20px 22px;}.state.svelte-1mrhfs9 {padding:48px 0;text-align:center;color:var(--text-muted);font-size:0.9rem;}\n\n  @media (max-width: 980px) {.browse.svelte-1mrhfs9 {padding:20px 24px 40px;}.grid.svelte-1mrhfs9 {grid-template-columns:repeat(4, 1fr);}\n  }\n  @media (max-width: 640px) {.grid.svelte-1mrhfs9 {grid-template-columns:repeat(3, 1fr);gap:16px 14px;}.field.search.svelte-1mrhfs9 {flex-basis:100%;}\n  }'
+	code: '.more.svelte-1mrhfs9 {display:flex;justify-content:center;padding:18px 0 8px;}.browse.svelte-1mrhfs9 {max-width:var(--maxw);margin:0 auto;padding:24px var(--pad) 48px;display:flex;flex-direction:column;gap:34px;}\n\n  /* ---- Filterleiste ---- */.filterbar.svelte-1mrhfs9 {display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;}.field.svelte-1mrhfs9 {position:relative;display:flex;flex-direction:column;gap:4px;min-width:130px;}.field.narrow.svelte-1mrhfs9 {min-width:110px;}.field.search.svelte-1mrhfs9 {flex:1 1 220px;min-width:180px;}.field.svelte-1mrhfs9 label:where(.svelte-1mrhfs9),\n  .lbl.svelte-1mrhfs9 {font-size:0.72rem;font-weight:600;color:var(--text-muted);padding-left:2px;}.searchbox.svelte-1mrhfs9 {display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:0 10px;height:38px;transition:border-color 0.15s ease;}.searchbox.svelte-1mrhfs9:focus-within {border-color:var(--accent);}.searchbox.svelte-1mrhfs9 svg:where(.svelte-1mrhfs9) {width:16px;height:16px;color:var(--text-muted);flex:0 0 auto;}.searchbox.svelte-1mrhfs9 input:where(.svelte-1mrhfs9) {border:0;background:none;outline:none;color:var(--text-strong);font-family:inherit;font-size:0.86rem;width:100%;}.searchbox.svelte-1mrhfs9 input:where(.svelte-1mrhfs9)::placeholder {color:var(--text-muted);}.searchbox.svelte-1mrhfs9 .ki:where(.svelte-1mrhfs9) {flex:0 0 auto;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);border-radius:var(--radius-sm);padding:3px 9px;font-size:0.74rem;font-weight:700;cursor:pointer;}.searchbox.svelte-1mrhfs9 .ki.on:where(.svelte-1mrhfs9) {background:var(--accent);color:var(--on-accent);border-color:var(--accent);}.drop.svelte-1mrhfs9 {display:flex;align-items:center;justify-content:space-between;gap:8px;height:38px;width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:0 10px;color:var(--text);font-size:0.86rem;cursor:pointer;transition:border-color 0.15s ease, color 0.15s ease;}.drop.svelte-1mrhfs9:hover:not(.disabled) {border-color:var(--accent);}.drop.filled.svelte-1mrhfs9 {color:var(--text-strong);border-color:var(--accent);}.drop.svelte-1mrhfs9 .val:where(.svelte-1mrhfs9) {overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;}.drop.svelte-1mrhfs9 .arr:where(.svelte-1mrhfs9) {font-style:normal;font-size:0.7rem;color:var(--text-muted);flex:0 0 auto;}.drop.disabled.svelte-1mrhfs9 {cursor:not-allowed;opacity:0.55;}.panel.svelte-1mrhfs9 {position:absolute;top:calc(100% + 4px);left:0;min-width:100%;max-width:260px;z-index:30;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:4px;display:flex;flex-direction:column;gap:1px;}.panel.scroll.svelte-1mrhfs9 {max-height:280px;overflow-y:auto;}.panel-empty.svelte-1mrhfs9 {padding:8px 10px;font-size:0.8rem;color:var(--text-muted);}.opt.svelte-1mrhfs9 {display:flex;align-items:center;gap:6px;border:0;background:none;color:var(--text);font-size:0.84rem;text-align:left;padding:7px 8px;border-radius:var(--radius-sm);cursor:pointer;white-space:nowrap;transition:background 0.12s ease, color 0.12s ease;}.opt.svelte-1mrhfs9:hover {background:var(--surface-2);}.opt.sel.svelte-1mrhfs9 {color:var(--accent);font-weight:600;}.opt.svelte-1mrhfs9 .tick:where(.svelte-1mrhfs9) {width:12px;flex:0 0 auto;color:var(--accent);font-size:0.78rem;}\n\n  /* ---- Reihen / Raster ---- */.row.svelte-1mrhfs9,\n  .result.svelte-1mrhfs9 {display:flex;flex-direction:column;gap:14px;}.head.svelte-1mrhfs9,\n  .result-head.svelte-1mrhfs9 {display:flex;align-items:baseline;justify-content:space-between;gap:12px;}.head.svelte-1mrhfs9 h2:where(.svelte-1mrhfs9),\n  .result-head.svelte-1mrhfs9 h2:where(.svelte-1mrhfs9) {margin:0;font-size:0.82rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:var(--text-strong);}.all.svelte-1mrhfs9 {border:0;background:none;color:var(--text-muted);font-size:0.78rem;cursor:pointer;padding:0;transition:color 0.15s ease;}.all.svelte-1mrhfs9:hover {color:var(--accent);}.grid.svelte-1mrhfs9 {display:grid;grid-template-columns:repeat(6, 1fr);gap:20px 22px;}.state.svelte-1mrhfs9 {padding:48px 0;text-align:center;color:var(--text-muted);font-size:0.9rem;}\n\n  @media (max-width: 980px) {.browse.svelte-1mrhfs9 {padding:20px 24px 40px;}.grid.svelte-1mrhfs9 {grid-template-columns:repeat(4, 1fr);}\n  }\n  @media (max-width: 640px) {.grid.svelte-1mrhfs9 {grid-template-columns:repeat(3, 1fr);gap:16px 14px;}.field.search.svelte-1mrhfs9 {flex-basis:100%;}\n  }'
 };
 
 function Browse($$anchor, $$props) {
@@ -14736,6 +14737,75 @@ function Browse($$anchor, $$props) {
 	let gridTotal = state(0);
 	let gridLoading = state(false);
 	let gridReq = 0;
+	const PAGE = 60;
+	let gridMore = state(false // weitere Seite wird nachgeladen
+	);
+	let sentinel = state(void 0);
+
+	function gridQuery() {
+		const q = { sort: get(selSort), limit: PAGE };
+
+		if (get(selGenres).length) q.genres = get(selGenres).join(',');
+		if (get(selTags).length) q.tags = get(selTags).join(',');
+		if (get(selSeason)) q.season = get(selSeason);
+
+		if (get(selYear)) {
+			q.year_min = get(selYear);
+			q.year_max = get(selYear);
+		}
+
+		if (get(selFormat)) q.format = get(selFormat);
+		if (get(selDubLang)) q.dub_lang = get(selDubLang);
+		if (get(selSeen)) q.seen = get(selSeen);
+		if (get(search).trim()) q.q = get(search).trim();
+
+		return q;
+	}
+
+	/** Naechste Seite anhaengen (Endlos-Scrollen / „Mehr laden"). Die KI-Suche liefert nur die besten Treffer, ohne Seiten. */
+	async function loadMore() {
+		if (get(gridMore) || get(gridLoading) || get(ai) && get(search).trim() || get(gridItems).length >= get(gridTotal)) return;
+
+		const req = gridReq;
+
+		set(gridMore, true);
+
+		try {
+			const { items } = await fetchList({ ...gridQuery(), offset: get(gridItems).length });
+
+			if (req !== gridReq) return;
+
+			const have = new Set(get(gridItems).map((m) => m.id));
+			const fresh = items.filter((m) => !have.has(m.id));
+
+			if (!fresh.length) set(gridTotal, get(gridItems // nichts Neues: Ende erreicht
+			).length, true);
+
+			set(gridItems, [...get(gridItems), ...fresh], true);
+		} catch(e) {
+			console.error('Browse mehr laden fehlgeschlagen:', e);
+		} finally {
+			set(gridMore, false);
+		}
+	}
+
+	// Sentinel am Ende des Rasters: kommt es in die Naehe des Sichtbereichs, wird nachgeladen
+	user_effect(() => {
+		const el = get(sentinel);
+
+		if (!el || typeof IntersectionObserver === 'undefined') return;
+
+		const io = new IntersectionObserver(
+			(es) => {
+				if (es.some((e) => e.isIntersecting)) loadMore();
+			},
+			{ rootMargin: '600px' }
+		);
+
+		io.observe(el);
+
+		return () => io.disconnect();
+	});
 
 	async function loadGrid() {
 		const req = ++gridReq;
@@ -14901,7 +14971,7 @@ function Browse($$anchor, $$props) {
 		e.stopPropagation();
 	}
 
-	var div = root_15$1();
+	var div = root_16$1();
 
 	event('click', $window, () => set(openDrop, ''));
 
@@ -15366,8 +15436,8 @@ function Browse($$anchor, $$props) {
 	var node_16 = sibling(div_1, 2);
 
 	{
-		var consequent_13 = ($$anchor) => {
-			var section = root_12$1();
+		var consequent_14 = ($$anchor) => {
+			var section = root_13$1();
 			var div_19 = child(section);
 			var h2 = child(div_19);
 			var node_17 = sibling(child(h2));
@@ -15403,7 +15473,8 @@ function Browse($$anchor, $$props) {
 				};
 
 				var alternate_1 = ($$anchor) => {
-					var div_22 = root_11$2();
+					var fragment_3 = root_12$1();
+					var div_22 = first_child(fragment_3);
 
 					each(div_22, 21, () => get(gridItems), (media) => media.id, ($$anchor, media) => {
 						Card($$anchor, {
@@ -15416,7 +15487,36 @@ function Browse($$anchor, $$props) {
 							}
 						});
 					});
-					append($$anchor, div_22);
+
+					var node_19 = sibling(div_22, 2);
+
+					{
+						var consequent_13 = ($$anchor) => {
+							var div_23 = root_11$2();
+							var button_21 = child(div_23);
+							var text_28 = only_child(button_21, true);
+							bind_this(div_23, ($$value) => set(sentinel, $$value), () => get(sentinel));
+
+							template_effect(() => {
+								button_21.disabled = get(gridMore);
+
+								set_text(text_28, get(gridMore)
+									? 'lädt …'
+									: `Mehr laden (${get(gridItems).length} von ${get(gridTotal)})`);
+							});
+
+							delegated('click', button_21, loadMore);
+							append($$anchor, div_23);
+						};
+
+						var d_1 = user_derived(() => get(gridItems).length < get(gridTotal) && !(get(ai) && get(search).trim()));
+
+						if_block(node_19, ($$render) => {
+							if (get(d_1)) $$render(consequent_13);
+						});
+					}
+
+					append($$anchor, fragment_3);
 				};
 
 				if_block(node_18, ($$render) => {
@@ -15428,36 +15528,36 @@ function Browse($$anchor, $$props) {
 		};
 
 		var alternate_3 = ($$anchor) => {
-			var fragment_4 = comment();
-			var node_19 = first_child(fragment_4);
+			var fragment_5 = comment();
+			var node_20 = first_child(fragment_5);
 
 			{
-				var consequent_14 = ($$anchor) => {
-					var div_23 = root_9$2();
-
-					append($$anchor, div_23);
-				};
-
 				var consequent_15 = ($$anchor) => {
-					var div_24 = root_13$1();
+					var div_24 = root_9$2();
 
 					append($$anchor, div_24);
 				};
 
+				var consequent_16 = ($$anchor) => {
+					var div_25 = root_14$1();
+
+					append($$anchor, div_25);
+				};
+
 				var alternate_2 = ($$anchor) => {
-					var fragment_5 = comment();
-					var node_20 = first_child(fragment_5);
+					var fragment_6 = comment();
+					var node_21 = first_child(fragment_6);
 
-					each(node_20, 17, () => get(rows), (row) => row.key, ($$anchor, row) => {
-						var section_1 = root_14$1();
-						var div_25 = child(section_1);
-						var h2_1 = child(div_25);
-						var text_28 = only_child(h2_1, true);
-						var button_21 = sibling(h2_1, 2);
+					each(node_21, 17, () => get(rows), (row) => row.key, ($$anchor, row) => {
+						var section_1 = root_15$1();
+						var div_26 = child(section_1);
+						var h2_1 = child(div_26);
+						var text_29 = only_child(h2_1, true);
+						var button_22 = sibling(h2_1, 2);
 
-						var div_26 = sibling(div_25, 2);
+						var div_27 = sibling(div_26, 2);
 
-						each(div_26, 21, () => get(row).items, (media) => media.id, ($$anchor, media) => {
+						each(div_27, 21, () => get(row).items, (media) => media.id, ($$anchor, media) => {
 							Card($$anchor, {
 								get media() {
 									return get(media);
@@ -15468,24 +15568,24 @@ function Browse($$anchor, $$props) {
 								}
 							});
 						});
-						template_effect(() => set_text(text_28, get(row).title));
-						delegated('click', button_21, () => viewAll(get(row).sort));
+						template_effect(() => set_text(text_29, get(row).title));
+						delegated('click', button_22, () => viewAll(get(row).sort));
 						append($$anchor, section_1);
 					});
 
-					append($$anchor, fragment_5);
+					append($$anchor, fragment_6);
 				};
 
-				if_block(node_19, ($$render) => {
-					if (get(rowsLoading) && get(rows).length === 0) $$render(consequent_14); else if (get(rows).length === 0) $$render(consequent_15, 1); else $$render(alternate_2, -1);
+				if_block(node_20, ($$render) => {
+					if (get(rowsLoading) && get(rows).length === 0) $$render(consequent_15); else if (get(rows).length === 0) $$render(consequent_16, 1); else $$render(alternate_2, -1);
 				});
 			}
 
-			append($$anchor, fragment_4);
+			append($$anchor, fragment_5);
 		};
 
 		if_block(node_16, ($$render) => {
-			if (get(active)) $$render(consequent_13); else $$render(alternate_3, -1);
+			if (get(active)) $$render(consequent_14); else $$render(alternate_3, -1);
 		});
 	}
 
@@ -17578,7 +17678,7 @@ function makePlugin(id, name, opts = {}) {
 const manifest = {
   id: "orbit-list-connect",
   name: "Orbit-List Connect (Test)",
-  version: "0.5.1",
+  version: "0.5.2",
   description: "Reines Frontend für mehrere Geräte: verbindet sich mit einem eigenen Orbit-List-Backend (Adresse:Port + Passwort). Das Backend kannst du selbst betreiben.",
   author: "Entwicklerfuchs",
   main: "main.js",
