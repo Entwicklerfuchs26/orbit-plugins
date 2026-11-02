@@ -1,7 +1,7 @@
 {
   "id": "orbit-list-connect",
   "name": "Orbit-List Connect (Test)",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Reines Frontend für mehrere Geräte: verbindet sich mit einem eigenen Orbit-List-Backend (Adresse:Port + Passwort). Das Backend kannst du selbst betreiben.",
   "author": "Entwicklerfuchs",
   "main": "main.js",
