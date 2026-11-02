@@ -37,8 +37,8 @@ export function setNet(g: NetGet) { netGet = g }
 function loadPrefs(defaultCatalog: string) {
   let s: any = {}
   try { s = JSON.parse(localStorage.getItem(LS) || '{}') } catch {}
-  // Nur eine bewusst geaenderte Adresse behalten; die alte Test-Adresse (Animus, Klartext-HTTP) verfaellt.
-  const saved = typeof s.catalogUrl === 'string' && !s.catalogUrl.includes('10.10.0.2:8787') ? s.catalogUrl : ''
+  // Nur eine bewusst geaenderte Adresse behalten; alte Klartext-HTTP-Adressen im Heimnetz verfallen (Android sperrt sie).
+  const saved = typeof s.catalogUrl === 'string' && !/^http:\/\/(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(s.catalogUrl) ? s.catalogUrl : ''
   emb.catalogUrl = saved || defaultCatalog
 }
 export function saveCatalogUrl(u: string) {
