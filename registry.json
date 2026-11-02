@@ -341,16 +341,22 @@
       "name": "Orbit-List (Test)",
       "description": "Anime-Tracker mit eigener offener Datenbank. Das Backend ist eingebaut und läuft auf dem Gerät — kein Server, keine Einrichtung. Beim ersten Start wird der Katalog geladen.",
       "author": "Entwicklerfuchs",
-      "version": "0.5.2",
+      "version": "0.6.0",
       "type": "gui",
       "platforms": [
         "desktop",
         "mobile",
         "web"
       ],
-      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/eb68194e972c4de99ef1b3cc2c68ca6af47d3ec6/test/orbit-list/main.js",
+      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/412d23c580e96993c33e12a0059ed7faf04a2d5a/test/orbit-list/main.js",
       "channel": "test",
       "versions": [
+        {
+          "label": "0.6.0+412d23c",
+          "version": "0.6.0",
+          "built": "412d23c",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/412d23c580e96993c33e12a0059ed7faf04a2d5a/test/orbit-list/main.js"
+        },
         {
           "label": "0.5.2+eb68194",
           "version": "0.5.2",
@@ -412,16 +418,22 @@
       "name": "Orbit-List Connect (Test)",
       "description": "Reines Frontend für mehrere Geräte: verbindet sich mit einem eigenen Orbit-List-Backend (Adresse:Port + Passwort). Das Backend kannst du selbst betreiben.",
       "author": "Entwicklerfuchs",
-      "version": "0.5.2",
+      "version": "0.6.0",
       "type": "gui",
       "platforms": [
         "desktop",
         "mobile",
         "web"
       ],
-      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/eb68194e972c4de99ef1b3cc2c68ca6af47d3ec6/test/orbit-list-connect/main.js",
+      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/412d23c580e96993c33e12a0059ed7faf04a2d5a/test/orbit-list-connect/main.js",
       "channel": "test",
       "versions": [
+        {
+          "label": "0.6.0+412d23c",
+          "version": "0.6.0",
+          "built": "412d23c",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/412d23c580e96993c33e12a0059ed7faf04a2d5a/test/orbit-list-connect/main.js"
+        },
         {
           "label": "0.5.2+eb68194",
           "version": "0.5.2",
