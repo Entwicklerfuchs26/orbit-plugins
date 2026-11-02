@@ -14421,7 +14421,9 @@ function loadPrefs(defaultCatalog) {
 		s = JSON.parse(localStorage.getItem(LS) || "{}");
 	} catch {}
 
-	emb.catalogUrl = s.catalogUrl || defaultCatalog;
+	const saved = typeof s.catalogUrl === "string" && !s.catalogUrl.includes("10.10.0.2:8787") ? s.catalogUrl : "";
+
+	emb.catalogUrl = saved || defaultCatalog;
 }
 
 function saveCatalogUrl(u) {
@@ -14768,7 +14770,7 @@ function makePlugin(id, name, opts = {}) {
 const manifest = {
   id: "orbit-list-connect",
   name: "Orbit-List Connect (Test)",
-  version: "0.3.0",
+  version: "0.3.1",
   description: "Reines Frontend für mehrere Geräte: verbindet sich mit einem eigenen Orbit-List-Backend (Adresse:Port + Passwort). Das Backend kannst du selbst betreiben.",
   author: "Entwicklerfuchs",
   main: "main.js",
