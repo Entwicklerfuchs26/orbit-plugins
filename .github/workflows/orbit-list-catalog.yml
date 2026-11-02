@@ -1,4 +1,5 @@
 name: orbit-list-catalog
+# (Läuft auch bei Änderungen am Katalog-Code.)
 # Baut täglich aus der offenen Datenbank (AnimeDB) die Katalog-Datei für das eingebaute Backend des Plugins.
 on:
   schedule: [{cron: "17 6 * * *"}]
