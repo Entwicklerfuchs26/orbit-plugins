@@ -17188,7 +17188,7 @@ function loadPrefs(defaultCatalog) {
 		s = JSON.parse(localStorage.getItem(LS) || "{}");
 	} catch {}
 
-	const saved = typeof s.catalogUrl === "string" && !s.catalogUrl.includes("10.10.0.2:8787") ? s.catalogUrl : "";
+	const saved = typeof s.catalogUrl === "string" && !(/^http:\/\/(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/).test(s.catalogUrl) ? s.catalogUrl : "";
 
 	emb.catalogUrl = saved || defaultCatalog;
 }
@@ -17554,7 +17554,7 @@ function makePlugin(id, name, opts = {}) {
 const manifest = {
   id: "orbit-list",
   name: "Orbit-List (Test)",
-  version: "0.4.0",
+  version: "0.4.1",
   description: "Anime-Tracker mit eigener offener Datenbank. Das Backend ist eingebaut und läuft auf dem Gerät — kein Server, keine Einrichtung. Beim ersten Start wird der Katalog geladen.",
   author: "Entwicklerfuchs",
   main: "main.js",
