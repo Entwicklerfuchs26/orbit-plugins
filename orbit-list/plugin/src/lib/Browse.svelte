@@ -152,6 +152,54 @@
   let gridLoading = $state(false)
   let gridReq = 0
 
+  const PAGE = 60
+  let gridMore = $state(false) // weitere Seite wird nachgeladen
+  let sentinel = $state<HTMLElement>()
+
+  function gridQuery(): Record<string, unknown> {
+    const q: Record<string, unknown> = { sort: selSort, limit: PAGE }
+    if (selGenres.length) q.genres = selGenres.join(',')
+    if (selTags.length) q.tags = selTags.join(',')
+    if (selSeason) q.season = selSeason
+    if (selYear) {
+      q.year_min = selYear
+      q.year_max = selYear
+    }
+    if (selFormat) q.format = selFormat
+    if (selDubLang) q.dub_lang = selDubLang
+    if (selSeen) q.seen = selSeen
+    if (search.trim()) q.q = search.trim()
+    return q
+  }
+
+  /** Naechste Seite anhaengen (Endlos-Scrollen / „Mehr laden"). Die KI-Suche liefert nur die besten Treffer, ohne Seiten. */
+  async function loadMore() {
+    if (gridMore || gridLoading || (ai && search.trim()) || gridItems.length >= gridTotal) return
+    const req = gridReq
+    gridMore = true
+    try {
+      const { items } = await fetchList({ ...gridQuery(), offset: gridItems.length })
+      if (req !== gridReq) return
+      const have = new Set(gridItems.map((m) => m.id))
+      const fresh = items.filter((m) => !have.has(m.id))
+      if (!fresh.length) gridTotal = gridItems.length // nichts Neues: Ende erreicht
+      gridItems = [...gridItems, ...fresh]
+    } catch (e) {
+      console.error('Browse mehr laden fehlgeschlagen:', e)
+    } finally {
+      gridMore = false
+    }
+  }
+
+  // Sentinel am Ende des Rasters: kommt es in die Naehe des Sichtbereichs, wird nachgeladen
+  $effect(() => {
+    const el = sentinel
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) loadMore() }, { rootMargin: '600px' })
+    io.observe(el)
+    return () => io.disconnect()
+  })
+
   async function loadGrid() {
     const req = ++gridReq
     gridLoading = true
@@ -466,6 +514,11 @@
             <Card {media} {onopen} />
           {/each}
         </div>
+        {#if gridItems.length < gridTotal && !(ai && search.trim())}
+          <div class="more" bind:this={sentinel}>
+            <button class="all" onclick={loadMore} disabled={gridMore}>{gridMore ? 'lädt …' : `Mehr laden (${gridItems.length} von ${gridTotal})`}</button>
+          </div>
+        {/if}
       {/if}
     </section>
   {:else}
@@ -493,6 +546,7 @@
 </div>
 
 <style>
+  .more { display: flex; justify-content: center; padding: 18px 0 8px; }
   .browse {
     max-width: var(--maxw);
     margin: 0 auto;
