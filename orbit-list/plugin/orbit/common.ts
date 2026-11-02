@@ -39,6 +39,17 @@ const netGet = async (url: string): Promise<Uint8Array> => {
   return new Uint8Array(await r.arrayBuffer())
 }
 
+// Dateigroesse per HEAD (Pruefung auf neue Katalog-Fassung ohne Download)
+const netSize = async (url: string): Promise<number | null> => {
+  if (Capacitor.isNativePlatform()) {
+    const r = await CapacitorHttp.request({ url, method: 'HEAD', connectTimeout: 10000, readTimeout: 15000 })
+    const h = Object.entries(r.headers || {}).find(([k]) => k.toLowerCase() === 'content-length')
+    return h ? Number(h[1]) : null
+  }
+  const l = (await fetch(url, { method: 'HEAD' })).headers.get('content-length')
+  return l ? Number(l) : null
+}
+
 export function makePlugin(id: string, name: string, opts: { defaultServer?: string; embedded?: boolean } = {}) {
   class AnimeView extends View {
     private component: any
@@ -61,7 +72,7 @@ export function makePlugin(id: string, name: string, opts: { defaultServer?: str
         this.style = style
         setHost(box)
         if (opts.embedded) {
-          setNet(netGet)
+          setNet(netGet, netSize)
           configure({ embedded: true, defaultServer: opts.defaultServer, http: embeddedHttp, storageKey: `orbitlist.conn.${id}` })
         } else {
           configure({ plugin: true, defaultServer: opts.defaultServer, http, storageKey: `orbitlist.conn.${id}` })

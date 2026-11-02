@@ -1,6 +1,15 @@
 <script lang="ts">
   import { api, downloadExport, importUserData } from '../api'
   import { conn, disconnect } from './conn.svelte'
+  import { checkCatalogUpdate } from './embedded.svelte'
+  let catMsg = $state('')
+  async function checkCat() {
+    catMsg = 'Prüfe …'
+    try {
+      const r = await checkCatalogUpdate(true)
+      catMsg = r === 'current' ? 'Der Katalog ist aktuell.' : r === 'updated' ? 'Katalog aktualisiert.' : 'Katalog-Quelle nicht erreichbar.'
+    } catch (e: any) { catMsg = e?.message || String(e) }
+  }
   let importEl = $state<HTMLInputElement>()
   let importMsg = $state('')
   async function doImport(e: Event) {
@@ -368,6 +377,8 @@
           <div class="field last">
             <label>Backend</label>
             <p class="hint">Eingebaut: läuft in diesem Plugin auf dem Gerät, ohne Server. Deine Liste liegt nur auf diesem Gerät. Mehrere Geräte/Frontends: Plugin „Orbit-List Connect" mit einem eigenen Backend verbinden.</p>
+            <button class="big" onclick={checkCat}>Katalog auf neue Version prüfen</button>
+            {#if catMsg}<p class="msg">{catMsg}</p>{/if}
           </div>
         </section>
       {:else if conn.mode === 'plugin' || conn.key}

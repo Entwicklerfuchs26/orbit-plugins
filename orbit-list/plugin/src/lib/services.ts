@@ -29,10 +29,22 @@ export function hasDirect(s: Service): boolean {
   return /\{slug\}/.test(s.url_schema)
 }
 
-/** Alle Direktlink-Kandidaten (englischer, romaji-Titel), ohne Doppelte. */
-export function directCandidates(s: Service, m: TitleSet): string[] {
+/** Alle Direktlink-Kandidaten (englischer, romaji-Titel) samt Kurzform, ohne Doppelte. */
+export function directCandidates(s: Service, m: TitleSet): { url: string; slug: string }[] {
   if (!hasDirect(s)) return []
-  return [...new Set(titles(m).map((t) => fill(s.url_schema, t)))]
+  const out = new Map<string, { url: string; slug: string }>()
+  for (const t of titles(m)) {
+    const url = fill(s.url_schema, t)
+    if (!out.has(url)) out.set(url, { url, slug: slugify(t) })
+  }
+  return [...out.values()]
+}
+
+/** Seiten leiten unbekannte Titel oft stillschweigend auf eine Uebersicht um (Status 200!). Treffer nur, wenn die
+ *  Kurzform auch nach allen Weiterleitungen noch im Pfad steht. Ohne Endadresse (Browser) laesst sich das nicht pruefen. */
+export function landedOn(finalUrl: string | undefined, slug: string): boolean {
+  if (!finalUrl) return true
+  try { return decodeURIComponent(new URL(finalUrl).pathname).toLowerCase().includes(slug.toLowerCase()) } catch { return true }
 }
 
 export function searchUrl(s: Service, m: TitleSet): string {
@@ -40,11 +52,14 @@ export function searchUrl(s: Service, m: TitleSet): string {
   return fill(s.search_schema || (hasDirect(s) ? '' : s.url_schema), t)
 }
 
-function nativeGet(): ((url: string) => Promise<number>) | null {
+function nativeGet(): ((url: string) => Promise<{ status: number; url?: string }>) | null {
   const cap = (globalThis as any).Capacitor
   const plug = cap?.isNativePlatform?.() ? cap?.Plugins?.CapacitorHttp : null
   if (!plug) return null
-  return async (url) => (await plug.request({ url, method: 'GET', connectTimeout: 6000, readTimeout: 8000 })).status
+  return async (url) => {
+    const r = await plug.request({ url, method: 'GET', connectTimeout: 6000, readTimeout: 8000 })
+    return { status: r.status, url: r.url }
+  }
 }
 
 /**
@@ -56,14 +71,14 @@ export async function openService(s: Service, m: TitleSet): Promise<void> {
   const cands = directCandidates(s, m)
   if (!cands.length) return void window.open(search, '_blank', 'noopener')
   const get = nativeGet()
-  if (!get) return void window.open(cands[0], '_blank', 'noopener')
-  for (const url of cands) {
+  if (!get) return void window.open(cands[0].url, '_blank', 'noopener')
+  for (const c of cands) {
     try {
-      const st = await get(url)
-      if (st >= 200 && st < 400) return void window.open(url, '_blank', 'noopener')
+      const r = await get(c.url)
+      if (r.status >= 200 && r.status < 400 && landedOn(r.url, c.slug)) return void window.open(c.url, '_blank', 'noopener')
     } catch {}
   }
-  window.open(search || cands[0], '_blank', 'noopener')
+  window.open(search || cands[0].url, '_blank', 'noopener')
 }
 
 /** Direktlinks aller Dienste mit Schema pruefen (nur auf dem Handy moeglich). Gibt null zurueck, wenn nicht pruefbar. */
@@ -73,10 +88,10 @@ export async function checkDirect(services: Service[], m: TitleSet): Promise<{ s
   if (!get || !direct.length) return get ? [] : null
   const hits: { service: string; url: string; source: 'direct' }[] = []
   await Promise.all(direct.map(async (s) => {
-    for (const url of directCandidates(s, m)) {
+    for (const c of directCandidates(s, m)) {
       try {
-        const st = await get(url)
-        if (st >= 200 && st < 400) { hits.push({ service: s.name, url, source: 'direct' }); return }
+        const r = await get(c.url)
+        if (r.status >= 200 && r.status < 400 && landedOn(r.url, c.slug)) { hits.push({ service: s.name, url: c.url, source: 'direct' }); return }
       } catch {}
     }
   }))

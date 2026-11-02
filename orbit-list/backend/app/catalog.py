@@ -87,6 +87,22 @@ def _dub_fields(r: dict) -> dict:
     }
 
 
+def _fame(r: dict, dub: dict) -> int:
+    """Bekanntheits-Naeherung ohne Nutzerzahlen (der offene Katalog hat keine): viele Querverweise, Synchro und
+    Beschreibung deuten auf bekannte Titel. Nur zum Sortieren; echte AniList-Zahlen (falls vorhanden) haben Vorrang."""
+    ids = [v for k, v in (r.get("ids") or {}).items() if v and k != "wikidata"]
+    score = 10 * len(ids) + 20 * len(dub.get("dub_languages") or []) + (40 if dub.get("dub_de") else 0)
+    if (r.get("synopsis") or {}).get("text"):
+        score += 30
+    if r.get("type") in ("tv", "movie"):
+        score += 15
+    eps = r.get("episodes") or 0
+    score += 5 if eps else 0
+    score += min(eps, 120) // 6  # lange Serien sind meist bekannter
+    score += 2 * min(len((r.get("title") or {}).get("synonyms") or []), 8)  # viele Titelvarianten
+    return score
+
+
 def _row_from_record(r: dict) -> dict:
     ids = r.get("ids") or {}
     t = r.get("title") or {}
@@ -122,6 +138,7 @@ def _row_from_record(r: dict) -> dict:
         "info_links": _info_links(ids, r.get("website")),
         "search_blob": " | ".join(x.lower() for x in titles + syn if x),
         **_dub_fields(r),
+        "popularity": _fame(r, _dub_fields(r)),
     }
 
 
@@ -167,7 +184,7 @@ def run(jsonl: Path = DEFAULT_JSONL, db: Path | None = None, progress=print) -> 
     stats = {"matched": 0, "created": 0, "created_h": 0, "skipped_dup": 0, "status_refreshed": 0, "dubs": 0}
 
     fill_cols = ["title_romaji", "title_english", "title_native", "format", "episodes", "season_year", "season",
-                 "description_en", "mal_id", "anisearch_id", "kitsu_id"]
+                 "description_en", "mal_id", "anisearch_id", "kitsu_id", "popularity"]
     fill_json = ["synonyms", "genres", "tags", "studios", "info_links"]
 
     n = 0
@@ -216,7 +233,7 @@ def run(jsonl: Path = DEFAULT_JSONL, db: Path | None = None, progress=print) -> 
             cols = ["oadb_id", "space", "media_type", "is_adult", "anilist_id", "mal_id", "anisearch_id", "kitsu_id",
                     "title_romaji", "title_english", "title_native", "synonyms", "format", "status", "episodes",
                     "season_year", "season", "genres", "tags", "studios", "description_en", "info_links", "search_blob",
-                    "dub_de", "dub_tier", "dub_languages"]
+                    "dub_de", "dub_tier", "dub_languages", "popularity"]
             vals = [_j(row.get(c)) if c != "media_type" else "anime" for c in cols]
             vals[cols.index("dub_de")] = row.get("dub_de", 0)
             try:

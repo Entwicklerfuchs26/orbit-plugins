@@ -18,6 +18,8 @@ const HOST = Object.values(
 )[0]
 
 export type NetGet = (url: string) => Promise<Uint8Array>
+/** Groesse der Katalog-Datei in Bytes (HEAD), null wenn nicht ermittelbar. */
+export type NetSize = (url: string) => Promise<number | null>
 
 export const emb = $state({
   phase: 'idle' as 'idle' | 'runtime' | 'catalog' | 'ready' | 'error',
@@ -30,20 +32,27 @@ export const emb = $state({
 let py: any = null
 let host: any = null
 let netGet: NetGet = async (u) => new Uint8Array(await (await fetch(u)).arrayBuffer())
+let netSize: NetSize = async (u) => { const l = (await fetch(u, { method: 'HEAD' })).headers.get('content-length'); return l ? Number(l) : null }
 let booting: Promise<void> | null = null
 
-export function setNet(g: NetGet) { netGet = g }
+export function setNet(g: NetGet, size?: NetSize) { netGet = g; if (size) netSize = size }
+
+function readPrefs(): any {
+  try { return JSON.parse(localStorage.getItem(LS) || '{}') } catch { return {} }
+}
+function savePrefs(patch: Record<string, unknown>) {
+  try { localStorage.setItem(LS, JSON.stringify({ ...readPrefs(), ...patch })) } catch {}
+}
 
 function loadPrefs(defaultCatalog: string) {
-  let s: any = {}
-  try { s = JSON.parse(localStorage.getItem(LS) || '{}') } catch {}
+  const s = readPrefs()
   // Nur eine bewusst geaenderte Adresse behalten; alte Klartext-HTTP-Adressen im Heimnetz verfallen (Android sperrt sie).
   const saved = typeof s.catalogUrl === 'string' && !/^http:\/\/(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(s.catalogUrl) ? s.catalogUrl : ''
   emb.catalogUrl = saved || defaultCatalog
 }
 export function saveCatalogUrl(u: string) {
   emb.catalogUrl = u.trim()
-  try { localStorage.setItem(LS, JSON.stringify({ catalogUrl: emb.catalogUrl })) } catch {}
+  savePrefs({ catalogUrl: emb.catalogUrl })
 }
 
 function syncFs(populate: boolean): Promise<void> {
@@ -95,6 +104,7 @@ async function run() {
     const db = await gunzip(gz)
     py.FS.writeFile('/data/catalog.db', db)
     await syncFs(false)
+    savePrefs({ catalogSig: String(gz.length), checkedAt: Date.now() })
   }
   py.FS.mkdirTree('/work')
   py.FS.writeFile('/work/anime.db', py.FS.readFile('/data/catalog.db'))
@@ -115,6 +125,45 @@ async function run() {
     await call('POST', '/import', {}, txt)
   }
   emb.phase = 'ready'; emb.msg = ''; emb.pct = 100
+  // Katalog im Hintergrund auf eine neue Fassung pruefen (hoechstens alle 12 h; ohne bekannte Fassung sofort)
+  checkCatalogUpdate(false).catch(() => {})
+}
+
+/** Neuen Katalog laden und einsetzen; Liste und Einstellungen bleiben erhalten (Export -> neuer Katalog -> Import). */
+async function updateCatalog(): Promise<void> {
+  const keep = await call('GET', '/export/json', {}, '')
+  emb.phase = 'catalog'; emb.pct = 0; emb.msg = 'Katalog wird aktualisiert …'
+  try {
+    const gz = await netGet(emb.catalogUrl)
+    emb.msg = 'Katalog wird entpackt …'
+    const db = await gunzip(gz)
+    py.FS.writeFile('/data/catalog.db', db)
+    py.FS.writeFile('/work/anime.db', db)
+    if (keep.status === 200) await call('POST', '/import', {}, keep.body)
+    await syncFs(false)
+    savePrefs({ catalogSig: String(gz.length), checkedAt: Date.now() })
+  } finally {
+    emb.phase = 'ready'; emb.msg = ''
+  }
+}
+
+/** 'updated' | 'current' | 'unreachable' | 'skipped'. force = Pruefung trotz kuerzlicher Pruefung (Knopf in den Einstellungen). */
+export async function checkCatalogUpdate(force: boolean): Promise<'updated' | 'current' | 'unreachable' | 'skipped'> {
+  if (!host || !emb.catalogUrl) return 'unreachable'
+  const p = readPrefs()
+  if (!force && p.catalogSig && Date.now() - (p.checkedAt || 0) < 12 * 3600 * 1000) return 'skipped'
+  let size: number | null = null
+  try { size = await netSize(emb.catalogUrl) } catch {}
+  if (size == null) return p.catalogSig ? 'unreachable' : await replaceUnknown()
+  if (String(size) === p.catalogSig) { savePrefs({ checkedAt: Date.now() }); return 'current' }
+  await updateCatalog()
+  return 'updated'
+}
+
+// Unbekannte Fassung (aeltere Installation) und Groesse nicht ermittelbar: einmal neu laden ist sicherer als veralten
+async function replaceUnknown() {
+  await updateCatalog()
+  return 'updated' as const
 }
 
 async function call(method: string, url: string, headers: Record<string, string>, body: string) {
