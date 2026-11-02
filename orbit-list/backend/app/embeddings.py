@@ -134,5 +134,49 @@ def search(query: str, space: str = "normal", limit: int = 3, new_for_me: bool =
     return out[:limit]
 
 
+# ---- Bausteine fuer das eingebettete Backend (Handy): dort rechnet das Plugin die Aehnlichkeit selbst
+# (kein sqlite-vec) und nutzt nur diese beiden Funktionen fuer Filter und Ergebnisdaten.
+def allowed_ids(space: str = "normal", new_for_me: bool = False, filters: dict | None = None) -> list[int]:
+    """IDs aller Titel, die die manuellen Filter erfuellen (gleiche _where-Logik wie die Suche)."""
+    f = dict(filters or {})
+    f["space"] = space
+    from .db import SqliteRepo
+    where, args = SqliteRepo()._where(f)
+    con = connect()
+    try:
+        rows = con.execute(
+            f"SELECT m.id, u.watch_status FROM media m LEFT JOIN user_entry u ON u.media_id=m.id WHERE {where}", args
+        ).fetchall()
+    finally:
+        con.close()
+    return [r["id"] for r in rows if not (new_for_me and r["watch_status"] in ("completed", "watching"))]
+
+
+def fetch_ordered(ids: list[int], distances: list[float] | None = None) -> list[dict]:
+    """Titel zu den IDs in genau dieser Reihenfolge (mit _rank/_distance wie die Server-Suche)."""
+    if not ids:
+        return []
+    from .db import _row_to_media
+    con = connect()
+    try:
+        ph = ",".join("?" for _ in ids)
+        rows = con.execute(
+            f"SELECT m.*, u.rating, u.note, u.watch_status, u.progress, u.collection, u.lent_to, u.lent_since "
+            f"FROM media m LEFT JOIN user_entry u ON u.media_id=m.id WHERE m.id IN ({ph})", ids
+        ).fetchall()
+    finally:
+        con.close()
+    by = {r["id"]: r for r in rows}
+    out = []
+    for i, mid in enumerate(ids):
+        if mid in by:
+            d = _row_to_media(by[mid])
+            d["_rank"] = i
+            if distances is not None and i < len(distances):
+                d["_distance"] = round(distances[i], 4)
+            out.append(d)
+    return out
+
+
 if __name__ == "__main__":
     print(index_all())

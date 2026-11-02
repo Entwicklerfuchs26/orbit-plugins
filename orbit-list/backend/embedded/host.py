@@ -59,12 +59,17 @@ def _load():
     return _app
 
 
-async def _call(method, path, headers, body):
+async def _ensure_started():
     app = _load()
     global _started
     if not _started:
         await app.router.startup()
         _started = True
+    return app
+
+
+async def _call(method, path, headers, body):
+    app = await _ensure_started()
     p, _, q = path.partition("?")
     scope = {
         "type": "http", "asgi": {"version": "3.0"}, "http_version": "1.1", "method": method.upper(),
@@ -97,3 +102,48 @@ async def handle(method, path, headers_json="{}", body=""):
     """Gibt (status, content_type, body_text) zurueck."""
     r = await _call(method, path, json.loads(headers_json or "{}"), body.encode() if isinstance(body, str) else body)
     return json.dumps({"status": r["status"], "headers": r["headers"], "body": r["body"].decode("utf-8", "replace")})
+
+
+# ---- KI-Suche auf dem Geraet: das Plugin (TypeScript) rechnet Einbettungen und Aehnlichkeit selbst;
+# hier nur Datenzugriff auf die Arbeitsdatenbank. Rueckgabe jeweils JSON-Text.
+async def ai_count():
+    await _ensure_started()
+    from app.db import connect
+    con = connect()
+    try:
+        return json.dumps(con.execute("SELECT COUNT(*) FROM media").fetchone()[0])
+    finally:
+        con.close()
+
+
+async def ai_docs(after, limit):
+    """Texte-Rohdaten der naechsten `limit` Titel mit id > after (aufsteigend)."""
+    await _ensure_started()
+    from app.db import connect
+    con = connect()
+    try:
+        cols = {r[1] for r in con.execute("PRAGMA table_info(media)")}
+        want = ["id", "title_english", "title_romaji", "title_native", "title_de", "synonyms", "genres",
+                "studios", "format", "season_year", "description_de", "description_en"]
+        sel = ", ".join(c if c in cols else f"NULL AS {c}" for c in want)
+        rows = con.execute(f"SELECT {sel} FROM media WHERE id>? ORDER BY id LIMIT ?", (int(after), int(limit))).fetchall()
+        return json.dumps([dict(r) for r in rows])
+    finally:
+        con.close()
+
+
+async def ai_allowed(space, new_for_me, filters_json, h_password=""):
+    await _ensure_started()
+    from app import embeddings
+    if space == "h":
+        from app.main import _h_ok
+        if not _h_ok(h_password or None):
+            return json.dumps({"forbidden": True, "ids": []})
+    f = json.loads(filters_json or "{}")
+    return json.dumps({"forbidden": False, "ids": embeddings.allowed_ids(space, bool(new_for_me), f)})
+
+
+async def ai_fetch(ids_json, distances_json="[]"):
+    await _ensure_started()
+    from app import embeddings
+    return json.dumps(embeddings.fetch_ordered(json.loads(ids_json), json.loads(distances_json)), default=str)

@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Media } from '../api'
+  import Cover from './Cover.svelte'
 
   let { api, activeType, hToken = null, onopen }: {
     api: any
@@ -79,7 +80,7 @@
         >
           <span class="rank">{i + 1}</span>
           <div class="cover">
-            {#if m.cover_url}<img src={m.cover_url} alt="" draggable="false" />{:else}<span class="ph2">{m.title?.[0] ?? '?'}</span>{/if}
+            <Cover media={m} />
           </div>
           <span class="title">{m.title}</span>
           <button class="heart" onclick={(e) => unfav(m, e)} title="Aus Favoriten entfernen" aria-label="Entfernen">♥</button>
@@ -99,7 +100,7 @@
   .fav:active { cursor: grabbing; }
   .fav.dragging { opacity: 0.45; }
   .rank { position: absolute; top: 6px; left: 6px; z-index: 2; background: var(--accent); color: var(--on-accent); font-weight: 800; font-size: 0.82rem; min-width: 22px; height: 22px; padding: 0 5px; border-radius: var(--radius-sm); display: grid; place-items: center; box-shadow: var(--shadow-sm); }
-  .cover { aspect-ratio: 185 / 265; border-radius: var(--radius); overflow: hidden; background: var(--surface); box-shadow: var(--shadow-sm); }
+  .cover { position: relative; aspect-ratio: 185 / 265; border-radius: var(--radius); overflow: hidden; background: var(--surface); box-shadow: var(--shadow-sm); }
   .cover img { width: 100%; height: 100%; object-fit: cover; }
   .ph2 { width: 100%; height: 100%; display: grid; place-items: center; color: var(--text-muted); font-weight: 600; }
   .title { font-size: 0.85rem; font-weight: 500; color: var(--text); line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }

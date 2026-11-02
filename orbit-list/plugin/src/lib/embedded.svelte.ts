@@ -4,6 +4,7 @@
 //   /data/catalog.db  – nur Anime, wird nie veraendert;  /data/user.json – Liste + Einstellungen im Export-Format.
 // Die Arbeitsdatenbank /work/anime.db (Katalog + Nutzerdaten, fuer die Abfragen) lebt nur im Arbeitsspeicher.
 import type { Http, HttpRes } from './conn.svelte'
+import { createAi } from './ai-embedded'
 
 const PYODIDE = 'https://cdn.jsdelivr.net/pyodide/v0.27.7/full/'
 const PIP = ['fastapi==0.115.6', 'starlette==0.41.3']
@@ -135,12 +136,28 @@ function scheduleSync() {
   }, 1500)
 }
 
+// KI-Suche: /ai/* beantwortet das Plugin selbst (ai-embedded.ts); Python liefert nur Daten.
+let aiCtl: ReturnType<typeof createAi> | null = null
+function ai() {
+  return (aiCtl ??= createAi({
+    host: {
+      count: async () => JSON.parse(await host.ai_count()),
+      docs: async (after, limit) => JSON.parse(await host.ai_docs(after, limit)),
+      allowed: async (space, newForMe, filters, hPassword) => JSON.parse(await host.ai_allowed(space, newForMe, JSON.stringify(filters), hPassword)),
+      fetch: async (ids, dist) => JSON.parse(await host.ai_fetch(JSON.stringify(ids), JSON.stringify(dist))),
+    },
+  }))
+}
+
 /** Transport fuer conn.svelte.ts: statt Netzwerk direkt in das eingebettete Backend. */
 export const embeddedHttp: Http = async (url, init) => {
   if (!host) throw new Error('Backend nicht bereit')
   const method = (init.method || 'GET').toUpperCase()
-  const out = await call(method, url, init.headers || {}, init.body || '')
-  if (method !== 'GET') scheduleSync()
+  const isAi = /^\/ai(\/|$)/.test(new URL(url, 'http://local').pathname)
+  const out = isAi
+    ? await ai().route(method, url, init.headers || {}, init.body || '')
+    : await call(method, url, init.headers || {}, init.body || '')
+  if (method !== 'GET' && !isAi) scheduleSync()
   const res: HttpRes = {
     status: out.status,
     json: async () => JSON.parse(out.body),

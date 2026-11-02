@@ -15,6 +15,7 @@
     ;(e.target as HTMLInputElement).value = ''
   }
   import { aiState, refreshAi } from './ai.svelte'
+  import AiEmbeddedSettings from './ai-EmbeddedSettings.svelte'
 
   let {
     theme = 'dark',
@@ -170,11 +171,13 @@
   $effect(() => { svcs = [...services] })
   let newName = $state('')
   let newUrl = $state('')
+  let newSearch = $state('')
   async function addSvc() {
     if (!newName.trim() || !newUrl.trim()) return
-    const r = await api.addService({ name: newName, url_schema: newUrl, config: activeConfig })
-    svcs = [...svcs, { id: r.id, name: newName, url_schema: newUrl }]
-    newName = ''; newUrl = ''
+    const search = newSearch.trim() || null
+    const r = await api.addService({ name: newName, url_schema: newUrl.trim(), search_schema: search, config: activeConfig })
+    svcs = [...svcs, { id: r.id, name: newName, url_schema: newUrl.trim(), search_schema: search }]
+    newName = ''; newUrl = ''; newSearch = ''
   }
   async function delSvc(id: number) {
     try { await api.deleteService(id) } catch {}
@@ -234,19 +237,22 @@
         <div class="field last">
           <label>Streaming-Dienste für {configName} (eigener Satz je Config)</label>
           {#each svcs as s}
-            <div class="svc-row"><span>{s.name}</span><code>{s.url_schema}</code><button class="del" onclick={() => delSvc(s.id)} aria-label="Entfernen">✕</button></div>
+            <div class="svc-row"><span>{s.name}</span><code>{s.url_schema}{#if s.search_schema} · Suche: {s.search_schema}{/if}</code><button class="del" onclick={() => delSvc(s.id)} aria-label="Entfernen">✕</button></div>
           {/each}
           <div class="addsvc">
             <input placeholder="Name (z. B. Wakanim)" bind:value={newName} />
-            <input placeholder={'URL-Schema mit {q}'} bind:value={newUrl} />
+            <input placeholder={'Direktlink, z. B. https://dienst.de/anime/stream/{slug}/staffel-1'} bind:value={newUrl} />
+            <input placeholder={'Suche (Rückfall), z. B. https://dienst.de/animes?q={q}'} bind:value={newSearch} />
             <button class="big" onclick={addSvc}>+ Dienst hinzufügen</button>
           </div>
-          <p class="hint">URL-Schema mit <code>{'{q}'}</code> als Platzhalter für den Titel, z. B. <code>https://dienst.de/search?q={'{q}'}</code>. Auch eigene/private Quellen.</p>
+          <p class="hint"><code>{'{slug}'}</code> = Titel als URL-Kurzform (<code>Scum's Wish</code> → <code>scums-wish</code>), <code>{'{q}'}</code> = Titel für eine Suche. Mit Direktlink + Suche öffnet die App erst die Serienseite und fällt bei „nicht gefunden“ auf die Suche zurück (die Prüfung geht nur auf dem Handy; im Browser öffnet immer der Direktlink). Nur ein Schema mit <code>{'{q}'}</code> funktioniert wie eine reine Suche.</p>
         </div>
       </section>
     {:else if cat === 'ki'}
       <section class="card">
-        {#if !ai}
+        {#if conn.mode === 'embedded'}
+          <AiEmbeddedSettings />
+        {:else if !ai}
           <p class="hint" style="margin-top:0">{aiMsg || 'Lade …'}</p>
         {:else}
           <div class="field">
@@ -353,7 +359,7 @@
         <div class="field last">
           <label>Über</label>
           <p class="hint">Orbitlist — erweiterbarer Medien-Tracker.<br />
-            Daten: AniList, {stats.attribution ?? 'MyDubList (CC BY 4.0)'}, Jikan/MAL (H), TMDB.<br />
+            Katalog: <a href="https://github.com/Entwicklerfuchs26/AnimeDB" target="_blank" rel="noopener">AnimeDB</a> (Wikidata CC0, Wikipedia CC BY-SA, anime-offline-database ODbL; Daten ODbL 1.0). Dub data © MyDubList – mydublist.com (CC BY 4.0). Bilder, Charaktere, Statistiken und Streaming-Verfügbarkeit: AniList (Abruf auf deinem Gerät).<br />
             {stats.anime ?? 0} Anime · {stats.h ?? 0} H · {stats.anime_dubbed ?? 0} dt. synchronisiert.</p>
         </div>
       </section>

@@ -4,7 +4,7 @@ import { makePlugin } from './common'
 export const manifest = {
   id: 'orbit-list',
   name: 'Orbit-List (Test)',
-  version: '0.3.1',
+  version: '0.4.0',
   description: 'Anime-Tracker mit eigener offener Datenbank. Das Backend ist eingebaut und läuft auf dem Gerät — kein Server, keine Einrichtung. Beim ersten Start wird der Katalog geladen.',
   author: 'Entwicklerfuchs',
   main: 'main.js',

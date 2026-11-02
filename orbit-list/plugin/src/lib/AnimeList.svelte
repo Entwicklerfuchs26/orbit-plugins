@@ -2,6 +2,7 @@
   import { aiState, refreshAi } from './ai.svelte'
   $effect(() => { if (!aiState.loaded) refreshAi() })
   import Card from './Card.svelte'
+  import Cover from './Cover.svelte'
   import type { Media } from '../api'
   import { DUB_LANGS } from './i18n'
 
@@ -71,6 +72,13 @@
 
   type Section = { status: string; items: Media[] }
   let sections = $state<Section[]>([]) // bei „Alle": je Kategorie ein Abschnitt; sonst 1 Abschnitt
+  // Wo schaubar (gespeicherte Treffer der Verfuegbarkeits-Pruefung) – fuer die Wunschliste: welche Titel auf welchem Dienst
+  let streams = $state<Record<string, { service: string }[]>>({})
+  $effect(() => {
+    const ids = sections.flatMap((x) => x.items.map((i: any) => i.id)).slice(0, 500)
+    if (!ids.length) return
+    api.streamingMap(ids).then((r: any) => { streams = r ?? {} }).catch(() => {})
+  })
   let loading = $state(false)
 
   // ── Zähler (unfiltert, wie AniList) ─────────────────────────────────
@@ -336,11 +344,12 @@
                   <span class="c-title">
                     {#if viewMode === 'table'}
                       <span class="cover">
-                        {#if m.cover_url}<img src={m.cover_url} alt="" loading="lazy" />{:else}<span class="ph">{m.title?.[0] ?? '?'}</span>{/if}
+                        <Cover media={m} />
                       </span>
                     {/if}
                     {#if ACTIVE.has(m.watch_status ?? '')}<span class="dot" title={STATUS_LABEL[m.watch_status ?? '']}></span>{/if}
                     <span class="tname">{m.title}</span>
+                    {#each streams[m.id] ?? [] as h}<span class="svcchip">{h.service}</span>{/each}
                   </span>
                   <span class="c-score">{fmtScore(m.rating) || '–'}</span>
                   <span class="c-prog">{fmtProgress(m)}</span>
@@ -526,7 +535,9 @@
     color: var(--text-muted);
   }
   .c-title { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .svcchip { flex: 0 0 auto; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: 0.68rem; background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border); white-space: nowrap; }
   .cover {
+    position: relative;
     flex: 0 0 auto;
     width: 40px;
     aspect-ratio: 185 / 265;

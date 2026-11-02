@@ -1,6 +1,8 @@
 <script lang="ts">
   import Card from './Card.svelte'
   import type { Media } from '../api'
+  import Cover from './Cover.svelte'
+  import { getAiring, type Airing } from './anilist'
 
   let {
     api,
@@ -27,6 +29,25 @@
   let inProgress = $state<Media[]>([])
   let trending = $state<Media[]>([])
   let newlyAdded = $state<Media[]>([])
+  // Demnächst: nächste Folge der laufenden Titel (AniList, Laufzeit-Abruf)
+  let airing = $state<(Airing & { m: Media })[]>([])
+  let airingState = $state<'idle' | 'loading' | 'done'>('idle')
+
+  async function loadAiring(list: Media[]) {
+    const withId = list.filter((m) => m.anilist_id)
+    if (!withId.length) { airing = []; airingState = 'done'; return }
+    airingState = 'loading'
+    const a = await getAiring(withId.map((m) => m.anilist_id))
+    const byId = new Map(withId.map((m) => [m.anilist_id, m]))
+    airing = a.filter((x) => byId.has(x.id)).map((x) => ({ ...x, m: byId.get(x.id)! }))
+    airingState = 'done'
+  }
+  function inTime(at: number): string {
+    const s = at - Date.now() / 1000
+    if (s <= 0) return 'jetzt'
+    const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), min = Math.floor((s % 3600) / 60)
+    return d > 0 ? `in ${d} T ${h} Std` : h > 0 ? `in ${h} Std ${min} Min` : `in ${min} Min`
+  }
 
   // Config-bewusst: H → api.h(token, …), sonst api.anime; media_type immer mitgeben.
   async function fetchList(q: Record<string, unknown>): Promise<Media[]> {
@@ -56,6 +77,7 @@
     inProgress = ip
     trending = tr
     newlyAdded = na
+    loadAiring(ip)
   }
 
   $effect(() => {
@@ -81,18 +103,9 @@
 </script>
 
 <div class="home">
-  <!-- LINKS: Aktivität (Platzhalter) + Ersatz: zuletzt aktualisierte Einträge -->
+  <!-- LINKS: zuletzt aktualisierte Einträge -->
   <aside class="left">
-    <h2>Aktivität</h2>
-    <div class="locked">
-      <span class="lockico">🔒</span>
-      <div>
-        <b>Aktivitäts-Feed</b>
-        <p>kommt mit Sync</p>
-      </div>
-    </div>
-
-    <h3>Zuletzt aktualisiert</h3>
+    <h2>Zuletzt aktualisiert</h2>
     {#if activity.length}
       <ul class="feed">
         {#each activity as m (m.id)}
@@ -118,11 +131,7 @@
           {#each inProgress as m (m.id)}
             <div class="ip">
               <button class="ipcover" onclick={() => onopen(m)} title={m.title}>
-                {#if m.cover_url}
-                  <img src={m.cover_url} alt="" loading="lazy" />
-                {:else}
-                  <div class="ph">{m.title?.[0] ?? '?'}</div>
-                {/if}
+                <Cover media={m} />
                 <div class="ipfoot">
                   <span class="prog">{m.progress ?? 0}{#if m.episodes} / {m.episodes}{/if}</span>
                 </div>
@@ -139,13 +148,22 @@
 
     <section class="block">
       <div class="head"><h2>Demnächst</h2></div>
-      <div class="locked wide">
-        <span class="lockico">🔒</span>
-        <div>
-          <b>Ausstrahlungs-Countdown</b>
-          <p>kommt mit Sync</p>
-        </div>
-      </div>
+      {#if airing.length}
+        <ul class="feed">
+          {#each airing as a (a.id)}
+            <li>
+              <button class="feedrow" onclick={() => onopen(a.m)}>
+                <span class="fstatus">Folge {a.episode} · {inTime(a.at)}</span>
+                <span class="ftitle">{a.m.title}</span>
+              </button>
+            </li>
+          {/each}
+        </ul>
+      {:else if airingState === 'loading'}
+        <p class="empty">lädt Ausstrahlungstermine…</p>
+      {:else}
+        <p class="empty">Keine Termine — „Beobachten“-Titel mit laufender Ausstrahlung erscheinen hier (Daten: AniList).</p>
+      {/if}
     </section>
 
     {#if trending.length}
@@ -200,21 +218,6 @@
   .left { min-width: 0; }
   .left h2 { margin-bottom: 10px; }
 
-  .locked {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: var(--surface);
-    border: 1px dashed var(--border);
-    border-radius: var(--radius);
-    padding: 16px 18px;
-    color: var(--text-muted);
-  }
-  .locked.wide { padding: 22px 20px; }
-  .lockico { font-size: 1.2rem; opacity: 0.8; }
-  .locked b { color: var(--text); font-size: 0.86rem; font-weight: 600; }
-  .locked p { margin: 2px 0 0; font-size: 0.76rem; }
-
   .feed { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
   .feedrow {
     width: 100%;
@@ -267,8 +270,6 @@
     transition: transform 0.18s ease, box-shadow 0.18s ease;
   }
   .ip:hover .ipcover { transform: translateY(-2px); box-shadow: var(--shadow); }
-  .ipcover img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .ph { width: 100%; height: 100%; display: grid; place-items: center; font-size: 2rem; font-weight: 600; color: var(--text-muted); }
   .ipfoot {
     position: absolute;
     left: 0; right: 0; bottom: 0;

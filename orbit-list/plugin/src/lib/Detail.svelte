@@ -3,6 +3,10 @@
   const SOURCE_DE: Record<string, string> = { MANGA: 'Manga', LIGHT_NOVEL: 'Light Novel', WEB_NOVEL: 'Web Novel', NOVEL: 'Roman', ORIGINAL: 'Original', VISUAL_NOVEL: 'Visual Novel', VIDEO_GAME: 'Videospiel', ANIME: 'Anime', GAME: 'Spiel', OTHER: 'Sonstiges', DOUJINSHI: 'Doujinshi', LIVE_ACTION: 'Realfilm', COMIC: 'Comic', MULTIMEDIA_PROJECT: 'Multimedia-Projekt', PICTURE_BOOK: 'Bilderbuch' }
   const COUNTRY_DE: Record<string, string> = { JP: 'Japan', CN: 'China', KR: 'Südkorea', TW: 'Taiwan' }
   import { api, type Media } from '../api'
+  import { getDetail, safeHtml, type Detail } from './anilist'
+  import { lightOf, want } from './anilist.svelte'
+  import { openService, hasDirect } from './services'
+  import { computeHits, type Hit } from './streaming'
 
   let {
     media,
@@ -89,33 +93,105 @@
     await patch(p)
   }
 
-  function serviceUrl(schema: string) {
-    const q = encodeURIComponent(m.title_romaji || m.title_english || m.title || '')
-    return schema.replace('{q}', q).replace('{slug}', q)
-  }
 
-  // Reiter (nur „Übersicht" aktiv; Rest 🔒 bis Import)
-  const TABS: { id: string; label: string; locked?: boolean }[] = [
+  // Reiter
+  const TABS: { id: string; label: string }[] = [
     { id: 'overview', label: 'Übersicht' },
-    { id: 'characters', label: 'Charaktere', locked: true },
-    { id: 'staff', label: 'Mitwirkende', locked: true },
-    { id: 'stats', label: 'Statistiken', locked: true },
+    { id: 'characters', label: 'Charaktere' },
+    { id: 'staff', label: 'Mitwirkende' },
+    { id: 'stats', label: 'Statistiken' },
   ]
   let tab = $state('overview')
+
+  // --- AniList-Laufzeitdaten (Cover, Banner, Charaktere, Beziehungen, Streaming …) ---------------
+  // Kommen erst auf dem Gerät per anilist_id; bis dahin / ohne Netz Platzhalter bzw. leere Zustände.
+  const aid = $derived(media.anilist_id ?? null)
+  $effect(() => { want(aid) })
+  const art = $derived(lightOf(aid))
+  const cover = $derived(m.cover_url || art?.cover)
+  const banner = $derived(m.banner_url || art?.banner)
+  const avg = $derived(m.average_score ?? art?.score)
+  const pop = $derived(m.popularity ?? art?.popularity)
+
+  let det = $state<Detail | null>(null)
+  let detState = $state<'loading' | 'ok' | 'fail'>('loading')
+  $effect(() => {
+    const id = aid
+    det = null
+    if (!id) { detState = 'fail'; return }
+    detState = 'loading'
+    let alive = true
+    getDetail(id).then((d) => {
+      if (!alive) return
+      det = d
+      detState = d ? 'ok' : 'fail'
+    })
+    return () => { alive = false }
+  })
+
+  // Verfuegbarkeit: gespeicherte Treffer sofort, dann frisch pruefen (AniList-Links + eigene Direktlinks) und speichern
+  let hits = $state<Hit[]>([])
+  let hitState = $state<'loading' | 'done'>('loading')
+  $effect(() => {
+    const id = media.id
+    hits = []; hitState = 'loading'
+    api.streamingOf(id).then((r: any) => { if (hitState === 'loading' && media.id === id) hits = r.items ?? [] }).catch(() => {})
+  })
+  $effect(() => {
+    if (detState === 'loading') return
+    const streams = det ? det.streaming : null
+    const id = media.id
+    let alive = true
+    computeHits(m, services, streams).then(async (h) => {
+      if (!alive || !h) return
+      hits = h; hitState = 'done'
+      try { await api.putStreaming(id, h) } catch {}
+    })
+    return () => { alive = false }
+  })
+
+  const descHtml = $derived(safeHtml(det?.description || m.description))
+  const REL_DE: Record<string, string> = {
+    SOURCE: 'Vorlage', PREQUEL: 'Vorgänger', SEQUEL: 'Fortsetzung', PARENT: 'Hauptgeschichte', SIDE_STORY: 'Nebengeschichte',
+    CHARACTER: 'Gleiche Charaktere', SUMMARY: 'Zusammenfassung', ALTERNATIVE: 'Alternative', SPIN_OFF: 'Spin-off',
+    ADAPTATION: 'Adaption', CONTAINS: 'Enthält', COMPATIBLE: 'Kompatibel', OTHER: 'Sonstiges',
+  }
+  const ROLE_DE: Record<string, string> = { MAIN: 'Hauptrolle', SUPPORTING: 'Nebenrolle', BACKGROUND: 'Statist' }
+  const DIST_DE: Record<string, string> = {
+    CURRENT: 'Schauen gerade', PLANNING: 'Geplant', COMPLETED: 'Abgeschlossen', DROPPED: 'Abgebrochen', PAUSED: 'Pausiert', REPEATING: 'Wiederholen',
+  }
+  const DIST_COL: Record<string, string> = {
+    CURRENT: 'var(--accent)', PLANNING: 'var(--gold)', COMPLETED: 'var(--good)', DROPPED: 'var(--bad)', PAUSED: 'var(--text-muted)', REPEATING: 'var(--accent-2)',
+  }
+  const nf = new Intl.NumberFormat('de-DE')
+  const alUrl = (x: { id: number; type?: string }) => `https://anilist.co/${x.type === 'MANGA' ? 'manga' : 'anime'}/${x.id}`
+  const statusTotal = $derived((det?.statusDist ?? []).reduce((a, x) => a + x.amount, 0))
+  const scoreMax = $derived(Math.max(1, ...(det?.scoreDist ?? []).map((x) => x.amount)))
+  const relations = $derived((det?.relations ?? []).filter((r) => r.type === 'ANIME' || r.type === 'MANGA'))
+
+  // Escape schließt (zuerst das Bearbeiten-Fenster, dann die Detailansicht)
+  function onKey(e: KeyboardEvent) {
+    if (e.key !== 'Escape') return
+    if (editing) editing = false
+    else onclose()
+  }
 
   const alts = $derived(
     [m.title_romaji, m.title_english, m.title_native].filter((t) => t && t !== m.title) as string[],
   )
 </script>
 
+<svelte:window onkeydown={onKey} />
+
 <div class="overlay" role="dialog" aria-modal="true" aria-label={m.title}>
+  <!-- oben LINKS: rechts oben liegen Statusleiste und das Orbit-X (schließt die ganze App) -->
   <button class="close" onclick={onclose} aria-label="Schließen">✕</button>
 
   <!-- Voll-Banner -->
   <div
     class="banner"
-    class:empty={!m.banner_url}
-    style={m.banner_url ? `background-image:url(${m.banner_url})` : ''}
+    class:empty={!banner}
+    style={banner ? `background-image:url('${banner}')` : art?.color ? `background:${art.color}` : ''}
   >
     <div class="banner-fade"></div>
   </div>
@@ -125,8 +201,8 @@
     <div class="container head-grid">
       <div class="poster-col">
         <div class="cover">
-          {#if m.cover_url}
-            <img src={m.cover_url} alt="" />
+          {#if cover}
+            <img src={cover} alt="" />
           {:else}
             <div class="cover-ph">{m.title?.[0] ?? '?'}</div>
           {/if}
@@ -157,14 +233,14 @@
         {/if}
 
         <div class="badges">
-          {#if m.average_score}
-            <span class="badge score"><span class="smile">☺</span> {m.average_score}%</span>
+          {#if avg}
+            <span class="badge score"><span class="smile">☺</span> {avg}%</span>
           {/if}
           {#if m.rating}
             <span class="badge mine">★ {m.rating}</span>
           {/if}
-          {#if m.popularity}
-            <span class="badge pop">Beliebtheit {m.popularity.toLocaleString('de-DE')}</span>
+          {#if pop}
+            <span class="badge pop">Beliebtheit {pop.toLocaleString('de-DE')}</span>
           {/if}
           {#if m.dub_de}
             <span class="badge dub">Deutscher Dub{m.dub_tier ? ` · ${m.dub_tier}` : ''}</span>
@@ -192,9 +268,10 @@
         {#if m.started_at}<div><dt>Begonnen</dt><dd>{m.started_at}</dd></div>{/if}
         {#if m.completed_at}<div><dt>Abgeschlossen</dt><dd>{m.completed_at}</dd></div>{/if}
         {#if m.rewatches}<div><dt>Wiederholt</dt><dd>{m.rewatches}×</dd></div>{/if}
+        {#if det?.nextAiring && !m.next_airing_ep}<div><dt>Nächste Folge</dt><dd>Ep. {det.nextAiring.episode} · {new Date(det.nextAiring.at * 1000).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}</dd></div>{/if}
         {#if m.next_airing_ep && m.next_airing_at}<div><dt>Nächste Folge</dt><dd>Ep. {m.next_airing_ep} · {new Date(m.next_airing_at * 1000).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}</dd></div>{/if}
-        {#if m.average_score}<div><dt>Ø Wertung</dt><dd class="score">{m.average_score}%</dd></div>{/if}
-        {#if m.popularity}<div><dt>Beliebtheit</dt><dd>{m.popularity.toLocaleString('de-DE')}</dd></div>{/if}
+        {#if avg}<div><dt>Ø Wertung</dt><dd class="score">{avg}%</dd></div>{/if}
+        {#if pop}<div><dt>Beliebtheit</dt><dd>{pop.toLocaleString('de-DE')}</dd></div>{/if}
         <div>
           <dt>Dub</dt>
           <dd>
@@ -231,69 +308,174 @@
     <main class="content">
       <nav class="tabs" aria-label="Reiter">
         {#each TABS as t}
-          <button
-            class="tab"
-            class:active={tab === t.id}
-            disabled={t.locked}
-            title={t.locked ? 'Braucht Extra-Import' : ''}
-            onclick={() => !t.locked && (tab = t.id)}
-          >{t.label}{#if t.locked}<span class="lock">🔒</span>{/if}</button>
+          <button class="tab" class:active={tab === t.id} onclick={() => (tab = t.id)}>{t.label}</button>
         {/each}
       </nav>
 
-      {#if m.description}
-        <section class="block">
-          <p class="desc">{@html m.description}</p>
-        </section>
-      {/if}
-
-      <!-- Wo schauen -->
-      {#if services.length}
-        <section class="block">
-          <h3>Wo schauen</h3>
-          <div class="btnrow">
-            {#each services as s}
-              <a class="svc" href={serviceUrl(s.url_schema)} target="_blank" rel="noopener">{s.name}</a>
+      {#snippet charList(limit: number)}
+        {#if det?.characters.length}
+          <div class="people">
+            {#each det.characters.slice(0, limit) as c (c.char.id)}
+              <div class="person">
+                {#if c.char.image}<img src={c.char.image} alt="" loading="lazy" />{:else}<span class="pph">{c.char.name[0]}</span>{/if}
+                <div class="pn"><b>{c.char.name}</b><small>{ROLE_DE[c.role] ?? c.role}</small></div>
+                {#if c.actors[0]}
+                  <div class="pn right"><b>{c.actors[0].name}</b><small>Sprecher (JP)</small></div>
+                  {#if c.actors[0].image}<img src={c.actors[0].image} alt="" loading="lazy" />{:else}<span class="pph">{c.actors[0].name[0]}</span>{/if}
+                {/if}
+              </div>
             {/each}
           </div>
-        </section>
-      {/if}
+        {:else}
+          {@render empty('Keine Charaktere bei AniList.')}
+        {/if}
+      {/snippet}
 
-      <!-- Infoseiten -->
-      {#if m.info_links && Object.keys(m.info_links).length}
+      {#snippet empty(text: string)}
+        <div class="placeholder">
+          {#if detState === 'loading'}lädt von AniList…
+          {:else if !aid}Dieser Titel hat keine AniList-ID.
+          {:else if detState === 'fail'}Keine Verbindung zu AniList — später erneut öffnen.
+          {:else}{text}{/if}
+        </div>
+      {/snippet}
+
+      {#snippet dists()}
         <section class="block">
-          <h3>Infoseiten</h3>
-          <div class="btnrow">
-            {#each Object.entries(m.info_links) as [k, url]}
-              <a class="svc ghost" href={url} target="_blank" rel="noopener">{LINK_LABEL[k] ?? k}</a>
-            {/each}
-          </div>
+          <h3>Status-Verteilung</h3>
+          {#if det?.statusDist.length && statusTotal}
+            <div class="stackbar" role="img" aria-label="Status-Verteilung">
+              {#each det.statusDist as x}<span style="flex:{x.amount};background:{DIST_COL[x.status] ?? 'var(--border)'}" title="{DIST_DE[x.status] ?? x.status}: {nf.format(x.amount)}"></span>{/each}
+            </div>
+            <ul class="legend">
+              {#each det.statusDist as x}
+                <li><i style="background:{DIST_COL[x.status] ?? 'var(--border)'}"></i>{DIST_DE[x.status] ?? x.status}<b>{nf.format(x.amount)}</b> <small>({Math.round((x.amount / statusTotal) * 100)} %)</small></li>
+              {/each}
+            </ul>
+          {:else}{@render empty('Keine Verteilung vorhanden.')}{/if}
         </section>
+        <section class="block">
+          <h3>Wertungs-Verteilung</h3>
+          {#if det?.scoreDist.length}
+            <div class="bars" role="img" aria-label="Wertungs-Verteilung">
+              {#each det.scoreDist as x}
+                <div class="bcol" title="{x.score}: {nf.format(x.amount)}">
+                  <span class="bfill" style="height:{(x.amount / scoreMax) * 100}%"></span>
+                  <small>{x.score}</small>
+                </div>
+              {/each}
+            </div>
+          {:else}{@render empty('Keine Wertungen vorhanden.')}{/if}
+        </section>
+      {/snippet}
+
+      {#if tab === 'overview'}
+        {#if descHtml}
+          <section class="block">
+            <div class="desc">{@html descHtml}</div>
+          </section>
+        {/if}
+
+        <!-- Wo schauen: nur tatsächlich gefundene Plattformen (AniList-Streaming-Links) -->
+        <section class="block">
+          <h3>Verfügbar auf</h3>
+          {#if hits.length}
+            <div class="btnrow">
+              {#each hits as h}
+                {#if h.url}
+                  <a class="svc stream" href={h.url} target="_blank" rel="noopener" title={h.source === 'direct' ? 'Seite beim Dienst gefunden' : 'Laut AniList'}>{h.service}</a>
+                {:else}
+                  <span class="svc stream">{h.service}</span>
+                {/if}
+              {/each}
+            </div>
+          {:else if hitState === 'loading'}
+            <div class="muted-note">prüfe Verfügbarkeit…</div>
+          {:else}
+            <div class="muted-note">Auf keinem deiner Dienste gefunden.</div>
+          {/if}
+          {#if services.length}
+            <details class="manual">
+              <summary>Dienste selbst öffnen</summary>
+              <div class="btnrow">
+                {#each services as s}
+                  <button class="svc ghost" onclick={() => openService(s, m)} title={hasDirect(s) ? 'Öffnet die Serienseite, sonst die Suche' : 'Öffnet die Suche dort – ob der Titel verfügbar ist, ist nicht geprüft'}>{s.name}{hasDirect(s) ? '' : ' (Suche)'}</button>
+                {/each}
+              </div>
+            </details>
+          {/if}
+          <div class="src">Daten: AniList</div>
+        </section>
+
+        <!-- Infoseiten -->
+        {#if m.info_links && Object.keys(m.info_links).length}
+          <section class="block">
+            <h3>Infoseiten</h3>
+            <div class="btnrow">
+              {#each Object.entries(m.info_links) as [k, url]}
+                <a class="svc ghost" href={url} target="_blank" rel="noopener">{LINK_LABEL[k] ?? k}</a>
+              {/each}
+            </div>
+          </section>
+        {/if}
+
+        <section class="block">
+          <h3>Beziehungen</h3>
+          {#if relations.length}
+            <div class="rels">
+              {#each relations as r (r.id + r.relation)}
+                <a class="rel" href={alUrl(r)} target="_blank" rel="noopener">
+                  {#if r.cover}<img src={r.cover} alt="" loading="lazy" />{:else}<span class="rph"></span>{/if}
+                  <small>{REL_DE[r.relation] ?? r.relation}</small>
+                  <span class="rt">{r.title}</span>
+                </a>
+              {/each}
+            </div>
+          {:else}{@render empty('Keine Beziehungen vorhanden.')}{/if}
+        </section>
+
+        <section class="block">
+          <h3>Charaktere</h3>
+          {@render charList(8)}
+          {#if (det?.characters.length ?? 0) > 8}<button class="more" onclick={() => (tab = 'characters')}>Alle Charaktere</button>{/if}
+        </section>
+
+        {@render dists()}
+
+        <section class="block">
+          <h3>Empfehlungen</h3>
+          {#if det?.recommendations.length}
+            <div class="rels">
+              {#each det.recommendations as r (r.id)}
+                <a class="rel" href={alUrl(r)} target="_blank" rel="noopener">
+                  {#if r.cover}<img src={r.cover} alt="" loading="lazy" />{:else}<span class="rph"></span>{/if}
+                  <span class="rt">{r.title}</span>
+                  {#if r.score}<small>{r.score}%</small>{/if}
+                </a>
+              {/each}
+            </div>
+          {:else}{@render empty('Keine Empfehlungen vorhanden.')}{/if}
+        </section>
+      {:else if tab === 'characters'}
+        <section class="block">{@render charList(24)}<div class="src">Daten: AniList</div></section>
+      {:else if tab === 'staff'}
+        <section class="block">
+          {#if det?.staff.length}
+            <div class="people">
+              {#each det.staff as s (s.person.id + s.role)}
+                <div class="person">
+                  {#if s.person.image}<img src={s.person.image} alt="" loading="lazy" />{:else}<span class="pph">{s.person.name[0]}</span>{/if}
+                  <div class="pn"><b>{s.person.name}</b><small>{s.role}</small></div>
+                </div>
+              {/each}
+            </div>
+          {:else}{@render empty('Keine Mitwirkenden bei AniList.')}{/if}
+          <div class="src">Daten: AniList</div>
+        </section>
+      {:else}
+        <div class="tabdists">{@render dists()}</div>
+        <div class="src">Daten: AniList</div>
       {/if}
-
-      <!-- 🔒 Platzhalter: Status-/Score-Verteilung -->
-      <section class="block">
-        <h3>Status-Verteilung</h3>
-        <div class="placeholder">Noch keine Community-Daten importiert.</div>
-      </section>
-      <section class="block">
-        <h3>Wertungs-Verteilung</h3>
-        <div class="placeholder">Noch keine Community-Daten importiert.</div>
-      </section>
-
-      <!-- 🔒 Platzhalter: Beziehungen / Charaktere / Mitwirkende / Empfehlungen -->
-      <section class="block">
-        <h3>Beziehungen</h3>
-        <div class="placeholder">Noch nicht importiert.</div>
-      </section>
-      <section class="block">
-        <h3>Charaktere</h3>
-        <div class="placeholder">Noch nicht importiert.</div>
-      </section>
-      <section class="block">
-        <h3>Empfehlungen</h3>
-        <div class="placeholder">Noch nicht importiert.</div>
-      </section>
     </main>
   </div>
 </div>
@@ -394,10 +576,13 @@
     overflow-y: auto; overflow-x: hidden;
     background: var(--bg);
   }
+  /* oben links, unterhalb der Statusleiste (Akkuanzeige): rechts oben sitzt das Orbit-X der Host-App */
   .close {
-    position: fixed; top: 16px; right: 18px; z-index: 50;
-    width: 36px; height: 36px; border-radius: 50%; border: 0; cursor: pointer;
-    background: rgba(0, 0, 0, 0.5); color: #fff; font-size: 1rem;
+    position: fixed; z-index: 50;
+    top: calc(max(env(safe-area-inset-top, 0px), 28px) + 12px);
+    left: max(env(safe-area-inset-left, 0px), 0px); margin-left: 14px;
+    width: 44px; height: 44px; border-radius: 50%; border: 0; cursor: pointer;
+    background: rgba(0, 0, 0, 0.6); color: #fff; font-size: 1.1rem;
     backdrop-filter: blur(4px);
   }
   .close:hover { background: rgba(0, 0, 0, 0.7); }
@@ -494,13 +679,12 @@
     color: var(--text-muted); font-size: 0.86rem; font-weight: 600;
     border-bottom: 2px solid transparent; margin-bottom: -1px;
   }
-  .tab:hover:not(:disabled) { color: var(--text); }
+  .tab:hover { color: var(--text); }
   .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-  .tab:disabled { cursor: not-allowed; opacity: 0.55; }
-  .tab .lock { margin-left: 5px; font-size: 0.72rem; }
 
   .block { margin-bottom: 30px; }
   .block h3 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); font-weight: 700; margin: 0 0 12px; }
+  .desc :global(p) { margin: 0 0 0.6em; }
   .desc { margin: 0; color: var(--text); line-height: 1.65; font-size: 0.92rem; }
 
   .btnrow { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -514,6 +698,41 @@
     background: var(--surface); color: var(--text-muted); font-size: 0.84rem; text-align: center;
   }
 
+  .svc.stream { display: inline-flex; align-items: center; gap: 8px; background: var(--surface-2); color: var(--text); border: 1px solid var(--border); min-height: 36px; }
+  .svc.stream:hover { border-color: var(--accent); color: var(--accent); }
+  .svc.stream img { width: 18px; height: 18px; border-radius: 4px; object-fit: cover; }
+  .muted-note { color: var(--text-muted); font-size: 0.84rem; }
+  .manual { margin-top: 12px; }
+  .manual summary { cursor: pointer; color: var(--text-muted); font-size: 0.8rem; margin-bottom: 8px; }
+  .src { margin-top: 10px; font-size: 0.72rem; color: var(--text-muted); }
+  .more { margin-top: 10px; padding: 8px 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); color: var(--text); cursor: pointer; font-size: 0.82rem; font-weight: 600; }
+  .more:hover { border-color: var(--accent); color: var(--accent); }
+
+  .people { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+  .person { display: flex; align-items: center; gap: 10px; background: var(--surface); border-radius: var(--radius); padding: 6px; min-width: 0; }
+  .person img, .pph { width: 48px; height: 64px; border-radius: var(--radius-sm); object-fit: cover; flex: none; background: var(--surface-2); }
+  .pph { display: grid; place-items: center; color: var(--text-muted); font-weight: 600; }
+  .pn { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+  .pn.right { text-align: right; }
+  .pn b { font-size: 0.82rem; font-weight: 600; color: var(--text-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pn small, .legend small, .rel small { color: var(--text-muted); font-size: 0.72rem; }
+
+  .rels { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 14px 12px; }
+  .rel { display: flex; flex-direction: column; gap: 4px; min-width: 0; color: inherit; text-decoration: none; }
+  .rel img, .rph { width: 100%; aspect-ratio: 185 / 265; object-fit: cover; border-radius: var(--radius); background: var(--surface-2); display: block; }
+  .rel:hover .rt { color: var(--accent); }
+  .rt { font-size: 0.78rem; line-height: 1.3; color: var(--text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+  .stackbar { display: flex; height: 14px; border-radius: var(--radius-sm); overflow: hidden; background: var(--surface-2); }
+  .legend { list-style: none; margin: 10px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px 14px; font-size: 0.8rem; color: var(--text); }
+  .legend li { display: flex; align-items: center; gap: 6px; }
+  .legend i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+  .legend b { margin-left: auto; font-weight: 600; color: var(--text-strong); }
+  .bars { display: flex; align-items: flex-end; gap: 6px; height: 130px; }
+  .bcol { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; }
+  .bfill { width: 100%; background: var(--accent); border-radius: 3px 3px 0 0; min-height: 2px; }
+  .bcol small { font-size: 0.68rem; color: var(--text-muted); }
+
   /* ---------- Bearbeiten-Modal ---------- */
   .modal-scrim { position: fixed; inset: 0; z-index: 60; background: rgba(0, 0, 0, 0.6); }
   .modal {
@@ -524,7 +743,7 @@
   }
   .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 0; }
   .modal-head h2 { margin: 0; font-size: 1.05rem; color: var(--text-strong); font-weight: 600; }
-  .close.sm { position: static; width: 30px; height: 30px; background: var(--surface-2); color: var(--text-muted); backdrop-filter: none; }
+  .close.sm { position: static; margin: 0; width: 40px; height: 40px; background: var(--surface-2); color: var(--text-muted); backdrop-filter: none; }
   .close.sm:hover { color: var(--text); background: var(--surface-2); }
   .modal-title { padding: 2px 20px 0; color: var(--accent); font-size: 0.86rem; font-weight: 600; }
   .modal-body { padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; }

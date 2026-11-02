@@ -87,6 +87,16 @@ CREATE TABLE IF NOT EXISTS services (
 
 CREATE TABLE IF NOT EXISTS meta_kv (key TEXT PRIMARY KEY, value TEXT);
 
+-- Wo ein Titel nachweislich schaubar ist (nur Treffer; vom Geraet geprueft: Direktlink aufloesbar bzw. AniList-Streaming-Link)
+CREATE TABLE IF NOT EXISTS streaming (
+  media_id   INTEGER NOT NULL REFERENCES media(id) ON DELETE CASCADE,
+  service    TEXT NOT NULL,
+  url        TEXT,
+  source     TEXT,             -- 'direct' (Schema-Link aufgeloest) | 'anilist'
+  checked_at TEXT DEFAULT (datetime('now')),
+  PRIMARY KEY (media_id, service)
+);
+
 -- Medientyp-Configs (= der Dropdown-Umschalter neben dem Logo). hidden=1 → nur nach H-Entsperren.
 CREATE TABLE IF NOT EXISTS media_types (
   slug        TEXT PRIMARY KEY,
@@ -151,7 +161,7 @@ def init_db() -> None:
     # AniList-Zusatzdaten (Import ueber /sync/anilist/import) — rein additiv
     for tbl, col, typ in [
         ("media", "season", "TEXT"), ("media", "country", "TEXT"), ("media", "source", "TEXT"),
-        ("media", "studios", "TEXT"), ("media", "oadb_id", "TEXT"), ("media", "kitsu_id", "INTEGER"), ("media", "next_airing_ep", "INTEGER"), ("media", "next_airing_at", "INTEGER"),
+        ("media", "studios", "TEXT"), ("media", "oadb_id", "TEXT"), ("services", "search_schema", "TEXT"), ("media", "kitsu_id", "INTEGER"), ("media", "next_airing_ep", "INTEGER"), ("media", "next_airing_at", "INTEGER"),
         ("user_entry", "started_at", "TEXT"), ("user_entry", "completed_at", "TEXT"), ("user_entry", "rewatches", "INTEGER"),
     ]:
         try:
@@ -579,12 +589,12 @@ class SqliteRepo(MediaRepo):
             con.close()
 
     def add_service(self, name: str, url_schema: str, logo: Optional[str] = None,
-                    config_slug: str = "anime", space: str = "normal") -> int:
+                    config_slug: str = "anime", space: str = "normal", search_schema: Optional[str] = None) -> int:
         con = connect()
         try:
             cur = con.execute(
-                "INSERT INTO services (name, url_schema, logo, space, config_slug, enabled) VALUES (?,?,?,?,?,1)",
-                (name, url_schema, logo, space, config_slug),
+                "INSERT INTO services (name, url_schema, search_schema, logo, space, config_slug, enabled) VALUES (?,?,?,?,?,?,1)",
+                (name, url_schema, search_schema, logo, space, config_slug),
             )
             con.commit()
             return cur.lastrowid

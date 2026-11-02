@@ -31,12 +31,14 @@ def export_dict() -> dict:
         ).fetchall()
         meta = {r["key"]: r["value"] for r in con.execute("SELECT key, value FROM meta_kv")
                 if not r["key"].startswith(SKIP_META)}
+        streaming = [dict(r) for r in con.execute(
+            "SELECT m.oadb_id, m.anilist_id, m.mal_id, s.service, s.url, s.source FROM streaming s JOIN media m ON m.id=s.media_id")]
         services = [dict(r) for r in con.execute("SELECT * FROM services")]
         types = [dict(r) for r in con.execute("SELECT * FROM media_types")]
     finally:
         con.close()
     return {"orbitlist_export": 2, "entries": [dict(r) for r in rows], "meta": meta,
-            "services": services, "media_types": types}
+            "services": services, "media_types": types, "streaming": streaming}
 
 
 def _find(con, e: dict):
@@ -98,6 +100,12 @@ def import_text(text: str) -> dict:
             if patch:
                 repo.set_user_entry(mid, patch)
             matched += 1
+        for st in data.get("streaming") or []:
+            mid = _find(con, st)
+            if mid and st.get("service"):
+                con.execute("INSERT OR REPLACE INTO streaming (media_id, service, url, source) VALUES (?,?,?,?)",
+                            (mid, st["service"], st.get("url"), st.get("source")))
+        con.commit()
     finally:
         con.close()
     return {"entries": matched + missing, "matched": matched, "not_in_catalog": missing}

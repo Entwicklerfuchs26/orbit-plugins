@@ -23,6 +23,7 @@ function jsonBody(body: unknown): RequestInit {
 
 export type Media = {
   id: number
+  anilist_id?: number | null
   title: string
   title_romaji?: string
   title_english?: string
@@ -42,6 +43,7 @@ export type Media = {
   dub_de?: number
   dub_tier?: string
   info_links?: Record<string, string>
+  progress?: number
   rating?: number
   note?: string
   watch_status?: string
@@ -77,8 +79,15 @@ export const api = {
   stats: () => j('/stats'),
   anime: (q: Record<string, unknown> = {}) => j('/anime' + qs(q)),
   get: (id: number) => j('/anime/' + id),
-  patchEntry: (id: number, patch: Record<string, unknown>) =>
-    j(`/media/${id}/entry`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(patch) }),
+  patchEntry: async (id: number, patch: Record<string, unknown>) => {
+    const r = await j(`/media/${id}/entry`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(patch) })
+    // Tracking-Aenderung (Status/Folge) -> Verfuegbarkeit im Hintergrund pruefen und speichern
+    if ('watch_status' in patch || 'progress' in patch) import('./lib/streaming').then((x) => x.refreshStreaming(id)).catch(() => {})
+    return r
+  },
+  streamingOf: (id: number) => j(`/media/${id}/streaming`),
+  putStreaming: (id: number, items: unknown[]) => j(`/media/${id}/streaming`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ items }) }),
+  streamingMap: (ids: number[]) => j('/streaming' + qs({ ids: ids.join(',') })),
   reorderFavorites: (ids: number[]) => j('/favorites/reorder', jsonBody({ ids })),
   services: (config = 'anime') => j('/services' + qs({ config })),
   addService: (body: Record<string, unknown>) => j('/services', jsonBody(body)),

@@ -69,6 +69,24 @@ def _info_links(ids: dict, website: str | None) -> dict:
     return links
 
 
+# Stufen aus MyDubList; fuer die Mehrsprachen-Liste zaehlt wie bisher "high" und besser
+DUB_LANG_TIERS = ("very-high", "high")
+DUB_ATTRIBUTION = "Dub data © MyDubList - https://mydublist.com - (CC BY 4.0)"
+
+
+def _dub_fields(r: dict) -> dict:
+    """Feld `dubs` der offenen Datenbank → dub_de / dub_tier / dub_languages (leer, wenn keine Angabe)."""
+    langs = ((r.get("dubs") or {}).get("languages")) or {}
+    if not langs:
+        return {}
+    de = langs.get("german")
+    return {
+        "dub_de": 1 if de else 0,
+        "dub_tier": de,
+        "dub_languages": sorted(l for l, t in langs.items() if t in DUB_LANG_TIERS),
+    }
+
+
 def _row_from_record(r: dict) -> dict:
     ids = r.get("ids") or {}
     t = r.get("title") or {}
@@ -103,6 +121,7 @@ def _row_from_record(r: dict) -> dict:
         "description_en": syn_text,
         "info_links": _info_links(ids, r.get("website")),
         "search_blob": " | ".join(x.lower() for x in titles + syn if x),
+        **_dub_fields(r),
     }
 
 
@@ -145,7 +164,7 @@ def run(jsonl: Path = DEFAULT_JSONL, db: Path | None = None, progress=print) -> 
     by_mal = {k: v for k, v in by_mal.items() if mal_cnt[k] == 1}
 
     claimed: set[int] = set()
-    stats = {"matched": 0, "created": 0, "created_h": 0, "skipped_dup": 0, "status_refreshed": 0}
+    stats = {"matched": 0, "created": 0, "created_h": 0, "skipped_dup": 0, "status_refreshed": 0, "dubs": 0}
 
     fill_cols = ["title_romaji", "title_english", "title_native", "format", "episodes", "season_year", "season",
                  "description_en", "mal_id", "anisearch_id", "kitsu_id"]
@@ -155,6 +174,7 @@ def run(jsonl: Path = DEFAULT_JSONL, db: Path | None = None, progress=print) -> 
     for line in open(jsonl, encoding="utf-8"):
         rec = json.loads(line)
         row = _row_from_record(rec)
+        stats["dubs"] += "dub_de" in row
         mid = by_oadb.get(row["oadb_id"])
         if mid is None and row["anilist_id"]:
             mid = by_ani.get(row["anilist_id"])
@@ -176,6 +196,11 @@ def run(jsonl: Path = DEFAULT_JSONL, db: Path | None = None, progress=print) -> 
                 if row.get(c) and not cur[c] or (row.get(c) and cur[c] in ("[]", "{}")):
                     sets.append(f"{c}=?")
                     vals.append(_j(row[c]))
+            # Synchro-Angaben sind eine Momentaufnahme der Quelle → immer aktualisieren (nur wenn die Quelle etwas sagt)
+            for c in ("dub_de", "dub_tier", "dub_languages"):
+                if c in row:
+                    sets.append(f"{c}=?")
+                    vals.append(_j(row[c]))
             # Status nur nachziehen, solange er sich aendern kann (laufend / angekuendigt)
             if row["status"] and cur["status"] in ("RELEASING", "NOT_YET_RELEASED", None) and row["status"] != cur["status"]:
                 sets.append("status=?")
@@ -190,8 +215,10 @@ def run(jsonl: Path = DEFAULT_JSONL, db: Path | None = None, progress=print) -> 
         else:
             cols = ["oadb_id", "space", "media_type", "is_adult", "anilist_id", "mal_id", "anisearch_id", "kitsu_id",
                     "title_romaji", "title_english", "title_native", "synonyms", "format", "status", "episodes",
-                    "season_year", "season", "genres", "tags", "studios", "description_en", "info_links", "search_blob"]
+                    "season_year", "season", "genres", "tags", "studios", "description_en", "info_links", "search_blob",
+                    "dub_de", "dub_tier", "dub_languages"]
             vals = [_j(row.get(c)) if c != "media_type" else "anime" for c in cols]
+            vals[cols.index("dub_de")] = row.get("dub_de", 0)
             try:
                 cur = con.execute(f"INSERT INTO media ({', '.join(cols)}) VALUES ({', '.join('?' for _ in cols)})", vals)
             except sqlite3.IntegrityError:
@@ -207,6 +234,8 @@ def run(jsonl: Path = DEFAULT_JSONL, db: Path | None = None, progress=print) -> 
             progress(f"  {n} Titel verarbeitet")
 
     con.execute("INSERT OR REPLACE INTO meta_kv(key, value) VALUES ('last_catalog_import', datetime('now'))")
+    if stats["dubs"]:
+        con.execute("INSERT OR REPLACE INTO meta_kv(key, value) VALUES ('dub_attribution', ?)", (DUB_ATTRIBUTION,))
     con.commit()
 
     after = {

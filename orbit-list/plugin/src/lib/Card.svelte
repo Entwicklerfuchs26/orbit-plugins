@@ -1,26 +1,26 @@
 <script lang="ts">
   import type { Media } from '../api'
+  import Cover from './Cover.svelte'
+  import { lightOf } from './anilist.svelte'
   let { media, list = false, onopen }: { media: Media; list?: boolean; onopen: (m: Media) => void } = $props()
+  // Wertung aus AniList (Laufzeit), falls der Katalog keine hat
+  const score = $derived(media.average_score ?? lightOf(media.anilist_id)?.score)
 </script>
 
 <button class="card" class:list onclick={() => onopen(media)}>
   <div class="cover">
-    {#if media.cover_url}
-      <img src={media.cover_url} alt="" loading="lazy" />
-    {:else}
-      <div class="ph">{media.title?.[0] ?? '?'}</div>
-    {/if}
+    <Cover {media} />
     {#if media.dub_de}<span class="badge dub" title="Deutscher Dub vorhanden">DE</span>{/if}
     {#if media.rating}<span class="badge rat" title="Deine Wertung">★ {media.rating}</span>{/if}
     {#if media.collection === 'owned'}<span class="badge own" title="Im Regal">▣</span>{/if}
-    {#if media.average_score}<span class="badge score" title="Durchschnitts-Wertung">{media.average_score}%</span>{/if}
+    {#if score}<span class="badge score" title="Durchschnitts-Wertung (AniList)">{score}%</span>{/if}
   </div>
   <div class="meta">
     <div class="title">{media.title}</div>
     <div class="sub">
       {#if media.season_year}<span>{media.season_year}</span>{/if}
       {#if media.format}<span>{media.format}</span>{/if}
-      {#if list && media.average_score}<span class="score-txt">{media.average_score}%</span>{/if}
+      {#if list && score}<span class="score-txt">{score}%</span>{/if}
     </div>
     {#if list && media.genres}<div class="genres">{media.genres.slice(0, 4).join(' · ')}</div>{/if}
   </div>
@@ -51,24 +51,6 @@
     transform: translateY(-2px);
     box-shadow: var(--shadow);
   }
-  .cover img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: filter 0.18s ease;
-  }
-  .card:hover .cover img { filter: brightness(1.06); }
-  .ph {
-    width: 100%;
-    height: 100%;
-    display: grid;
-    place-items: center;
-    font-size: 2rem;
-    font-weight: 600;
-    color: var(--text-muted);
-  }
-
   .badge {
     position: absolute;
     font-size: 0.72rem;

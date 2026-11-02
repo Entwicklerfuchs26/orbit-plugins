@@ -251,6 +251,7 @@ def services(config: str = "anime") -> list:
 class ServiceBody(BaseModel):
     name: str
     url_schema: str
+    search_schema: Optional[str] = None  # Suche des Dienstes (Rueckfall, wenn url_schema ein Direktlink mit {slug} ist)
     logo: Optional[str] = None
     config: str = "anime"
     space: str = "normal"
@@ -258,7 +259,7 @@ class ServiceBody(BaseModel):
 
 @app.post("/services")
 def add_service(body: ServiceBody) -> dict:
-    return {"id": repo.add_service(body.name, body.url_schema, body.logo, body.config, body.space)}
+    return {"id": repo.add_service(body.name, body.url_schema, body.logo, body.config, body.space, body.search_schema)}
 
 
 @app.delete("/services/{sid}")
@@ -547,6 +548,30 @@ def ai_search(
 
 
 # ------------------------------------------------------------- Verfuegbarkeit
+class StreamingBody(BaseModel):
+    items: list[dict]
+
+
+@app.get("/media/{media_id}/streaming")
+def media_streaming(media_id: int) -> dict:
+    from . import streaming
+    return {"items": streaming.get_map([media_id]).get(media_id, [])}
+
+
+@app.put("/media/{media_id}/streaming")
+def media_streaming_set(media_id: int, body: StreamingBody) -> dict:
+    from . import streaming
+    return {"saved": streaming.set_items(media_id, body.items)}
+
+
+@app.get("/streaming")
+def streaming_map(ids: str = Query("")) -> dict:
+    """Treffer fuer mehrere Titel auf einmal (Wunschliste/Listen): ?ids=1,2,3"""
+    from . import streaming
+    want = [int(x) for x in ids.split(",") if x.strip().isdigit()][:500]
+    return {str(k): v for k, v in streaming.get_map(want).items()}
+
+
 @app.get("/media/{media_id}/availability")
 def media_availability(media_id: int) -> dict:
     m = repo.get_media(media_id)

@@ -1,9 +1,10 @@
 <script lang="ts">
   import { api as defaultApi } from '../api'
+  import { getCredits, type Credits } from './anilist'
 
   let { api = defaultApi }: { api?: typeof defaultApi } = $props()
 
-  type Page = 'overview' | 'genres' | 'tags' | 'studios'
+  type Page = 'overview' | 'genres' | 'tags' | 'studios' | 'voice' | 'staff'
   let page = $state<Page>('overview')
   let stats = $state<any>(null)
   let uname = $state('')
@@ -23,14 +24,52 @@
     if (page === 'tags' && !tags.length) api.statsTags().then((d) => (tags = d.items)).catch(() => {})
   })
 
-  // Sidebar: aktive Punkte + deaktivierte 🔒 (brauchen zusätzlichen Sync)
+  // Sidebar-Seiten
   const SIDE: { id: Page; label: string }[] = [
     { id: 'overview', label: 'Übersicht' },
     { id: 'genres', label: 'Genres' },
     { id: 'tags', label: 'Tags' },
     { id: 'studios', label: 'Studios' },
+    { id: 'voice', label: 'Sprecher' },
+    { id: 'staff', label: 'Staff' },
   ]
-  const SIDE_LOCKED = ['Voice Actors', 'Staff']
+  // Sprecher/Staff: aus den Titeln der eigenen Liste, per AniList (Laufzeit-Abruf, gecacht)
+  let credits = $state<Credits[]>([])
+  let credState = $state<'idle' | 'loading' | 'done' | 'error'>('idle')
+  let credProg = $state({ done: 0, total: 0 })
+  let credTried = false
+  async function loadCredits() {
+    if (credTried) return
+    credTried = true
+    credState = 'loading'
+    try {
+      const d = await api.anime({ watch_status: 'all', sort: 'recent', limit: 100 })
+      const ids = (d?.items ?? []).map((m: any) => m.anilist_id).filter(Boolean)
+      credProg = { done: 0, total: ids.length }
+      credits = await getCredits(ids, (done, total) => (credProg = { done, total }))
+      credState = 'done'
+    } catch {
+      credState = 'error'
+    }
+  }
+  $effect(() => { if (page === 'voice' || page === 'staff') loadCredits() })
+  type Ranked = { id: number; name: string; image?: string; n: number; roles: string[] }
+  function rankPeople(kind: 'voice' | 'staff'): Ranked[] {
+    const m = new Map<number, Ranked>()
+    for (const c of credits) {
+      const rows = kind === 'voice' ? c.actors.map((p) => ({ p, role: '' })) : c.staff.map((e) => ({ p: e.person, role: e.role }))
+      const seen = new Set<number>()
+      for (const { p, role } of rows) {
+        let r = m.get(p.id)
+        if (!r) m.set(p.id, (r = { id: p.id, name: p.name, image: p.image, n: 0, roles: [] }))
+        if (!seen.has(p.id)) { r.n++; seen.add(p.id) }
+        if (role && !r.roles.includes(role) && r.roles.length < 2) r.roles.push(role)
+      }
+    }
+    return [...m.values()].sort((a, b) => b.n - a.n || a.name.localeCompare(b.name)).slice(0, 60)
+  }
+  let people = $derived(page === 'voice' || page === 'staff' ? rankPeople(page) : [])
+
   const RANK: [typeof rankBy, string][] = [['count', 'Anzahl'], ['mean_score', 'Ø Wertung'], ['hours', 'Stunden']]
 
   const FORMAT: Record<string, string> = {
@@ -144,11 +183,6 @@
     <div class="side-head">Anime-Statistik</div>
     {#each SIDE as { id, label }}
       <button class:on={page === id} onclick={() => (page = id)}>{label}</button>
-    {/each}
-    {#each SIDE_LOCKED as label}
-      <button class="locked" disabled title="Braucht zusätzlichen Sync">
-        <span>{label}</span><span class="lock">🔒</span>
-      </button>
     {/each}
   </aside>
 
@@ -298,6 +332,34 @@
         {/if}
       </section>
 
+    <!-- ══════════════ SPRECHER / STAFF ══════════════ -->
+    {:else if page === 'voice' || page === 'staff'}
+      <div class="bhead card-head"><h2>{page === 'voice' ? 'Sprecher (japanisch)' : 'Staff'}</h2></div>
+      {#if credState === 'loading'}
+        <div class="loading">lädt von AniList… {credProg.done} / {credProg.total} Titel</div>
+      {:else if credState === 'error'}
+        <div class="empty">AniList ist gerade nicht erreichbar — später erneut öffnen.</div>
+      {:else if people.length === 0}
+        <div class="empty">Noch keine Daten — füge Titel mit AniList-ID zu deiner Liste hinzu.</div>
+      {:else}
+        <div class="grid">
+          {#each people as x, i (x.id)}
+            <div class="gcard">
+              <div class="gtop">
+                <span class="rank">#{i + 1}</span>
+                <span class="gname" title={x.name}>{x.name}</span>
+              </div>
+              <div class="gstats">
+                <div class="gstat"><span class="gv">{num(x.n)}</span><span class="gl">Titel in deiner Liste</span></div>
+              </div>
+              {#if x.roles.length}<div class="gfoot">{x.roles.join(' · ')}</div>{/if}
+            </div>
+          {/each}
+        </div>
+        {#if credProg.done < credProg.total}<p class="note">Teilweise geladen ({credProg.done} / {credProg.total}) — AniList-Limit, beim nächsten Öffnen geht es weiter.</p>{/if}
+        <p class="note">Daten: AniList · berücksichtigt bis zu 100 zuletzt aktualisierte Titel deiner Liste.</p>
+      {/if}
+
     <!-- ══════════════ GENRES / TAGS ══════════════ -->
     {:else}
       {@const list = page === 'genres' ? genres : page === 'studios' ? studios : tags}
@@ -310,7 +372,7 @@
 
       {#if list.length === 0}
         <div class="empty">
-          {page === 'tags' || page === 'studios' ? 'Noch nicht importiert — Einstellungen → Import → „Von AniList importieren“.' : 'Noch keine Daten.'}
+          Noch keine Daten — sie entstehen aus den Titeln deiner Liste.
         </div>
       {:else}
         <div class="grid">
@@ -355,8 +417,7 @@
   .side button { text-align: left; padding: 10px 14px; border-radius: var(--radius); border: 0; background: transparent; color: var(--text-muted); cursor: pointer; font-weight: 600; font-size: 0.86rem; transition: background 0.15s, color 0.15s; }
   .side button:hover:not(:disabled) { color: var(--text); background: var(--surface-2); }
   .side button.on { background: var(--accent); color: var(--on-accent); }
-  .side button.locked { display: flex; align-items: center; justify-content: space-between; opacity: 0.45; cursor: not-allowed; }
-  .side button.locked .lock { font-size: 0.78rem; }
+  .note { color: var(--text-muted); font-size: 0.76rem; margin: 14px 2px 0; }
 
   .content { min-width: 0; }
   .loading, .empty { text-align: center; color: var(--text-muted); padding: 50px; background: var(--surface); border-radius: var(--radius); }
