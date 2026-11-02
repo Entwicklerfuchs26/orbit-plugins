@@ -335,6 +335,29 @@
           "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/56f4f4c9bfb45a5c0332e0e4291946cb82cb8c98/orbit-launcher/main.js"
         }
       ]
+    },
+    {
+      "id": "anime-liste",
+      "name": "Anime-Liste (Test)",
+      "description": "Anime-Tracker mit eigener Datenbank und KI-Suche. Beim ersten Öffnen verbindest du dein eigenes Backend (Adresse:Port + Passwort) — das Backend kannst du selbst installieren.",
+      "author": "Entwicklerfuchs",
+      "version": "0.1.0",
+      "type": "gui",
+      "platforms": [
+        "desktop",
+        "mobile",
+        "web"
+      ],
+      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/2909aedea49d35cfb6706c35778052bfa2b5fe91/test/anime-liste/main.js",
+      "channel": "test",
+      "versions": [
+        {
+          "label": "0.1.0+2909aed",
+          "version": "0.1.0",
+          "built": "2909aed",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/2909aedea49d35cfb6706c35778052bfa2b5fe91/test/anime-liste/main.js"
+        }
+      ]
     }
   ]
 }
