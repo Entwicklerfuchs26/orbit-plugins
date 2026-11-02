@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Anime-Liste Tracker",
+  "version": "0.1.0",
+  "description": "Meldet die gerade laufende Folge (Crunchyroll / aniworld) an das lokale Anime-Liste-Backend. Liest nur den eigenen offenen Tab.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "*://*.crunchyroll.com/*",
+    "*://aniworld.to/*",
+    "http://127.0.0.1/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://*.crunchyroll.com/*", "*://aniworld.to/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

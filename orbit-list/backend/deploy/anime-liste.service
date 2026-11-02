@@ -1,0 +1,19 @@
+# systemd-Unit (Vorlage) — Backend als Dienst auf nexus.
+# Kopieren nach ~/.config/systemd/user/ und: systemctl --user enable --now anime-liste
+[Unit]
+Description=Anime-Liste Backend
+After=network.target
+
+[Service]
+WorkingDirectory=%h/projects/anime-liste/backend
+ExecStart=%h/projects/anime-liste/backend/run.sh
+Environment=PORT=8787
+# Secrets (Jonas, via sops/agenix bereitstellen):
+# Environment=ANILIST_TOKEN=...
+# Environment=JELLYFIN_URL=http://jellyfin.local:8096
+# Environment=JELLYFIN_TOKEN=...
+# Environment=TMDB_API_KEY=...
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

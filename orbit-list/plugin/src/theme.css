@@ -1,0 +1,58 @@
+/* Orbitlist-Theme — exakt an AniList angelehnt (Tokens live aus anilist.co ausgelesen 2026-11-01).
+   Standard = AniList-Hell (Default der Seite). Dunkel = AniList-Nachtmodus via data-theme='dark'. */
+.ol-root {
+  --accent: #e8503a;          /* Jonas' AniList = Rot (Profile Color). Überschreibbar per Farbwähler. */
+  --accent-2: #8b5cf6;        /* weicher Violett-Akzent (H / Verläufe) */
+  --accent-dim: color-mix(in srgb, var(--accent) 78%, #000);  /* folgt dem Akzent automatisch */
+  --on-accent: #fff;          /* Textfarbe auf Akzent-Flächen (hell+dunkel gleich) */
+  --good: #7bd555;            /* AniList green 123,213,85 (Scores) */
+  --warn: #f7a60c;
+  --bad: #e85d75;            /* AniList red 232,93,117 */
+  --gold: #f7c948;           /* eigene Wertung (Stern-Badge) */
+  --radius: 4px;             /* AniList nutzt durchgehend 4px */
+  --radius-sm: 3px;
+  --maxw: 1140px;            /* AniList .container */
+  --pad: 50px;               /* AniList Seiten-Padding */
+
+  /* Hell (AniList-Default) */
+  --bg: #edf1f5;             /* 237,241,245 */
+  --surface: #fafafa;        /* 250,250,250 Karten/Widgets */
+  --surface-2: #ebeef2;      /* Insets / grey-dark */
+  --surface-3: #f6f8fb;      /* foreground-blue */
+  --border: #e2e7ee;
+  --text: #5c728a;           /* 92,114,138 Haupttext */
+  --text-strong: #44515f;    /* Überschriften */
+  --text-muted: #8c99a8;     /* 146,153,161 */
+  --nav: #fafafa;
+  --shadow: 0 6px 12px rgba(49, 54, 68, 0.12);
+  --shadow-sm: 0 2px 5px rgba(49, 54, 68, 0.1);
+}
+.ol-root[data-theme='dark'] {
+  /* Dunkel (AniList-Nachtmodus) */
+  --bg: #0b1622;             /* 11,22,34 */
+  --surface: #151f2e;        /* 21,31,46 */
+  --surface-2: #1f2b3d;
+  --surface-3: #16202e;
+  --border: #273449;
+  --text: #9fadbd;           /* AniList dark Haupttext */
+  --text-strong: #e6edf5;
+  --text-muted: #6f7d8d;
+  --nav: #151f2e;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+/* Alles auf .ol-root begrenzt, damit das Plugin das Orbit-Host-Layout nicht beeinflusst. */
+.ol-root, .ol-root * { box-sizing: border-box; }
+.ol-root {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Overpass', Roboto, -apple-system, BlinkMacSystemFont, 'Segoe UI', Ubuntu, sans-serif;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100%;
+}
+.ol-root a { color: var(--accent); text-decoration: none; }
+.ol-root ::-webkit-scrollbar { width: 10px; height: 10px; }
+.ol-root ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 6px; }
+.ol-root ::-webkit-scrollbar-track { background: transparent; }
+.ol-root button { font-family: inherit; }

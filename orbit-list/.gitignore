@@ -1,0 +1,16 @@
+# Python
+backend/.venv/
+__pycache__/
+*.pyc
+# Daten / DB (werden importiert, nicht versioniert)
+backend/data/
+*.db
+*.db-wal
+*.db-shm
+# Node / Plugin
+plugin/node_modules/
+plugin/dist/
+plugin/.svelte-kit/
+# Logs / Tmp
+*.log
+.DS_Store

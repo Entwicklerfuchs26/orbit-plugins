@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+httpx
+sqlite-vec
+pydantic
+mcp<2
+jsonschema

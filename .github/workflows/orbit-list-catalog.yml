@@ -1,0 +1,25 @@
+name: orbit-list-catalog
+# Baut täglich aus der offenen Datenbank (AnimeDB) die Katalog-Datei für das eingebaute Backend des Plugins.
+on:
+  schedule: [{cron: "17 6 * * *"}]
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths: [orbit-list/backend/app/slim.py, orbit-list/backend/app/catalog.py, .github/workflows/orbit-list-catalog.yml]
+permissions:
+  contents: write
+jobs:
+  catalog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: curl -fL -o anime.jsonl https://github.com/Entwicklerfuchs26/AnimeDB/releases/latest/download/anime.jsonl
+      - run: cd orbit-list/backend && python -m app.slim ../../anime.jsonl ../../catalog.db.gz
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: orbit-list-catalog
+          name: Katalog (aktuell)
+          body: Anime-Katalog für das eingebaute Backend (ohne Nutzerdaten), täglich aus AnimeDB gebaut. Daten ODbL 1.0, siehe AnimeDB.
+          files: catalog.db.gz
