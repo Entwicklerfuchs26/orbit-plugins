@@ -178,6 +178,8 @@ function gql(query: string, variables: Record<string, unknown>): Promise<any> {
 // ---------------------------------------------------------------- Leichte Daten (Karten)
 
 const Q_LIGHT = `query($ids:[Int],$n:Int){Page(perPage:$n){media(id_in:$ids,type:ANIME){id averageScore popularity bannerImage coverImage{large color}}}}`
+// Titel ohne AniList-ID (viele H-Titel) werden ueber die MAL-ID gefunden. Schluessel: AniList-ID positiv, MAL-ID negativ.
+const Q_LIGHT_MAL = `query($ids:[Int],$n:Int){Page(perPage:$n){media(idMal_in:$ids,type:ANIME){id idMal averageScore popularity bannerImage coverImage{large color}}}}`
 
 function toLight(m: any): Light {
   return {
@@ -219,23 +221,29 @@ async function flushLight() {
   flushTimer = null
   const waiters = lightWaiters
   lightWaiters = new Map()
-  const ids = [...waiters.keys()]
-  for (let i = 0; i < ids.length; i += 50) {
-    const part = ids.slice(i, i + 50)
-    let got = new Map<number, Light>()
+  const keys = [...waiters.keys()]
+  const jobs: { query: string; keys: number[]; mal: boolean }[] = []
+  const pos = keys.filter((k) => k > 0), neg = keys.filter((k) => k < 0)
+  for (let i = 0; i < pos.length; i += 50) jobs.push({ query: Q_LIGHT, keys: pos.slice(i, i + 50), mal: false })
+  for (let i = 0; i < neg.length; i += 50) jobs.push({ query: Q_LIGHT_MAL, keys: neg.slice(i, i + 50), mal: true })
+  for (const job of jobs) {
+    const got = new Map<number, Light>()
     try {
-      const d = await gql(Q_LIGHT, { ids: part, n: part.length })
-      for (const m of d?.Page?.media || []) got.set(m.id, toLight(m))
-      for (const id of part) {
-        const v = got.get(id)
-        if (v) await cachePut('l:' + id, v)
-        else failedUntil.set(id, Date.now() + 6 * 3600e3) // AniList kennt die ID nicht
+      const d = await gql(job.query, { ids: job.keys.map((k) => Math.abs(k)), n: job.keys.length })
+      for (const m of d?.Page?.media || []) {
+        const key = job.mal ? (m.idMal ? -m.idMal : 0) : m.id
+        if (key) got.set(key, toLight(m))
+      }
+      for (const k of job.keys) {
+        const v = got.get(k)
+        if (v) await cachePut('l:' + k, v)
+        else failedUntil.set(k, Date.now() + 6 * 3600e3) // AniList kennt die ID nicht
       }
     } catch (e: any) {
       const back = e?.status === 429 ? Math.max(30e3, blockedUntil - Date.now()) : 60e3
-      for (const id of part) failedUntil.set(id, Date.now() + back)
+      for (const k of job.keys) failedUntil.set(k, Date.now() + back)
     }
-    for (const id of part) for (const w of waiters.get(id) || []) w(got.get(id) ?? null)
+    for (const k of job.keys) for (const w of waiters.get(k) || []) w(got.get(k) ?? null)
   }
 }
 
@@ -300,7 +308,7 @@ export function getDetail(id: number | null | undefined): Promise<Detail | null>
     const c = await cacheGet('d:' + id)
     if (c && Date.now() - c.at < TTL_DETAIL) return c.v as Detail
     try {
-      const d = await gql(Q_DETAIL, { id })
+      const d = await gql(id < 0 ? Q_DETAIL.replace('Media(id:$id', 'Media(idMal:$id') : Q_DETAIL, { id: Math.abs(id) })
       if (!d?.Media) return (c?.v as Detail) ?? null
       const v = toDetail(d.Media)
       await cachePut('d:' + id, v)

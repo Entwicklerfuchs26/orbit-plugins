@@ -6,6 +6,10 @@ import { api } from '../api'
 const store = $state<Record<number, Light>>({})
 const asked = new Set<number>()
 
+/** Schluessel fuer AniList-Abrufe: AniList-ID, sonst negative MAL-ID (z. B. viele H-Titel), sonst null. */
+export const lightKey = (m: { anilist_id?: number | null; mal_id?: number | null }): number | null =>
+  m.anilist_id ?? (m.mal_id ? -m.mal_id : null)
+
 /** Bereits geladene leichte Daten (reaktiv) oder undefined. */
 export function lightOf(id?: number | null): Light | undefined {
   return id ? store[id] : undefined
@@ -13,11 +17,11 @@ export function lightOf(id?: number | null): Light | undefined {
 
 /** Daten fuer eine ID anfordern (einmal pro Sitzung; Zwischenspeicher zuerst, dann gebuendelt per Netz). */
 // Geladene Wertungen im Katalog zwischenspeichern (Sortierung nach Wertung), gebuendelt
-let pending: { anilist_id: number; score: number }[] = []
+let pending: { anilist_id?: number; mal_id?: number; score: number }[] = []
 let flushT: any = null
 function queueScore(id: number, score?: number) {
   if (!score) return
-  pending.push({ anilist_id: id, score })
+  pending.push(id > 0 ? { anilist_id: id, score } : { mal_id: -id, score })
   clearTimeout(flushT)
   flushT = setTimeout(() => {
     const batch = pending.splice(0, 500)

@@ -4,7 +4,7 @@
   const COUNTRY_DE: Record<string, string> = { JP: 'Japan', CN: 'China', KR: 'Südkorea', TW: 'Taiwan' }
   import { api, type Media } from '../api'
   import { getDetail, safeHtml, type Detail } from './anilist'
-  import { lightOf, want } from './anilist.svelte'
+  import { lightOf, want, lightKey } from './anilist.svelte'
   import { openService, hasDirect } from './services'
   import { computeHits, type Hit } from './streaming'
 
@@ -105,7 +105,7 @@
 
   // --- AniList-Laufzeitdaten (Cover, Banner, Charaktere, Beziehungen, Streaming …) ---------------
   // Kommen erst auf dem Gerät per anilist_id; bis dahin / ohne Netz Platzhalter bzw. leere Zustände.
-  const aid = $derived(media.anilist_id ?? null)
+  const aid = $derived(lightKey(media))
   $effect(() => { want(aid) })
   const art = $derived(lightOf(aid))
   const cover = $derived(m.cover_url || art?.cover)

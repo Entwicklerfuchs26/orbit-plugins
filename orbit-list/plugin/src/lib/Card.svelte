@@ -1,10 +1,10 @@
 <script lang="ts">
   import type { Media } from '../api'
   import Cover from './Cover.svelte'
-  import { lightOf } from './anilist.svelte'
+  import { lightOf, lightKey } from './anilist.svelte'
   let { media, list = false, onopen }: { media: Media; list?: boolean; onopen: (m: Media) => void } = $props()
   // Wertung aus AniList (Laufzeit), falls der Katalog keine hat
-  const score = $derived(media.average_score ?? lightOf(media.anilist_id)?.score)
+  const score = $derived(media.average_score ?? lightOf(lightKey(media))?.score)
 </script>
 
 <button class="card" class:list onclick={() => onopen(media)}>

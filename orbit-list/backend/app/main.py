@@ -575,9 +575,13 @@ def put_scores(body: ScoresBody) -> dict:
     try:
         n = 0
         for it in body.items[:500]:
-            aid, sc = it.get("anilist_id"), it.get("score")
-            if isinstance(aid, int) and isinstance(sc, (int, float)) and 0 < sc <= 100:
+            aid, mal, sc = it.get("anilist_id"), it.get("mal_id"), it.get("score")
+            if not (isinstance(sc, (int, float)) and 0 < sc <= 100):
+                continue
+            if isinstance(aid, int):
                 n += con.execute("UPDATE media SET average_score=? WHERE anilist_id=?", (int(sc), aid)).rowcount
+            elif isinstance(mal, int):
+                n += con.execute("UPDATE media SET average_score=? WHERE mal_id=? AND anilist_id IS NULL", (int(sc), mal)).rowcount
         con.commit()
         return {"saved": n}
     finally:
