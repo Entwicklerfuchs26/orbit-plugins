@@ -7143,6 +7143,86 @@ function to_number(value) {
 	return value === '' ? null : +value;
 }
 
+/** @import { ComponentContext, Effect } from '#client' */
+
+/**
+ * @param {any} bound_value
+ * @param {Element} element_or_component
+ * @returns {boolean}
+ */
+function is_bound_this(bound_value, element_or_component) {
+	return (
+		bound_value === element_or_component || bound_value?.[STATE_SYMBOL] === element_or_component
+	);
+}
+
+/**
+ * @param {any} element_or_component
+ * @param {(value: unknown, ...parts: unknown[]) => void} update
+ * @param {(...parts: unknown[]) => unknown} get_value
+ * @param {() => unknown[]} [get_parts] Set if the this binding is used inside an each block,
+ * 										returns all the parts of the each block context that are used in the expression
+ * @returns {void}
+ */
+function bind_this(
+	element_or_component = mark_as_component(),
+	update,
+	get_value,
+	get_parts
+) {
+	var component_effect = /** @type {ComponentContext} */ (component_context).r;
+	var parent = /** @type {Effect} */ (active_effect);
+
+	effect(() => {
+		/** @type {unknown[]} */
+		var old_parts;
+
+		/** @type {unknown[]} */
+		var parts;
+
+		render_effect(() => {
+			old_parts = parts;
+			// We only track changes to the parts, not the value itself to avoid unnecessary reruns.
+			parts = [];
+
+			untrack(() => {
+				if (!is_bound_this(get_value(...parts), element_or_component)) {
+					update(element_or_component, ...parts);
+					// If this is an effect rerun (cause: each block context changes), then nullify the binding at
+					// the previous position if it isn't already taken over by a different effect.
+					if (old_parts && is_bound_this(get_value(...old_parts), element_or_component)) {
+						update(null, ...old_parts);
+					}
+				}
+			});
+		});
+
+		return () => {
+			// When the bind:this effect is destroyed, we go up the effect parent chain until we find the last parent effect that is destroyed,
+			// or the effect containing the component bind:this is in (whichever comes first). That way we can time the nulling of the binding
+			// as close to user/developer expectation as possible.
+			// TODO Svelte 6: Decide if we want to keep this logic or just always null the binding in the component effect's teardown
+			// (which would be simpler, but less intuitive in some cases, and breaks the `ondestroy-before-cleanup` test)
+			let p = parent;
+			while (p !== component_effect && p.parent !== null && p.parent.f & DESTROYING) {
+				p = p.parent;
+			}
+			const teardown = () => {
+				if (parts && is_bound_this(get_value(...parts), element_or_component)) {
+					update(null, ...parts);
+				}
+			};
+			const original_teardown = p.teardown;
+			p.teardown = () => {
+				teardown();
+				original_teardown?.();
+			};
+		};
+	});
+
+	return element_or_component;
+}
+
 /** @import { ComponentContextLegacy } from '#client' */
 
 /**
@@ -8253,6 +8333,12 @@ async function downloadExport(kind) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 4e3);
+}
+async function importUserData(file) {
+  const r = await request("/import", { method: "POST", headers: { "content-type": "text/plain" }, body: await file.text() });
+  const d = await r.json().catch(() => ({}));
+  if (r.status !== 200) throw new Error(d.detail || `Import fehlgeschlagen (${r.status})`);
+  return d;
 }
 const api = {
   health: () => j("/health"),
@@ -9501,7 +9587,7 @@ var root_12$4 = from_html(`<div class="field svelte-lqmuci"><label class="svelte
 var root_13$4 = from_html(`<section class="card svelte-lqmuci"><!></section>`);
 var root_14$3 = from_html(`<p class="hint svelte-lqmuci"> </p>`);
 var root_15$3 = from_html(`<section class="card svelte-lqmuci"><div class="field svelte-lqmuci"><label class="svelte-lqmuci">Zu AniList hochsynchronisieren</label> <p class="hint svelte-lqmuci" style="margin-top:0">Überträgt Status, Wertung und Fortschritt deiner Anime-Liste (nie H). Ohne hinterlegten AniList-Token wird nichts gesendet — die Vorschau zeigt, was übertragen würde.</p> <button class="big svelte-lqmuci">Vorschau laden</button> <!> <button class="big svelte-lqmuci">Jetzt synchronisieren</button> <!></div> <div class="field last svelte-lqmuci"><label class="svelte-lqmuci">Daten von AniList importieren</label> <p class="hint svelte-lqmuci" style="margin-top:0">Liest dein <b>öffentliches</b> AniList-Profil (kein Token nötig) und ergänzt Tags, Studios, Saison, Land, Quelle, Start-/Enddatum, Rewatches und Favoriten. Status, Wertung und Fortschritt bleiben unverändert.</p> <input placeholder="AniList-Benutzername" class="svelte-lqmuci"/> <button class="big svelte-lqmuci"> </button> <!></div></section>`);
-var root_16$2 = from_html(`<section class="card svelte-lqmuci"><div class="field last svelte-lqmuci"><label class="svelte-lqmuci">Export / Backup</label> <button class="big svelte-lqmuci">Als MAL-XML exportieren (Standard)</button> <button class="big svelte-lqmuci">Als JSON-Vollbackup exportieren</button> <p class="hint svelte-lqmuci">MAL-XML importieren AniList/Kitsu/Simkl/MAL. JSON enthält zusätzlich Notizen, Regal &amp; Favoriten.</p></div></section>`);
+var root_16$2 = from_html(`<section class="card svelte-lqmuci"><div class="field last svelte-lqmuci"><label class="svelte-lqmuci">Export / Backup</label> <button class="big svelte-lqmuci">Als MAL-XML exportieren (Standard)</button> <button class="big svelte-lqmuci">Als JSON-Vollbackup exportieren</button> <input type="file" accept=".json,.xml" style="display:none" class="svelte-lqmuci"/> <button class="big svelte-lqmuci">Liste importieren (Orbitlist-JSON oder MAL-XML)</button> <!> <p class="hint svelte-lqmuci">MAL-XML importieren AniList/Kitsu/Simkl/MAL. JSON enthält zusätzlich Notizen, Regal &amp; Favoriten.</p></div></section>`);
 var root_17$2 = from_html(`<p class="hint svelte-lqmuci" style="margin-top:0">API: <code class="svelte-lqmuci"> </code></p> <p class="hint svelte-lqmuci">Pair-Token: <code class="svelte-lqmuci"> </code></p> <p class="hint svelte-lqmuci"> </p>`, 1);
 var root_18$2 = from_html(`<p class="hint svelte-lqmuci" style="margin-top:0">Pairing-Info nicht erreichbar.</p>`);
 var root_19$2 = from_html(`<p class="hint svelte-lqmuci" style="margin-top:0">Lade …</p>`);
@@ -9521,6 +9607,36 @@ const $$css$9 = {
 function Settings($$anchor, $$props) {
 	push($$props, true);
 	append_styles($$anchor, $$css$9);
+
+	let importEl = state(void 0);
+	let importMsg = state('');
+
+	async function doImport(e) {
+		const f = e.target.files?.[0];
+
+		if (!f) return;
+
+		set(importMsg, 'Importiere …');
+
+		try {
+			const r = await importUserData(f);
+
+			set(importMsg, `${r.matched} Einträge übernommen${r.not_in_catalog
+				? `, ${r.not_in_catalog} nicht im Katalog gefunden`
+				: ''}. Seite wird neu geladen …`);
+
+			setTimeout(
+				() => {
+					conn.rev++;
+				},
+				900
+			);
+		} catch(err) {
+			set(importMsg, err.message || String(err), true);
+		}
+
+		e.target.value = '';
+	}
 
 	let theme = prop($$props, 'theme', 3, 'dark'),
 		accent = prop($$props, 'accent', 3, ''),
@@ -10214,115 +10330,137 @@ function Settings($$anchor, $$props) {
 			append($$anchor, section_4);
 		};
 
-		var consequent_15 = ($$anchor) => {
+		var consequent_16 = ($$anchor) => {
 			var section_5 = root_16$2();
 			var div_18 = child(section_5);
 			var button_19 = sibling(child(div_18), 2);
 			var button_20 = sibling(button_19, 2);
+			var input_8 = sibling(button_20, 2);
+
+			bind_this(input_8, ($$value) => set(importEl, $$value), () => get(importEl));
+
+			var button_21 = sibling(input_8, 2);
+			var node_12 = sibling(button_21, 2);
+
+			{
+				var consequent_15 = ($$anchor) => {
+					var p_9 = root_11$5();
+					var text_15 = only_child(p_9, true);
+
+					template_effect(() => set_text(text_15, get(importMsg)));
+					append($$anchor, p_9);
+				};
+
+				if_block(node_12, ($$render) => {
+					if (get(importMsg)) $$render(consequent_15);
+				});
+			}
 			delegated('click', button_19, () => downloadExport('mal').catch((e) => alert(e.message)));
 			delegated('click', button_20, () => downloadExport('json').catch((e) => alert(e.message)));
+			delegated('change', input_8, doImport);
+			delegated('click', button_21, () => get(importEl)?.click());
 			append($$anchor, section_5);
 		};
 
-		var consequent_18 = ($$anchor) => {
+		var consequent_19 = ($$anchor) => {
 			var section_6 = root_20$1();
 			var div_19 = child(section_6);
-			var node_12 = sibling(child(div_19), 2);
+			var node_13 = sibling(child(div_19), 2);
 
 			{
-				var consequent_16 = ($$anchor) => {
+				var consequent_17 = ($$anchor) => {
 					var fragment_5 = root_17$2();
-					var p_9 = first_child(fragment_5);
-					var code_3 = sibling(child(p_9));
-					var text_15 = only_child(code_3, true);
-
-					var p_10 = sibling(p_9, 2);
-					var code_4 = sibling(child(p_10));
-					var text_16 = only_child(code_4, true);
+					var p_10 = first_child(fragment_5);
+					var code_3 = sibling(child(p_10));
+					var text_16 = only_child(code_3, true);
 
 					var p_11 = sibling(p_10, 2);
-					var text_17 = only_child(p_11, true);
+					var code_4 = sibling(child(p_11));
+					var text_17 = only_child(code_4, true);
+
+					var p_12 = sibling(p_11, 2);
+					var text_18 = only_child(p_12, true);
 
 					template_effect(() => {
-						set_text(text_15, get(pair).api_base);
-						set_text(text_16, get(pair).token);
-						set_text(text_17, get(pair).note);
+						set_text(text_16, get(pair).api_base);
+						set_text(text_17, get(pair).token);
+						set_text(text_18, get(pair).note);
 					});
 
 					append($$anchor, fragment_5);
 				};
 
-				var consequent_17 = ($$anchor) => {
-					var p_12 = root_18$2();
-
-					append($$anchor, p_12);
-				};
-
-				var alternate_1 = ($$anchor) => {
-					var p_13 = root_19$2();
+				var consequent_18 = ($$anchor) => {
+					var p_13 = root_18$2();
 
 					append($$anchor, p_13);
 				};
 
-				if_block(node_12, ($$render) => {
-					if (get(pair) && !get(pair).error) $$render(consequent_16); else if (get(pair)?.error) $$render(consequent_17, 1); else $$render(alternate_1, -1);
+				var alternate_1 = ($$anchor) => {
+					var p_14 = root_19$2();
+
+					append($$anchor, p_14);
+				};
+
+				if_block(node_13, ($$render) => {
+					if (get(pair) && !get(pair).error) $$render(consequent_17); else if (get(pair)?.error) $$render(consequent_18, 1); else $$render(alternate_1, -1);
 				});
 			}
 			append($$anchor, section_6);
 		};
 
-		var consequent_21 = ($$anchor) => {
+		var consequent_22 = ($$anchor) => {
 			var section_7 = root_22();
 			var div_20 = child(section_7);
-			var p_14 = sibling(child(div_20), 2);
-			var text_18 = only_child(p_14);
-			var input_8 = sibling(p_14, 2);
+			var p_15 = sibling(child(div_20), 2);
+			var text_19 = only_child(p_15);
+			var input_9 = sibling(p_15, 2);
 
-			var button_21 = sibling(input_8, 2);
-			var text_19 = only_child(button_21, true);
-			var node_13 = sibling(button_21, 2);
-
-			{
-				var consequent_19 = ($$anchor) => {
-					var button_22 = root_21();
-
-					delegated('click', button_22, handleReset);
-					append($$anchor, button_22);
-				};
-
-				if_block(node_13, ($$render) => {
-					if (hConfigured()) $$render(consequent_19);
-				});
-			}
-
-			var node_14 = sibling(node_13, 2);
+			var button_22 = sibling(input_9, 2);
+			var text_20 = only_child(button_22, true);
+			var node_14 = sibling(button_22, 2);
 
 			{
 				var consequent_20 = ($$anchor) => {
-					var p_15 = root_11$5();
-					var text_20 = only_child(p_15, true);
+					var button_23 = root_21();
 
-					template_effect(() => set_text(text_20, get(hMsg)));
-					append($$anchor, p_15);
+					delegated('click', button_23, handleReset);
+					append($$anchor, button_23);
 				};
 
 				if_block(node_14, ($$render) => {
-					if (get(hMsg)) $$render(consequent_20);
+					if (hConfigured()) $$render(consequent_20);
+				});
+			}
+
+			var node_15 = sibling(node_14, 2);
+
+			{
+				var consequent_21 = ($$anchor) => {
+					var p_16 = root_11$5();
+					var text_21 = only_child(p_16, true);
+
+					template_effect(() => set_text(text_21, get(hMsg)));
+					append($$anchor, p_16);
+				};
+
+				if_block(node_15, ($$render) => {
+					if (get(hMsg)) $$render(consequent_21);
 				});
 			}
 
 			template_effect(() => {
-				set_text(text_18, `Standardmäßig unsichtbar. ${hConfigured()
+				set_text(text_19, `Standardmäßig unsichtbar. ${hConfigured()
 					? 'Passwort eingeben zum Entsperren.'
 					: 'Lege ein Passwort fest — danach erscheint „Hentai" im Medientyp-Menü (oben neben dem Logo). Verschwindet bei jedem Neuladen wieder.'}`);
 
-				set_attribute(input_8, 'placeholder', hConfigured() ? 'Passwort' : 'Passwort festlegen');
-				set_text(text_19, hConfigured() ? 'Entsperren' : 'Passwort setzen & entsperren');
+				set_attribute(input_9, 'placeholder', hConfigured() ? 'Passwort' : 'Passwort festlegen');
+				set_text(text_20, hConfigured() ? 'Entsperren' : 'Passwort setzen & entsperren');
 			});
 
-			delegated('keydown', input_8, (e) => e.key === 'Enter' && handleH());
-			bind_value(input_8, () => get(hPw), ($$value) => set(hPw, $$value));
-			delegated('click', button_21, handleH);
+			delegated('keydown', input_9, (e) => e.key === 'Enter' && handleH());
+			bind_value(input_9, () => get(hPw), ($$value) => set(hPw, $$value));
+			delegated('click', button_22, handleH);
 			append($$anchor, section_7);
 		};
 
@@ -10330,36 +10468,36 @@ function Settings($$anchor, $$props) {
 			var fragment_6 = root_25();
 			var section_8 = first_child(fragment_6);
 			var div_21 = child(section_8);
-			var p_16 = sibling(child(div_21), 2);
-			var text_21 = sibling(child(p_16), 2);
-			var text_22 = sibling(text_21, 2);
+			var p_17 = sibling(child(div_21), 2);
+			var text_22 = sibling(child(p_17), 2);
+			var text_23 = sibling(text_22, 2);
 
-			var node_15 = sibling(section_8, 2);
+			var node_16 = sibling(section_8, 2);
 
 			{
-				var consequent_22 = ($$anchor) => {
+				var consequent_23 = ($$anchor) => {
 					var section_9 = root_23();
 
 					append($$anchor, section_9);
 				};
 
-				var consequent_23 = ($$anchor) => {
+				var consequent_24 = ($$anchor) => {
 					var section_10 = root_24();
 					var div_22 = child(section_10);
-					var p_17 = sibling(child(div_22), 2);
-					var text_23 = only_child(p_17, true);
-					var button_23 = sibling(p_17, 2);
-					var text_24 = only_child(button_23, true);
+					var p_18 = sibling(child(div_22), 2);
+					var text_24 = only_child(p_18, true);
+					var button_24 = sibling(p_18, 2);
+					var text_25 = only_child(button_24, true);
 
 					template_effect(() => {
-						set_text(text_23, conn.mode === 'plugin'
+						set_text(text_24, conn.mode === 'plugin'
 							? `Backend: ${conn.server}`
 							: 'Dieses Backend ist passwortgeschützt.');
 
-						set_text(text_24, conn.mode === 'plugin' ? 'Verbindung ändern / trennen' : 'Abmelden');
+						set_text(text_25, conn.mode === 'plugin' ? 'Verbindung ändern / trennen' : 'Abmelden');
 					});
 
-					delegated('click', button_23, () => {
+					delegated('click', button_24, () => {
 						$$props.onclose();
 						disconnect();
 					});
@@ -10367,21 +10505,21 @@ function Settings($$anchor, $$props) {
 					append($$anchor, section_10);
 				};
 
-				if_block(node_15, ($$render) => {
-					if (conn.mode === 'embedded') $$render(consequent_22); else if (conn.mode === 'plugin' || conn.key) $$render(consequent_23, 1);
+				if_block(node_16, ($$render) => {
+					if (conn.mode === 'embedded') $$render(consequent_23); else if (conn.mode === 'plugin' || conn.key) $$render(consequent_24, 1);
 				});
 			}
 
 			template_effect(() => {
-				set_text(text_21, ` Daten: AniList, ${stats().attribution ?? 'MyDubList (CC BY 4.0)' ?? ''}, Jikan/MAL (H), TMDB.`);
-				set_text(text_22, ` ${stats().anime ?? 0 ?? ''} Anime · ${stats().h ?? 0 ?? ''} H · ${stats().anime_dubbed ?? 0 ?? ''} dt. synchronisiert.`);
+				set_text(text_22, ` Daten: AniList, ${stats().attribution ?? 'MyDubList (CC BY 4.0)' ?? ''}, Jikan/MAL (H), TMDB.`);
+				set_text(text_23, ` ${stats().anime ?? 0 ?? ''} Anime · ${stats().h ?? 0 ?? ''} H · ${stats().anime_dubbed ?? 0 ?? ''} dt. synchronisiert.`);
 			});
 
 			append($$anchor, fragment_6);
 		};
 
 		if_block(node, ($$render) => {
-			if (get(cat) === 'profil') $$render(consequent); else if (get(cat) === 'medien') $$render(consequent_1, 1); else if (get(cat) === 'listen') $$render(consequent_2, 2); else if (get(cat) === 'ki') $$render(consequent_10, 3); else if (get(cat) === 'import') $$render(consequent_14, 4); else if (get(cat) === 'export') $$render(consequent_15, 5); else if (get(cat) === 'apps') $$render(consequent_18, 6); else if (get(cat) === 'privat') $$render(consequent_21, 7); else $$render(alternate_2, -1);
+			if (get(cat) === 'profil') $$render(consequent); else if (get(cat) === 'medien') $$render(consequent_1, 1); else if (get(cat) === 'listen') $$render(consequent_2, 2); else if (get(cat) === 'ki') $$render(consequent_10, 3); else if (get(cat) === 'import') $$render(consequent_14, 4); else if (get(cat) === 'export') $$render(consequent_16, 5); else if (get(cat) === 'apps') $$render(consequent_19, 6); else if (get(cat) === 'privat') $$render(consequent_22, 7); else $$render(alternate_2, -1);
 		});
 	}
 
@@ -14196,7 +14334,7 @@ const __vite_glob_0_8 = "\"\"\"AniList-GDPR-Export → eigene DB (user_entry). D
 
 const __vite_glob_0_9 = "\"\"\"Import-Pipeline: AniList-Metadaten + MyDubList-Dub-Status + Jikan/MAL-H-Daten.\"\"\"\nfrom __future__ import annotations\n\nimport datetime\n\nimport httpx\n\nfrom .db import repo\nfrom .sources import anilist, jikan, mydublist\n\n\ndef build_info_links(anilist_id, mal_id, anisearch_id) -> dict:\n    links = {}\n    if anilist_id:\n        links[\"anilist\"] = f\"https://anilist.co/anime/{anilist_id}\"\n    if mal_id:\n        links[\"mal\"] = f\"https://myanimelist.net/anime/{mal_id}\"\n    if anisearch_id:\n        links[\"anisearch\"] = f\"https://www.anisearch.com/anime/{anisearch_id}\"\n    return links\n\n\ndef _apply_dub(m: dict, a2ids: dict, tier_of: dict, mal2ids: dict) -> None:\n    mal = m.get(\"mal_id\")\n    ani = a2ids.get(m.get(\"anilist_id\"), {}) if m.get(\"anilist_id\") else {}\n    info = mal2ids.get(mal, {}) if mal else {}\n    if not m.get(\"anilist_id\"):\n        m[\"anilist_id\"] = info.get(\"anilist\")\n    anisearch = m.get(\"anisearch_id\") or ani.get(\"anisearch\") or info.get(\"anisearch\")\n    m[\"anisearch_id\"] = anisearch\n    tier = tier_of.get(mal) if mal else None\n    m[\"dub_de\"] = 1 if tier else 0\n    m[\"dub_tier\"] = tier\n    m[\"info_links\"] = build_info_links(m.get(\"anilist_id\"), mal, anisearch)\n\n\ndef run(pages_anilist: int = 500, hentai_pages: int = 40) -> dict:\n    \"\"\"Voll-Import, STREAMEND (speichert pro Seite → überlebt Abbrüche, zeigt Fortschritt).\"\"\"\n    with httpx.Client(headers={\"User-Agent\": \"anime-liste/0.1 (+local, private)\"}) as client:\n        print(\"MyDubList: Mappings + Dub-Tiers laden …\", flush=True)\n        a2ids, mal2ids = mydublist.load_mappings(client)\n        tier_of = mydublist.load_dub_tiers(client)\n        print(f\"  {len(a2ids)} AniList-Mappings, {len(tier_of)} deutsche Dubs\", flush=True)\n\n        print(\"AniList: Voll-Katalog streamend importieren (Jahr-Sharding) …\", flush=True)\n        n = 0\n        for page in anilist.iter_all(client):\n            for m in page:\n                _apply_dub(m, a2ids, tier_of, mal2ids)\n                repo.upsert_media(m)\n            n += len(page)\n            if n % 500 < 50:\n                print(f\"  Anime {n}\", flush=True)\n\n        print(\"H-Datenraum (AniList isAdult; Jikan IPv6-only) streamend …\", flush=True)\n        hn = 0\n        for page in anilist.iter_adult(client, pages=hentai_pages):\n            for m in page:\n                _apply_dub(m, a2ids, tier_of, mal2ids)\n                repo.upsert_media(m)\n            hn += len(page)\n            print(f\"  H {hn}\", flush=True)\n        repo.meta_set(\"h_source\", \"anilist\")\n\n    repo.meta_set(\"last_import\", datetime.datetime.now().isoformat(timespec=\"seconds\"))\n    repo.meta_set(\"dub_attribution\", mydublist.ATTRIBUTION)\n    stats = {\"anime\": repo.count(space=\"normal\"), \"h\": repo.count(space=\"h\")}\n    print(f\"Import fertig: {stats}\", flush=True)\n    return stats\n\n\nif __name__ == \"__main__\":\n    import argparse\n\n    ap = argparse.ArgumentParser()\n    ap.add_argument(\"--pages\", type=int, default=4, help=\"AniList-Seiten à 50\")\n    ap.add_argument(\"--hentai-pages\", type=int, default=2)\n    args = ap.parse_args()\n    run(args.pages, args.hentai_pages)\n";
 
-const __vite_glob_0_10 = "\"\"\"FastAPI-App — Anime-Liste Backend.\n\nH-Datenraum ist per Passwort-Gate geschuetzt (Bedrohungsmodell: Gaeste am PC).\nDefault zeigt keine Spur von H: /anime bedient nur space='normal'.\n\"\"\"\nfrom __future__ import annotations\n\nimport hashlib\nfrom typing import Optional\n\nfrom pathlib import Path\n\nfrom fastapi import FastAPI, Header, HTTPException, Query, Request\nfrom fastapi.responses import JSONResponse\nfrom fastapi.middleware.cors import CORSMiddleware\nfrom fastapi.staticfiles import StaticFiles\nfrom pydantic import BaseModel\n\nimport secrets\n\nfrom . import auth\nfrom . import availability as avail_mod\nfrom . import db\nfrom . import embeddings as emb\nfrom . import sync_anilist\nfrom . import aiconf\nfrom . import anilist_import\nfrom . import translate as tr\nfrom .db import repo\nfrom .sources import ollama\nfrom .tracker import jellyfin as jf\n\napp = FastAPI(title=\"Orbitlist API\", version=\"0.1.0\")\napp.add_middleware(\n    CORSMiddleware, allow_origins=[\"*\"], allow_methods=[\"*\"], allow_headers=[\"*\"]\n)\n\n\n\n@app.middleware(\"http\")\nasync def _access_guard(request: Request, call_next):\n    h = request.headers.get(\"authorization\", \"\")\n    key = request.headers.get(\"x-orbitlist-key\") or (h[7:] if h.lower().startswith(\"bearer \") else None)\n    client = request.client.host if request.client else \"\"\n    denied = auth.check(request.url.path, client, key, request.method)\n    if denied:\n        return JSONResponse({\"detail\": denied[1]}, status_code=denied[0])\n    return await call_next(request)\n\n\nclass _LoginBody(BaseModel):\n    password: str\n\n\n@app.get(\"/auth/status\")\ndef auth_status() -> dict:\n    return {\"required\": auth.is_required()}\n\n\n@app.post(\"/auth/login\")\ndef auth_login(body: _LoginBody, request: Request) -> dict:\n    if not auth.is_required():\n        return {\"key\": \"\", \"required\": False}\n    try:\n        key = auth.login(body.password, request.client.host if request.client else \"\")\n    except PermissionError as e:\n        raise HTTPException(429, str(e))\n    if not key:\n        raise HTTPException(401, \"Passwort falsch\")\n    return {\"key\": key, \"required\": True}\n\n\n# Legale Standard-Dienste (generischer Checker; Jonas ergaenzt eigene/H-Dienste selbst)\nDEFAULT_SERVICES = [\n    (\"Crunchyroll\", \"https://www.crunchyroll.com/de/search?q={q}\", \"crunchyroll.png\"),\n    (\"Netflix\", \"https://www.netflix.com/search?q={q}\", \"netflix.png\"),\n    (\"Prime Video\", \"https://www.primevideo.com/search?phrase={q}\", \"prime.png\"),\n    (\"Disney+\", \"https://www.disneyplus.com/de-de/search?q={q}\", \"disneyplus.png\"),\n]\n\n\ndef _seed_services() -> None:\n    if repo.list_services(\"anime\"):\n        return\n    con = db.connect()\n    try:\n        for name, schema, logo in DEFAULT_SERVICES:\n            con.execute(\n                \"INSERT INTO services (name, url_schema, logo, space, config_slug, enabled) VALUES (?,?,?, 'normal', 'anime', 1)\",\n                (name, schema, logo),\n            )\n        con.commit()\n    finally:\n        con.close()\n\n\n# Medientyp-Start-Configs (idempotent). Anime = nicht löschbarer Default; H-Configs hidden.\n# (slug, name, description, space, media_type, hidden, deletable, sort_order)\nDEFAULT_MEDIA_TYPES = [\n    (\"anime\", \"Anime\", \"Serien & Filme aus Japan\", \"normal\", \"anime\", 0, 0, 0),\n    (\"manga\", \"Manga\", \"Comics & Light Novels\", \"normal\", \"manga\", 0, 1, 1),\n    (\"book\", \"Bücher\", \"Romane & Sachbücher\", \"normal\", \"book\", 0, 1, 2),\n    (\"film\", \"Filme\", \"Kino & Streaming\", \"normal\", \"film\", 0, 1, 3),\n    (\"series\", \"Serien\", \"Real-Serien & Shows\", \"normal\", \"series\", 0, 1, 4),\n    (\"audiobook\", \"Hörbücher\", \"Audio & Podcasts\", \"normal\", \"audiobook\", 0, 1, 5),\n    (\"h\", \"Hentai\", \"Versteckt — nur nach Entsperren\", \"h\", \"anime\", 1, 1, 10),\n    (\"porno\", \"Porno\", \"Versteckt\", \"h\", \"porno\", 1, 1, 11),\n    (\"doujin\", \"Doujinshi\", \"Versteckt\", \"h\", \"doujin\", 1, 1, 12),\n]\n\n\ndef _seed_media_types() -> None:\n    con = db.connect()\n    try:\n        for slug, name, desc, space, mt, hidden, deletable, order in DEFAULT_MEDIA_TYPES:\n            con.execute(\n                \"INSERT OR IGNORE INTO media_types \"\n                \"(slug,name,description,space,media_type,hidden,enabled,sort_order,deletable) \"\n                \"VALUES (?,?,?,?,?,?,1,?,?)\",\n                (slug, name, desc, space, mt, hidden, order, deletable),\n            )\n        con.commit()\n    finally:\n        con.close()\n\n\n@app.on_event(\"startup\")\ndef _startup() -> None:\n    db.init_db()\n    auth.apply_env()\n    _seed_services()\n    _seed_media_types()\n\n\n# --------------------------------------------------------------------- Katalog-Abzug\n@app.get(\"/catalog/slim.db.gz\")\ndef catalog_slim():\n    \"\"\"Katalog ohne Nutzerdaten fuer das eingebettete Backend (Handy). Oeffentlich lesbar.\"\"\"\n    from fastapi.responses import FileResponse\n    from . import slim\n    return FileResponse(slim.build(), media_type=\"application/gzip\", filename=\"catalog.db.gz\")\n\n\n# --------------------------------------------------------------------- health\n@app.get(\"/health\")\ndef health() -> dict:\n    return {\n        \"status\": \"ok\",\n        \"media_normal\": repo.count(space=\"normal\"),\n        \"media_h\": repo.count(space=\"h\"),\n        \"last_import\": repo.meta_get(\"last_import\"),\n    }\n\n\n@app.get(\"/stats\")\ndef stats() -> dict:\n    return {\n        \"anime\": repo.count(space=\"normal\"),\n        \"anime_dubbed\": repo.count(space=\"normal\", dub=True),\n        \"h\": repo.count(space=\"h\"),\n        \"attribution\": repo.meta_get(\"dub_attribution\"),\n    }\n\n\n# ----------------------------------------------------------------- normale DB\n@app.get(\"/anime\")\ndef list_anime(\n    genre: Optional[str] = None,\n    genres: Optional[str] = None,\n    format: Optional[str] = None,\n    status: Optional[str] = None,\n    year_min: Optional[int] = None,\n    year_max: Optional[int] = None,\n    dub: Optional[bool] = None,\n    dub_lang: Optional[str] = None,\n    q: Optional[str] = None,\n    sort: str = \"popularity\",\n    collection: Optional[str] = None,\n    watch_status: Optional[str] = None,\n    media_type: Optional[str] = None,\n    seen: Optional[str] = None,\n    favorite: Optional[str] = None,\n    rating: Optional[int] = None,\n    tags: Optional[str] = None,\n    season: Optional[str] = None,\n    country: Optional[str] = None,\n    source: Optional[str] = None,\n    studio: Optional[str] = None,\n    limit: int = Query(60, le=2000),\n    offset: int = 0,\n) -> dict:\n    f = dict(space=\"normal\", genre=genre, genres=genres, format=format, status=status,\n             year_min=year_min, year_max=year_max, dub=dub, dub_lang=dub_lang, q=q,\n             collection=collection, watch_status=watch_status, media_type=media_type, seen=seen,\n             favorite=favorite, rating=rating, tags=tags, season=season, country=country, source=source, studio=studio)\n    items = repo.list_media(**f, sort=sort, limit=limit, offset=offset)\n    return {\"total\": repo.count(**f), \"count\": len(items), \"items\": items}\n\n\n@app.get(\"/profile/stats\")\ndef profile_stats() -> dict:\n    return repo.profile_stats()\n\n\n@app.get(\"/stats/distributions\")\ndef stats_distributions() -> dict:\n    return repo.stats_distributions()\n\n\n@app.get(\"/stats/genres\")\ndef stats_genres() -> dict:\n    return {\"items\": repo.stats_by_field(\"genres\")}\n\n\n@app.get(\"/stats/tags\")\ndef stats_tags() -> dict:\n    return {\"items\": repo.stats_by_field(\"tags\")}\n\n\n@app.get(\"/stats/studios\")\ndef stats_studios() -> dict:\n    return {\"items\": repo.stats_by_field(\"studios\")}\n\n\n@app.get(\"/meta/filters\")\ndef meta_filters(\n    space: str = \"normal\",\n    media_type: Optional[str] = None,\n    x_h_password: Optional[str] = Header(None),\n) -> dict:\n    \"\"\"Verfügbare Filterwerte PRO CONFIG (eigene Genres/Formate je Config; H hat andere als Anime).\"\"\"\n    if space == \"h\" and not _h_ok(x_h_password):\n        raise HTTPException(403, \"gesperrt\")\n    return repo.filter_meta(space=space, media_type=media_type)\n\n\n@app.get(\"/anime/{media_id}\")\ndef get_anime(media_id: int) -> dict:\n    m = repo.get_media(media_id)\n    if not m or m[\"space\"] != \"normal\":\n        raise HTTPException(404, \"nicht gefunden\")\n    return m\n\n\n@app.get(\"/services\")\ndef services(config: str = \"anime\") -> list:\n    # Dienste PRO Config (H hat komplett eigene, getrennt von Anime).\n    return repo.list_services(config)\n\n\nclass ServiceBody(BaseModel):\n    name: str\n    url_schema: str\n    logo: Optional[str] = None\n    config: str = \"anime\"\n    space: str = \"normal\"\n\n\n@app.post(\"/services\")\ndef add_service(body: ServiceBody) -> dict:\n    return {\"id\": repo.add_service(body.name, body.url_schema, body.logo, body.config, body.space)}\n\n\n@app.delete(\"/services/{sid}\")\ndef del_service(sid: int) -> dict:\n    repo.delete_service(sid)\n    return {\"ok\": True}\n\n\n# ---------------------------------------- Medientyp-Configs (Dropdown-Umschalter)\nclass MediaTypeBody(BaseModel):\n    slug: str\n    name: str\n    description: Optional[str] = None\n    space: str = \"normal\"\n    media_type: str = \"anime\"\n    hidden: bool = False\n\n\nclass ActiveBody(BaseModel):\n    slug: str\n\n\n@app.get(\"/media-types\")\ndef media_types(x_h_password: Optional[str] = Header(None)) -> list:\n    # Versteckte Configs (H) NUR mit gültigem Passwort — sonst verrät die Liste die Existenz von H.\n    return repo.list_media_types(include_hidden=_h_ok(x_h_password))\n\n\n@app.post(\"/media-types\")\ndef add_media_type(body: MediaTypeBody) -> dict:\n    repo.add_media_type(body.slug, body.name, body.description, body.space, body.media_type, int(body.hidden))\n    return {\"ok\": True, \"slug\": body.slug}\n\n\n@app.delete(\"/media-types/{slug}\")\ndef del_media_type(slug: str) -> dict:\n    mt = repo.get_media_type(slug)\n    if not mt:\n        raise HTTPException(404, \"nicht gefunden\")\n    if not mt[\"deletable\"]:\n        raise HTTPException(409, \"Standard-Typ nicht löschbar\")\n    repo.delete_media_type(slug)\n    if repo.meta_get(\"active_media_type\") == slug:\n        repo.meta_set(\"active_media_type\", \"anime\")  # aktiven gelöschten Typ → Fallback Anime\n    return {\"ok\": True}\n\n\n@app.get(\"/media-types/active\")\ndef get_active_media_type() -> dict:\n    # Nur SICHTBARE Typen werden persistiert → H taucht nach Reload NIE von selbst auf (Leak-Schutz).\n    slug = repo.meta_get(\"active_media_type\") or \"anime\"\n    mt = repo.get_media_type(slug)\n    if not mt or mt[\"hidden\"]:\n        mt = repo.get_media_type(\"anime\")\n    return mt or {\"slug\": \"anime\", \"name\": \"Anime\", \"space\": \"normal\", \"media_type\": \"anime\", \"hidden\": 0, \"deletable\": 0}\n\n\n@app.put(\"/media-types/active\")\ndef set_active_media_type(body: ActiveBody) -> dict:\n    mt = repo.get_media_type(body.slug)\n    if not mt:\n        raise HTTPException(404, \"nicht gefunden\")\n    if mt[\"hidden\"]:\n        # Versteckte Typen NICHT persistieren (nur Session) — sonst Leak bei Reload.\n        return {\"ok\": True, \"persisted\": False}\n    repo.meta_set(\"active_media_type\", body.slug)\n    return {\"ok\": True, \"persisted\": True}\n\n\n# ----------------------------------------------------- user entry (Bewerten, Regal)\nclass EntryPatch(BaseModel):\n    rating: Optional[int] = None\n    note: Optional[str] = None\n    watch_status: Optional[str] = None\n    progress: Optional[int] = None\n    collection: Optional[str] = None  # none|wish|owned\n    lent_to: Optional[str] = None\n    lent_since: Optional[str] = None\n    favorite: Optional[int] = None  # 0/1 ♥\n\n\n@app.patch(\"/media/{media_id}/entry\")\ndef patch_entry(media_id: int, patch: EntryPatch) -> dict:\n    if not repo.get_media(media_id):\n        raise HTTPException(404, \"nicht gefunden\")\n    return repo.set_user_entry(media_id, patch.model_dump(exclude_none=True))\n\n\nclass FavOrder(BaseModel):\n    ids: list[int]\n\n\n@app.post(\"/favorites/reorder\")\ndef favorites_reorder(body: FavOrder) -> dict:\n    repo.set_favorites_order(body.ids)\n    return {\"ok\": True, \"count\": len(body.ids)}\n\n\n# ----------------------------------------------------------- H-Gate (versteckt)\ndef _hash(pw: str) -> str:\n    return hashlib.sha256(pw.encode()).hexdigest()\n\n\ndef _h_ok(x_h_password: Optional[str]) -> bool:\n    stored = repo.meta_get(\"h_password_hash\")\n    return bool(stored and x_h_password and _hash(x_h_password) == stored)\n\n\nclass PwBody(BaseModel):\n    password: str\n\n\n@app.get(\"/h/status\")\ndef h_status() -> dict:\n    return {\"configured\": repo.meta_get(\"h_password_hash\") is not None}\n\n\n@app.post(\"/h/password\")\ndef h_set_password(body: PwBody) -> dict:\n    repo.meta_set(\"h_password_hash\", _hash(body.password))\n    return {\"ok\": True}\n\n\n@app.post(\"/h/unlock\")\ndef h_unlock(body: PwBody) -> dict:\n    if not _h_ok(body.password):\n        raise HTTPException(403, \"falsch oder nicht gesetzt\")\n    return {\"ok\": True}\n\n\n@app.post(\"/h/reset\")\ndef h_reset() -> dict:\n    # Casual-Gäste-Modell: Zurücksetzen ohne altes Passwort erlaubt (Gäste gehen nicht in die Einstellungen).\n    con = db.connect()\n    con.execute(\"DELETE FROM meta_kv WHERE key='h_password_hash'\")\n    con.commit()\n    con.close()\n    return {\"ok\": True}\n\n\n@app.get(\"/h\")\ndef list_h(\n    genre: Optional[str] = None,\n    genres: Optional[str] = None,\n    format: Optional[str] = None,\n    status: Optional[str] = None,\n    year_min: Optional[int] = None,\n    year_max: Optional[int] = None,\n    q: Optional[str] = None,\n    media_type: Optional[str] = None,\n    watch_status: Optional[str] = None,\n    seen: Optional[str] = None,\n    favorite: Optional[str] = None,\n    rating: Optional[int] = None,\n    dub: Optional[bool] = None,\n    dub_lang: Optional[str] = None,\n    sort: str = \"popularity\",\n    limit: int = Query(60, le=2000),\n    offset: int = 0,\n    x_h_password: Optional[str] = Header(None),\n) -> dict:\n    if not _h_ok(x_h_password):\n        raise HTTPException(403, \"gesperrt\")\n    f = dict(space=\"h\", genre=genre, genres=genres, format=format, status=status,\n             year_min=year_min, year_max=year_max, q=q, media_type=media_type,\n             watch_status=watch_status, seen=seen, favorite=favorite, rating=rating,\n             dub=dub, dub_lang=dub_lang)\n    items = repo.list_media(**f, sort=sort, limit=limit, offset=offset)\n    return {\"total\": repo.count(**f), \"count\": len(items), \"items\": items}\n\n\n# ------------------------------------------------- KI: Embeddings + semantische Suche\n_idx: dict = {\"running\": False, \"done\": 0, \"total\": 0, \"error\": None}\n\n\n@app.get(\"/ai/status\")\ndef ai_status() -> dict:\n    return {\n        \"embed_model\": ollama.EMBED_MODEL,\n        \"embed_ready\": ollama.has_model(ollama.EMBED_MODEL),\n        \"translate_model\": ollama.TRANSLATE_MODEL,\n        \"translate_ready\": ollama.has_model(ollama.TRANSLATE_MODEL),\n        \"problem\": aiconf.check_ready(),\n        \"indexing\": dict(_idx),\n        **emb.index_count(),\n    }\n\n\n@app.get(\"/ai/config\")\ndef ai_config_get() -> dict:\n    return aiconf.get()\n\n\nclass AiConfig(BaseModel):\n    enabled: Optional[bool] = None\n    mode: Optional[str] = None\n    ext_kind: Optional[str] = None\n    ext_url: Optional[str] = None\n    ext_model: Optional[str] = None\n    ext_key: Optional[str] = None\n\n\n@app.put(\"/ai/config\")\ndef ai_config_put(body: AiConfig) -> dict:\n    try:\n        return aiconf.update(body.model_dump(exclude_none=True))\n    except ValueError as ex:\n        raise HTTPException(400, str(ex))\n\n\n@app.post(\"/ai/test\")\ndef ai_test() -> dict:\n    return aiconf.test()\n\n\ndef _run_index(full: bool) -> None:\n    def prog(n: int, t: int) -> None:\n        _idx[\"done\"], _idx[\"total\"] = n, t\n    try:\n        if full:\n            emb.rebuild(progress=prog)\n        else:\n            emb.index_all(progress=prog)  # nur neue Titel nachziehen\n    except Exception as ex:\n        _idx[\"error\"] = str(ex)[:300]\n    finally:\n        _idx[\"running\"] = False\n\n\n@app.post(\"/ai/index\")\ndef ai_index(rebuild: bool = False) -> dict:\n    \"\"\"Index im Hintergrund pflegen (Fortschritt in /ai/status). rebuild=true: komplett neu mit dem gewählten Modell;\n    sonst nur neue Titel — außer der Index gehört zu einem anderen Modell, dann zwingend komplett neu.\"\"\"\n    import threading\n\n    if _idx[\"running\"]:\n        return {\"started\": False, \"running\": True}\n    t = aiconf.test()\n    if not t[\"ok\"]:\n        raise HTTPException(503, f\"Modell nicht erreichbar: {t['error']}\")\n    _idx.update(running=True, done=0, total=0, error=None)\n    full = rebuild or aiconf.get()[\"index_model\"] != aiconf.model_id()\n    threading.Thread(target=_run_index, args=(full,), daemon=True).start()\n    return {\"started\": True}\n\n\n@app.get(\"/ai/search\")\ndef ai_search(\n    q: str,\n    space: str = \"normal\",\n    new_for_me: bool = False,\n    genre: Optional[str] = None,\n    genres: Optional[str] = None,\n    format: Optional[str] = None,\n    status: Optional[str] = None,\n    year_min: Optional[int] = None,\n    year_max: Optional[int] = None,\n    dub: Optional[bool] = None,\n    dub_lang: Optional[str] = None,\n    media_type: Optional[str] = None,\n    watch_status: Optional[str] = None,\n    seen: Optional[str] = None,\n    favorite: Optional[str] = None,\n    rating: Optional[int] = None,\n    tags: Optional[str] = None,\n    season: Optional[str] = None,\n    country: Optional[str] = None,\n    source: Optional[str] = None,\n    studio: Optional[str] = None,\n    limit: int = Query(20, le=50),\n    x_h_password: Optional[str] = Header(None),\n) -> dict:\n    if space == \"h\" and not _h_ok(x_h_password):\n        raise HTTPException(403, \"gesperrt\")\n    problem = aiconf.check_ready()\n    if problem:\n        raise HTTPException(503, problem)\n    # Semantische Suche GLEICHZEITIG mit den manuellen Filtern (genres/format/status/year/dub/seen/…)\n    filters = dict(genre=genre, genres=genres, format=format, status=status,\n                   year_min=year_min, year_max=year_max, dub=dub, dub_lang=dub_lang,\n                   media_type=media_type, watch_status=watch_status, seen=seen,\n                   favorite=favorite, rating=rating, tags=tags, season=season, country=country,\n                   source=source, studio=studio)\n    return {\"query\": q, \"new_for_me\": new_for_me,\n            \"results\": emb.search(q, space=space, limit=limit, new_for_me=new_for_me, filters=filters)}\n\n\n# ------------------------------------------------------------- Verfuegbarkeit\n@app.get(\"/media/{media_id}/availability\")\ndef media_availability(media_id: int) -> dict:\n    m = repo.get_media(media_id)\n    if not m:\n        raise HTTPException(404, \"nicht gefunden\")\n    return avail_mod.availability(m)\n\n\n# ------------------------------------------------------------- Uebersetzung\n@app.post(\"/translate/run\")\ndef translate_run(limit: int = 50, space: Optional[str] = None) -> dict:\n    if not ollama.has_model(ollama.TRANSLATE_MODEL):\n        raise HTTPException(503, \"Uebersetzungsmodell nicht geladen\")\n    return tr.translate_missing(limit, space)\n\n\n# ----------------------------------------------- Export (Standard MAL-XML + JSON-Vollbackup)\nfrom fastapi.responses import Response  # noqa: E402\nimport json as _json  # noqa: E402\n\n_MAL_STATUS = {\n    \"watching\": \"Watching\", \"rewatching\": \"Watching\", \"completed\": \"Completed\",\n    \"paused\": \"On-Hold\", \"dropped\": \"Dropped\", \"planning\": \"Plan to Watch\",\n}\n\n\ndef _export_rows() -> list:\n    con = db.connect()\n    try:\n        return con.execute(\n            \"SELECT m.anilist_id, m.mal_id, m.title_romaji, m.title_english, m.title_de, \"\n            \"u.rating, u.watch_status, u.progress, u.note, u.collection, u.favorite, u.favorite_order \"\n            \"FROM media m JOIN user_entry u ON u.media_id=m.id \"\n            \"WHERE m.space='normal' AND (u.watch_status<>'none' OR u.rating IS NOT NULL OR u.favorite=1)\"\n        ).fetchall()\n    finally:\n        con.close()\n\n\n@app.get(\"/export/mal\")\ndef export_mal() -> Response:\n    \"\"\"MAL-kompatibles XML — von AniList/Kitsu/Simkl/MAL importierbar (De-facto-Standard).\"\"\"\n    parts = ['<?xml version=\"1.0\" encoding=\"UTF-8\"?>', \"<myanimelist>\",\n             \"  <myinfo><user_export_type>1</user_export_type></myinfo>\"]\n    for r in _export_rows():\n        if not r[\"mal_id\"] or (r[\"watch_status\"] in (None, \"none\")):\n            continue\n        title = r[\"title_romaji\"] or r[\"title_english\"] or \"\"\n        parts.append(\"  <anime>\")\n        parts.append(f\"    <series_animedb_id>{r['mal_id']}</series_animedb_id>\")\n        parts.append(f\"    <series_title><![CDATA[{title}]]></series_title>\")\n        parts.append(f\"    <my_watched_episodes>{r['progress'] or 0}</my_watched_episodes>\")\n        parts.append(f\"    <my_score>{r['rating'] or 0}</my_score>\")\n        parts.append(f\"    <my_status>{_MAL_STATUS.get(r['watch_status'], 'Watching')}</my_status>\")\n        parts.append(\"    <update_on_import>1</update_on_import>\")\n        parts.append(\"  </anime>\")\n    parts.append(\"</myanimelist>\")\n    xml = \"\\n\".join(parts)\n    return Response(content=xml, media_type=\"application/xml\",\n                    headers={\"Content-Disposition\": \"attachment; filename=orbitlist-mal.xml\"})\n\n\n@app.get(\"/export/json\")\ndef export_json() -> Response:\n    \"\"\"Vollbackup inkl. Orbitlist-Felder (Notiz/Regal/Favorit) — die MAL-XML nicht abbildet.\"\"\"\n    data = {\"orbitlist_export\": 1, \"entries\": [dict(r) for r in _export_rows()]}\n    body = _json.dumps(data, ensure_ascii=False, indent=2)\n    return Response(content=body, media_type=\"application/json\",\n                    headers={\"Content-Disposition\": \"attachment; filename=orbitlist-backup.json\"})\n\n\n# ----------------------------------------------- Sammlung als Einkaufsliste (API-Facette)\n@app.get(\"/collection/export\")\ndef collection_export(status: str = \"wish\") -> dict:\n    items = repo.list_media(space=\"normal\", collection=status, limit=500)\n    svcs = repo.list_services(\"anime\")\n\n    def links(m: dict) -> dict:\n        q = m.get(\"title_romaji\") or m.get(\"title\") or \"\"\n        return {s[\"name\"]: s[\"url_schema\"].replace(\"{q}\", q) for s in svcs}\n\n    return {\n        \"status\": status,\n        \"count\": len(items),\n        \"items\": [\n            {\n                \"title\": m[\"title\"],\n                \"year\": m.get(\"season_year\"),\n                \"rating\": m.get(\"rating\"),\n                \"dubbed_de\": bool(m.get(\"dub_de\")),\n                \"info_links\": m.get(\"info_links\"),\n                \"service_links\": links(m),\n            }\n            for m in items\n        ],\n    }\n\n\n# =================================================================== D/E (Gerüst + Stubs)\n# --- Watch-Tracker: Ingest vom Browser (WebExtension) ---\nclass WatchEvent(BaseModel):\n    source: str  # 'crunchyroll' | 'aniworld' | …\n    serie: str\n    staffel: Optional[int] = None\n    folge: Optional[int] = None\n    position_sec: Optional[float] = None\n    playing: bool = True\n\n\n@app.post(\"/watch\")\ndef watch(ev: WatchEvent) -> dict:\n    con = db.connect()\n    try:\n        row = con.execute(\n            \"SELECT id FROM media WHERE search_blob LIKE ? ORDER BY popularity DESC LIMIT 1\",\n            (f\"%{ev.serie.lower()}%\",),\n        ).fetchone()\n    finally:\n        con.close()\n    if row and ev.folge:\n        repo.set_user_entry(row[\"id\"], {\"watch_status\": \"watching\", \"progress\": ev.folge})\n        return {\"matched\": True, \"media_id\": row[\"id\"]}\n    repo.meta_set(\"last_watch_unmatched\", f\"{ev.source}: {ev.serie} S{ev.staffel}E{ev.folge}\")\n    return {\"matched\": False, \"note\": \"kein DB-Treffer (nachpflegbar)\"}\n\n\n# --- AniList-Export (Stub ohne Token) ---\n@app.get(\"/sync/anilist/preview\")\ndef sync_preview() -> dict:\n    p = sync_anilist.preview()\n    return {\"count\": len(p), \"entries\": p[:50]}\n\n\nclass AniImport(BaseModel):\n    username: str\n\n\n@app.post(\"/sync/anilist/import\")\ndef anilist_import_run(body: AniImport) -> dict:\n    \"\"\"Zusatzdaten aus oeffentlichem AniList-Profil (tokenfrei). Ueberschreibt nie Status/Wertung.\"\"\"\n    try:\n        return anilist_import.run(body.username.strip())\n    except Exception as ex:\n        raise HTTPException(502, f\"AniList-Import fehlgeschlagen: {ex}\")\n\n\n@app.get(\"/sync/anilist/username\")\ndef anilist_username() -> dict:\n    return {\"username\": repo.meta_get(\"anilist_username\")}\n\n\n@app.post(\"/sync/anilist/run\")\ndef sync_run() -> dict:\n    return sync_anilist.run()\n\n\n# --- Jellyfin-Tracker (Stub ohne Env) ---\n@app.get(\"/tracker/jellyfin/now\")\ndef jellyfin_now() -> dict:\n    return jf.now_playing()\n\n\n# --- Pairing: Backend erzeugt URL + Token fuer das Plugin ---\n@app.get(\"/pair/info\")\ndef pair_info() -> dict:\n    tok = repo.meta_get(\"pair_token\")\n    if not tok:\n        tok = secrets.token_urlsafe(18)\n        repo.meta_set(\"pair_token\", tok)\n    return {\"api_base\": \"http://<nexus-ip>:8787\", \"token\": tok, \"note\": \"Im Plugin eintragen (gleiches Netz / WireGuard).\"}\n\n\n# --- gebautes Frontend unter /app servieren (zum direkten Testen im Browser) ---\nimport os as _os\n_PLUGIN_DIST = Path(_os.environ.get(\"ORBITLIST_UI\") or Path(__file__).resolve().parent.parent.parent / \"plugin\" / \"dist\")\nif _PLUGIN_DIST.exists():\n    app.mount(\"/app\", StaticFiles(directory=str(_PLUGIN_DIST), html=True), name=\"app\")\n";
+const __vite_glob_0_10 = "\"\"\"FastAPI-App — Anime-Liste Backend.\n\nH-Datenraum ist per Passwort-Gate geschuetzt (Bedrohungsmodell: Gaeste am PC).\nDefault zeigt keine Spur von H: /anime bedient nur space='normal'.\n\"\"\"\nfrom __future__ import annotations\n\nimport hashlib\nfrom typing import Optional\n\nfrom pathlib import Path\n\nfrom fastapi import FastAPI, Header, HTTPException, Query, Request\nfrom fastapi.responses import JSONResponse\nfrom fastapi.middleware.cors import CORSMiddleware\nfrom fastapi.staticfiles import StaticFiles\nfrom pydantic import BaseModel\n\nimport secrets\n\nfrom . import auth\nfrom . import availability as avail_mod\nfrom . import db\nfrom . import embeddings as emb\nfrom . import sync_anilist\nfrom . import aiconf\nfrom . import anilist_import\nfrom . import translate as tr\nfrom .db import repo\nfrom .sources import ollama\nfrom .tracker import jellyfin as jf\n\napp = FastAPI(title=\"Orbitlist API\", version=\"0.1.0\")\napp.add_middleware(\n    CORSMiddleware, allow_origins=[\"*\"], allow_methods=[\"*\"], allow_headers=[\"*\"]\n)\n\n\n\n@app.middleware(\"http\")\nasync def _access_guard(request: Request, call_next):\n    h = request.headers.get(\"authorization\", \"\")\n    key = request.headers.get(\"x-orbitlist-key\") or (h[7:] if h.lower().startswith(\"bearer \") else None)\n    client = request.client.host if request.client else \"\"\n    denied = auth.check(request.url.path, client, key, request.method)\n    if denied:\n        return JSONResponse({\"detail\": denied[1]}, status_code=denied[0])\n    return await call_next(request)\n\n\nclass _LoginBody(BaseModel):\n    password: str\n\n\n@app.get(\"/auth/status\")\ndef auth_status() -> dict:\n    return {\"required\": auth.is_required()}\n\n\n@app.post(\"/auth/login\")\ndef auth_login(body: _LoginBody, request: Request) -> dict:\n    if not auth.is_required():\n        return {\"key\": \"\", \"required\": False}\n    try:\n        key = auth.login(body.password, request.client.host if request.client else \"\")\n    except PermissionError as e:\n        raise HTTPException(429, str(e))\n    if not key:\n        raise HTTPException(401, \"Passwort falsch\")\n    return {\"key\": key, \"required\": True}\n\n\n# Legale Standard-Dienste (generischer Checker; Jonas ergaenzt eigene/H-Dienste selbst)\nDEFAULT_SERVICES = [\n    (\"Crunchyroll\", \"https://www.crunchyroll.com/de/search?q={q}\", \"crunchyroll.png\"),\n    (\"Netflix\", \"https://www.netflix.com/search?q={q}\", \"netflix.png\"),\n    (\"Prime Video\", \"https://www.primevideo.com/search?phrase={q}\", \"prime.png\"),\n    (\"Disney+\", \"https://www.disneyplus.com/de-de/search?q={q}\", \"disneyplus.png\"),\n]\n\n\ndef _seed_services() -> None:\n    if repo.list_services(\"anime\"):\n        return\n    con = db.connect()\n    try:\n        for name, schema, logo in DEFAULT_SERVICES:\n            con.execute(\n                \"INSERT INTO services (name, url_schema, logo, space, config_slug, enabled) VALUES (?,?,?, 'normal', 'anime', 1)\",\n                (name, schema, logo),\n            )\n        con.commit()\n    finally:\n        con.close()\n\n\n# Medientyp-Start-Configs (idempotent). Anime = nicht löschbarer Default; H-Configs hidden.\n# (slug, name, description, space, media_type, hidden, deletable, sort_order)\nDEFAULT_MEDIA_TYPES = [\n    (\"anime\", \"Anime\", \"Serien & Filme aus Japan\", \"normal\", \"anime\", 0, 0, 0),\n    (\"manga\", \"Manga\", \"Comics & Light Novels\", \"normal\", \"manga\", 0, 1, 1),\n    (\"book\", \"Bücher\", \"Romane & Sachbücher\", \"normal\", \"book\", 0, 1, 2),\n    (\"film\", \"Filme\", \"Kino & Streaming\", \"normal\", \"film\", 0, 1, 3),\n    (\"series\", \"Serien\", \"Real-Serien & Shows\", \"normal\", \"series\", 0, 1, 4),\n    (\"audiobook\", \"Hörbücher\", \"Audio & Podcasts\", \"normal\", \"audiobook\", 0, 1, 5),\n    (\"h\", \"Hentai\", \"Versteckt — nur nach Entsperren\", \"h\", \"anime\", 1, 1, 10),\n    (\"porno\", \"Porno\", \"Versteckt\", \"h\", \"porno\", 1, 1, 11),\n    (\"doujin\", \"Doujinshi\", \"Versteckt\", \"h\", \"doujin\", 1, 1, 12),\n]\n\n\ndef _seed_media_types() -> None:\n    con = db.connect()\n    try:\n        for slug, name, desc, space, mt, hidden, deletable, order in DEFAULT_MEDIA_TYPES:\n            con.execute(\n                \"INSERT OR IGNORE INTO media_types \"\n                \"(slug,name,description,space,media_type,hidden,enabled,sort_order,deletable) \"\n                \"VALUES (?,?,?,?,?,?,1,?,?)\",\n                (slug, name, desc, space, mt, hidden, order, deletable),\n            )\n        con.commit()\n    finally:\n        con.close()\n\n\n@app.on_event(\"startup\")\ndef _startup() -> None:\n    db.init_db()\n    auth.apply_env()\n    _seed_services()\n    _seed_media_types()\n\n\n# --------------------------------------------------------------------- Katalog-Abzug\n@app.get(\"/catalog/slim.db.gz\")\ndef catalog_slim():\n    \"\"\"Katalog ohne Nutzerdaten fuer das eingebettete Backend (Handy). Oeffentlich lesbar.\"\"\"\n    from fastapi.responses import FileResponse\n    from . import slim\n    return FileResponse(slim.build(), media_type=\"application/gzip\", filename=\"catalog.db.gz\")\n\n\n# --------------------------------------------------------------------- health\n@app.get(\"/health\")\ndef health() -> dict:\n    return {\n        \"status\": \"ok\",\n        \"media_normal\": repo.count(space=\"normal\"),\n        \"media_h\": repo.count(space=\"h\"),\n        \"last_import\": repo.meta_get(\"last_import\"),\n    }\n\n\n@app.get(\"/stats\")\ndef stats() -> dict:\n    return {\n        \"anime\": repo.count(space=\"normal\"),\n        \"anime_dubbed\": repo.count(space=\"normal\", dub=True),\n        \"h\": repo.count(space=\"h\"),\n        \"attribution\": repo.meta_get(\"dub_attribution\"),\n    }\n\n\n# ----------------------------------------------------------------- normale DB\n@app.get(\"/anime\")\ndef list_anime(\n    genre: Optional[str] = None,\n    genres: Optional[str] = None,\n    format: Optional[str] = None,\n    status: Optional[str] = None,\n    year_min: Optional[int] = None,\n    year_max: Optional[int] = None,\n    dub: Optional[bool] = None,\n    dub_lang: Optional[str] = None,\n    q: Optional[str] = None,\n    sort: str = \"popularity\",\n    collection: Optional[str] = None,\n    watch_status: Optional[str] = None,\n    media_type: Optional[str] = None,\n    seen: Optional[str] = None,\n    favorite: Optional[str] = None,\n    rating: Optional[int] = None,\n    tags: Optional[str] = None,\n    season: Optional[str] = None,\n    country: Optional[str] = None,\n    source: Optional[str] = None,\n    studio: Optional[str] = None,\n    limit: int = Query(60, le=2000),\n    offset: int = 0,\n) -> dict:\n    f = dict(space=\"normal\", genre=genre, genres=genres, format=format, status=status,\n             year_min=year_min, year_max=year_max, dub=dub, dub_lang=dub_lang, q=q,\n             collection=collection, watch_status=watch_status, media_type=media_type, seen=seen,\n             favorite=favorite, rating=rating, tags=tags, season=season, country=country, source=source, studio=studio)\n    items = repo.list_media(**f, sort=sort, limit=limit, offset=offset)\n    return {\"total\": repo.count(**f), \"count\": len(items), \"items\": items}\n\n\n@app.get(\"/profile/stats\")\ndef profile_stats() -> dict:\n    return repo.profile_stats()\n\n\n@app.get(\"/stats/distributions\")\ndef stats_distributions() -> dict:\n    return repo.stats_distributions()\n\n\n@app.get(\"/stats/genres\")\ndef stats_genres() -> dict:\n    return {\"items\": repo.stats_by_field(\"genres\")}\n\n\n@app.get(\"/stats/tags\")\ndef stats_tags() -> dict:\n    return {\"items\": repo.stats_by_field(\"tags\")}\n\n\n@app.get(\"/stats/studios\")\ndef stats_studios() -> dict:\n    return {\"items\": repo.stats_by_field(\"studios\")}\n\n\n@app.get(\"/meta/filters\")\ndef meta_filters(\n    space: str = \"normal\",\n    media_type: Optional[str] = None,\n    x_h_password: Optional[str] = Header(None),\n) -> dict:\n    \"\"\"Verfügbare Filterwerte PRO CONFIG (eigene Genres/Formate je Config; H hat andere als Anime).\"\"\"\n    if space == \"h\" and not _h_ok(x_h_password):\n        raise HTTPException(403, \"gesperrt\")\n    return repo.filter_meta(space=space, media_type=media_type)\n\n\n@app.get(\"/anime/{media_id}\")\ndef get_anime(media_id: int) -> dict:\n    m = repo.get_media(media_id)\n    if not m or m[\"space\"] != \"normal\":\n        raise HTTPException(404, \"nicht gefunden\")\n    return m\n\n\n@app.get(\"/services\")\ndef services(config: str = \"anime\") -> list:\n    # Dienste PRO Config (H hat komplett eigene, getrennt von Anime).\n    return repo.list_services(config)\n\n\nclass ServiceBody(BaseModel):\n    name: str\n    url_schema: str\n    logo: Optional[str] = None\n    config: str = \"anime\"\n    space: str = \"normal\"\n\n\n@app.post(\"/services\")\ndef add_service(body: ServiceBody) -> dict:\n    return {\"id\": repo.add_service(body.name, body.url_schema, body.logo, body.config, body.space)}\n\n\n@app.delete(\"/services/{sid}\")\ndef del_service(sid: int) -> dict:\n    repo.delete_service(sid)\n    return {\"ok\": True}\n\n\n# ---------------------------------------- Medientyp-Configs (Dropdown-Umschalter)\nclass MediaTypeBody(BaseModel):\n    slug: str\n    name: str\n    description: Optional[str] = None\n    space: str = \"normal\"\n    media_type: str = \"anime\"\n    hidden: bool = False\n\n\nclass ActiveBody(BaseModel):\n    slug: str\n\n\n@app.get(\"/media-types\")\ndef media_types(x_h_password: Optional[str] = Header(None)) -> list:\n    # Versteckte Configs (H) NUR mit gültigem Passwort — sonst verrät die Liste die Existenz von H.\n    return repo.list_media_types(include_hidden=_h_ok(x_h_password))\n\n\n@app.post(\"/media-types\")\ndef add_media_type(body: MediaTypeBody) -> dict:\n    repo.add_media_type(body.slug, body.name, body.description, body.space, body.media_type, int(body.hidden))\n    return {\"ok\": True, \"slug\": body.slug}\n\n\n@app.delete(\"/media-types/{slug}\")\ndef del_media_type(slug: str) -> dict:\n    mt = repo.get_media_type(slug)\n    if not mt:\n        raise HTTPException(404, \"nicht gefunden\")\n    if not mt[\"deletable\"]:\n        raise HTTPException(409, \"Standard-Typ nicht löschbar\")\n    repo.delete_media_type(slug)\n    if repo.meta_get(\"active_media_type\") == slug:\n        repo.meta_set(\"active_media_type\", \"anime\")  # aktiven gelöschten Typ → Fallback Anime\n    return {\"ok\": True}\n\n\n@app.get(\"/media-types/active\")\ndef get_active_media_type() -> dict:\n    # Nur SICHTBARE Typen werden persistiert → H taucht nach Reload NIE von selbst auf (Leak-Schutz).\n    slug = repo.meta_get(\"active_media_type\") or \"anime\"\n    mt = repo.get_media_type(slug)\n    if not mt or mt[\"hidden\"]:\n        mt = repo.get_media_type(\"anime\")\n    return mt or {\"slug\": \"anime\", \"name\": \"Anime\", \"space\": \"normal\", \"media_type\": \"anime\", \"hidden\": 0, \"deletable\": 0}\n\n\n@app.put(\"/media-types/active\")\ndef set_active_media_type(body: ActiveBody) -> dict:\n    mt = repo.get_media_type(body.slug)\n    if not mt:\n        raise HTTPException(404, \"nicht gefunden\")\n    if mt[\"hidden\"]:\n        # Versteckte Typen NICHT persistieren (nur Session) — sonst Leak bei Reload.\n        return {\"ok\": True, \"persisted\": False}\n    repo.meta_set(\"active_media_type\", body.slug)\n    return {\"ok\": True, \"persisted\": True}\n\n\n# ----------------------------------------------------- user entry (Bewerten, Regal)\nclass EntryPatch(BaseModel):\n    rating: Optional[int] = None\n    note: Optional[str] = None\n    watch_status: Optional[str] = None\n    progress: Optional[int] = None\n    collection: Optional[str] = None  # none|wish|owned\n    lent_to: Optional[str] = None\n    lent_since: Optional[str] = None\n    favorite: Optional[int] = None  # 0/1 ♥\n\n\n@app.patch(\"/media/{media_id}/entry\")\ndef patch_entry(media_id: int, patch: EntryPatch) -> dict:\n    if not repo.get_media(media_id):\n        raise HTTPException(404, \"nicht gefunden\")\n    return repo.set_user_entry(media_id, patch.model_dump(exclude_none=True))\n\n\nclass FavOrder(BaseModel):\n    ids: list[int]\n\n\n@app.post(\"/favorites/reorder\")\ndef favorites_reorder(body: FavOrder) -> dict:\n    repo.set_favorites_order(body.ids)\n    return {\"ok\": True, \"count\": len(body.ids)}\n\n\n# ----------------------------------------------------------- H-Gate (versteckt)\ndef _hash(pw: str) -> str:\n    return hashlib.sha256(pw.encode()).hexdigest()\n\n\ndef _h_ok(x_h_password: Optional[str]) -> bool:\n    stored = repo.meta_get(\"h_password_hash\")\n    return bool(stored and x_h_password and _hash(x_h_password) == stored)\n\n\nclass PwBody(BaseModel):\n    password: str\n\n\n@app.get(\"/h/status\")\ndef h_status() -> dict:\n    return {\"configured\": repo.meta_get(\"h_password_hash\") is not None}\n\n\n@app.post(\"/h/password\")\ndef h_set_password(body: PwBody) -> dict:\n    repo.meta_set(\"h_password_hash\", _hash(body.password))\n    return {\"ok\": True}\n\n\n@app.post(\"/h/unlock\")\ndef h_unlock(body: PwBody) -> dict:\n    if not _h_ok(body.password):\n        raise HTTPException(403, \"falsch oder nicht gesetzt\")\n    return {\"ok\": True}\n\n\n@app.post(\"/h/reset\")\ndef h_reset() -> dict:\n    # Casual-Gäste-Modell: Zurücksetzen ohne altes Passwort erlaubt (Gäste gehen nicht in die Einstellungen).\n    con = db.connect()\n    con.execute(\"DELETE FROM meta_kv WHERE key='h_password_hash'\")\n    con.commit()\n    con.close()\n    return {\"ok\": True}\n\n\n@app.get(\"/h\")\ndef list_h(\n    genre: Optional[str] = None,\n    genres: Optional[str] = None,\n    format: Optional[str] = None,\n    status: Optional[str] = None,\n    year_min: Optional[int] = None,\n    year_max: Optional[int] = None,\n    q: Optional[str] = None,\n    media_type: Optional[str] = None,\n    watch_status: Optional[str] = None,\n    seen: Optional[str] = None,\n    favorite: Optional[str] = None,\n    rating: Optional[int] = None,\n    dub: Optional[bool] = None,\n    dub_lang: Optional[str] = None,\n    sort: str = \"popularity\",\n    limit: int = Query(60, le=2000),\n    offset: int = 0,\n    x_h_password: Optional[str] = Header(None),\n) -> dict:\n    if not _h_ok(x_h_password):\n        raise HTTPException(403, \"gesperrt\")\n    f = dict(space=\"h\", genre=genre, genres=genres, format=format, status=status,\n             year_min=year_min, year_max=year_max, q=q, media_type=media_type,\n             watch_status=watch_status, seen=seen, favorite=favorite, rating=rating,\n             dub=dub, dub_lang=dub_lang)\n    items = repo.list_media(**f, sort=sort, limit=limit, offset=offset)\n    return {\"total\": repo.count(**f), \"count\": len(items), \"items\": items}\n\n\n# ------------------------------------------------- KI: Embeddings + semantische Suche\n_idx: dict = {\"running\": False, \"done\": 0, \"total\": 0, \"error\": None}\n\n\n@app.get(\"/ai/status\")\ndef ai_status() -> dict:\n    return {\n        \"embed_model\": ollama.EMBED_MODEL,\n        \"embed_ready\": ollama.has_model(ollama.EMBED_MODEL),\n        \"translate_model\": ollama.TRANSLATE_MODEL,\n        \"translate_ready\": ollama.has_model(ollama.TRANSLATE_MODEL),\n        \"problem\": aiconf.check_ready(),\n        \"indexing\": dict(_idx),\n        **emb.index_count(),\n    }\n\n\n@app.get(\"/ai/config\")\ndef ai_config_get() -> dict:\n    return aiconf.get()\n\n\nclass AiConfig(BaseModel):\n    enabled: Optional[bool] = None\n    mode: Optional[str] = None\n    ext_kind: Optional[str] = None\n    ext_url: Optional[str] = None\n    ext_model: Optional[str] = None\n    ext_key: Optional[str] = None\n\n\n@app.put(\"/ai/config\")\ndef ai_config_put(body: AiConfig) -> dict:\n    try:\n        return aiconf.update(body.model_dump(exclude_none=True))\n    except ValueError as ex:\n        raise HTTPException(400, str(ex))\n\n\n@app.post(\"/ai/test\")\ndef ai_test() -> dict:\n    return aiconf.test()\n\n\ndef _run_index(full: bool) -> None:\n    def prog(n: int, t: int) -> None:\n        _idx[\"done\"], _idx[\"total\"] = n, t\n    try:\n        if full:\n            emb.rebuild(progress=prog)\n        else:\n            emb.index_all(progress=prog)  # nur neue Titel nachziehen\n    except Exception as ex:\n        _idx[\"error\"] = str(ex)[:300]\n    finally:\n        _idx[\"running\"] = False\n\n\n@app.post(\"/ai/index\")\ndef ai_index(rebuild: bool = False) -> dict:\n    \"\"\"Index im Hintergrund pflegen (Fortschritt in /ai/status). rebuild=true: komplett neu mit dem gewählten Modell;\n    sonst nur neue Titel — außer der Index gehört zu einem anderen Modell, dann zwingend komplett neu.\"\"\"\n    import threading\n\n    if _idx[\"running\"]:\n        return {\"started\": False, \"running\": True}\n    t = aiconf.test()\n    if not t[\"ok\"]:\n        raise HTTPException(503, f\"Modell nicht erreichbar: {t['error']}\")\n    _idx.update(running=True, done=0, total=0, error=None)\n    full = rebuild or aiconf.get()[\"index_model\"] != aiconf.model_id()\n    threading.Thread(target=_run_index, args=(full,), daemon=True).start()\n    return {\"started\": True}\n\n\n@app.get(\"/ai/search\")\ndef ai_search(\n    q: str,\n    space: str = \"normal\",\n    new_for_me: bool = False,\n    genre: Optional[str] = None,\n    genres: Optional[str] = None,\n    format: Optional[str] = None,\n    status: Optional[str] = None,\n    year_min: Optional[int] = None,\n    year_max: Optional[int] = None,\n    dub: Optional[bool] = None,\n    dub_lang: Optional[str] = None,\n    media_type: Optional[str] = None,\n    watch_status: Optional[str] = None,\n    seen: Optional[str] = None,\n    favorite: Optional[str] = None,\n    rating: Optional[int] = None,\n    tags: Optional[str] = None,\n    season: Optional[str] = None,\n    country: Optional[str] = None,\n    source: Optional[str] = None,\n    studio: Optional[str] = None,\n    limit: int = Query(20, le=50),\n    x_h_password: Optional[str] = Header(None),\n) -> dict:\n    if space == \"h\" and not _h_ok(x_h_password):\n        raise HTTPException(403, \"gesperrt\")\n    problem = aiconf.check_ready()\n    if problem:\n        raise HTTPException(503, problem)\n    # Semantische Suche GLEICHZEITIG mit den manuellen Filtern (genres/format/status/year/dub/seen/…)\n    filters = dict(genre=genre, genres=genres, format=format, status=status,\n                   year_min=year_min, year_max=year_max, dub=dub, dub_lang=dub_lang,\n                   media_type=media_type, watch_status=watch_status, seen=seen,\n                   favorite=favorite, rating=rating, tags=tags, season=season, country=country,\n                   source=source, studio=studio)\n    return {\"query\": q, \"new_for_me\": new_for_me,\n            \"results\": emb.search(q, space=space, limit=limit, new_for_me=new_for_me, filters=filters)}\n\n\n# ------------------------------------------------------------- Verfuegbarkeit\n@app.get(\"/media/{media_id}/availability\")\ndef media_availability(media_id: int) -> dict:\n    m = repo.get_media(media_id)\n    if not m:\n        raise HTTPException(404, \"nicht gefunden\")\n    return avail_mod.availability(m)\n\n\n# ------------------------------------------------------------- Uebersetzung\n@app.post(\"/translate/run\")\ndef translate_run(limit: int = 50, space: Optional[str] = None) -> dict:\n    if not ollama.has_model(ollama.TRANSLATE_MODEL):\n        raise HTTPException(503, \"Uebersetzungsmodell nicht geladen\")\n    return tr.translate_missing(limit, space)\n\n\n# ----------------------------------------------- Export (Standard MAL-XML + JSON-Vollbackup)\nfrom fastapi.responses import Response  # noqa: E402\nimport json as _json  # noqa: E402\n\n_MAL_STATUS = {\n    \"watching\": \"Watching\", \"rewatching\": \"Watching\", \"completed\": \"Completed\",\n    \"paused\": \"On-Hold\", \"dropped\": \"Dropped\", \"planning\": \"Plan to Watch\",\n}\n\n\ndef _export_rows() -> list:\n    con = db.connect()\n    try:\n        return con.execute(\n            \"SELECT m.anilist_id, m.mal_id, m.title_romaji, m.title_english, m.title_de, \"\n            \"u.rating, u.watch_status, u.progress, u.note, u.collection, u.favorite, u.favorite_order \"\n            \"FROM media m JOIN user_entry u ON u.media_id=m.id \"\n            \"WHERE m.space='normal' AND (u.watch_status<>'none' OR u.rating IS NOT NULL OR u.favorite=1)\"\n        ).fetchall()\n    finally:\n        con.close()\n\n\n@app.get(\"/export/mal\")\ndef export_mal() -> Response:\n    \"\"\"MAL-kompatibles XML — von AniList/Kitsu/Simkl/MAL importierbar (De-facto-Standard).\"\"\"\n    parts = ['<?xml version=\"1.0\" encoding=\"UTF-8\"?>', \"<myanimelist>\",\n             \"  <myinfo><user_export_type>1</user_export_type></myinfo>\"]\n    for r in _export_rows():\n        if not r[\"mal_id\"] or (r[\"watch_status\"] in (None, \"none\")):\n            continue\n        title = r[\"title_romaji\"] or r[\"title_english\"] or \"\"\n        parts.append(\"  <anime>\")\n        parts.append(f\"    <series_animedb_id>{r['mal_id']}</series_animedb_id>\")\n        parts.append(f\"    <series_title><![CDATA[{title}]]></series_title>\")\n        parts.append(f\"    <my_watched_episodes>{r['progress'] or 0}</my_watched_episodes>\")\n        parts.append(f\"    <my_score>{r['rating'] or 0}</my_score>\")\n        parts.append(f\"    <my_status>{_MAL_STATUS.get(r['watch_status'], 'Watching')}</my_status>\")\n        parts.append(\"    <update_on_import>1</update_on_import>\")\n        parts.append(\"  </anime>\")\n    parts.append(\"</myanimelist>\")\n    xml = \"\\n\".join(parts)\n    return Response(content=xml, media_type=\"application/xml\",\n                    headers={\"Content-Disposition\": \"attachment; filename=orbitlist-mal.xml\"})\n\n\n@app.get(\"/export/json\")\ndef export_json() -> Response:\n    \"\"\"Vollbackup inkl. Orbitlist-Felder (Notiz/Regal/Favorit) — die MAL-XML nicht abbildet.\"\"\"\n    from . import userdata\n    data = userdata.export_dict()\n    body = _json.dumps(data, ensure_ascii=False, indent=2)\n    return Response(content=body, media_type=\"application/json\",\n                    headers={\"Content-Disposition\": \"attachment; filename=orbitlist-backup.json\"})\n\n\n@app.post(\"/import\")\nasync def import_user(request: Request) -> dict:\n    \"\"\"Nutzerdaten importieren: Orbitlist-JSON-Backup oder MAL-XML (Rohtext im Body).\"\"\"\n    from . import userdata\n    try:\n        return userdata.import_text((await request.body()).decode(\"utf-8\"))\n    except Exception as e:\n        raise HTTPException(400, f\"Import fehlgeschlagen: {e}\")\n\n\n# ----------------------------------------------- Sammlung als Einkaufsliste (API-Facette)\n@app.get(\"/collection/export\")\ndef collection_export(status: str = \"wish\") -> dict:\n    items = repo.list_media(space=\"normal\", collection=status, limit=500)\n    svcs = repo.list_services(\"anime\")\n\n    def links(m: dict) -> dict:\n        q = m.get(\"title_romaji\") or m.get(\"title\") or \"\"\n        return {s[\"name\"]: s[\"url_schema\"].replace(\"{q}\", q) for s in svcs}\n\n    return {\n        \"status\": status,\n        \"count\": len(items),\n        \"items\": [\n            {\n                \"title\": m[\"title\"],\n                \"year\": m.get(\"season_year\"),\n                \"rating\": m.get(\"rating\"),\n                \"dubbed_de\": bool(m.get(\"dub_de\")),\n                \"info_links\": m.get(\"info_links\"),\n                \"service_links\": links(m),\n            }\n            for m in items\n        ],\n    }\n\n\n# =================================================================== D/E (Gerüst + Stubs)\n# --- Watch-Tracker: Ingest vom Browser (WebExtension) ---\nclass WatchEvent(BaseModel):\n    source: str  # 'crunchyroll' | 'aniworld' | …\n    serie: str\n    staffel: Optional[int] = None\n    folge: Optional[int] = None\n    position_sec: Optional[float] = None\n    playing: bool = True\n\n\n@app.post(\"/watch\")\ndef watch(ev: WatchEvent) -> dict:\n    con = db.connect()\n    try:\n        row = con.execute(\n            \"SELECT id FROM media WHERE search_blob LIKE ? ORDER BY popularity DESC LIMIT 1\",\n            (f\"%{ev.serie.lower()}%\",),\n        ).fetchone()\n    finally:\n        con.close()\n    if row and ev.folge:\n        repo.set_user_entry(row[\"id\"], {\"watch_status\": \"watching\", \"progress\": ev.folge})\n        return {\"matched\": True, \"media_id\": row[\"id\"]}\n    repo.meta_set(\"last_watch_unmatched\", f\"{ev.source}: {ev.serie} S{ev.staffel}E{ev.folge}\")\n    return {\"matched\": False, \"note\": \"kein DB-Treffer (nachpflegbar)\"}\n\n\n# --- AniList-Export (Stub ohne Token) ---\n@app.get(\"/sync/anilist/preview\")\ndef sync_preview() -> dict:\n    p = sync_anilist.preview()\n    return {\"count\": len(p), \"entries\": p[:50]}\n\n\nclass AniImport(BaseModel):\n    username: str\n\n\n@app.post(\"/sync/anilist/import\")\ndef anilist_import_run(body: AniImport) -> dict:\n    \"\"\"Zusatzdaten aus oeffentlichem AniList-Profil (tokenfrei). Ueberschreibt nie Status/Wertung.\"\"\"\n    try:\n        return anilist_import.run(body.username.strip())\n    except Exception as ex:\n        raise HTTPException(502, f\"AniList-Import fehlgeschlagen: {ex}\")\n\n\n@app.get(\"/sync/anilist/username\")\ndef anilist_username() -> dict:\n    return {\"username\": repo.meta_get(\"anilist_username\")}\n\n\n@app.post(\"/sync/anilist/run\")\ndef sync_run() -> dict:\n    return sync_anilist.run()\n\n\n# --- Jellyfin-Tracker (Stub ohne Env) ---\n@app.get(\"/tracker/jellyfin/now\")\ndef jellyfin_now() -> dict:\n    return jf.now_playing()\n\n\n# --- Pairing: Backend erzeugt URL + Token fuer das Plugin ---\n@app.get(\"/pair/info\")\ndef pair_info() -> dict:\n    tok = repo.meta_get(\"pair_token\")\n    if not tok:\n        tok = secrets.token_urlsafe(18)\n        repo.meta_set(\"pair_token\", tok)\n    return {\"api_base\": \"http://<nexus-ip>:8787\", \"token\": tok, \"note\": \"Im Plugin eintragen (gleiches Netz / WireGuard).\"}\n\n\n# --- gebautes Frontend unter /app servieren (zum direkten Testen im Browser) ---\nimport os as _os\n_PLUGIN_DIST = Path(_os.environ.get(\"ORBITLIST_UI\") or Path(__file__).resolve().parent.parent.parent / \"plugin\" / \"dist\")\nif _PLUGIN_DIST.exists():\n    app.mount(\"/app\", StaticFiles(directory=str(_PLUGIN_DIST), html=True), name=\"app\")\n";
 
 const __vite_glob_0_11 = "\"\"\"Füllt media.dub_languages aus MyDubLists Sprach-Dateien (für den Mehrsprachen-Filter).\nSchnell: lädt nur die Dub-Listen (keine AniList-Calls), updatet per mal_id.\"\"\"\nfrom __future__ import annotations\n\nimport json\n\nimport httpx\n\nfrom .db import connect\nfrom .sources import mydublist\n\n\ndef run() -> dict:\n    with httpx.Client(headers={\"User-Agent\": \"orbitlist/0.1 (+local)\"}) as client:\n        mal_to_langs = mydublist.load_all_dub_languages(client)\n    con = connect()\n    try:\n        rows = con.execute(\"SELECT id, mal_id FROM media WHERE mal_id IS NOT NULL\").fetchall()\n        n = 0\n        for r in rows:\n            langs = mal_to_langs.get(r[\"mal_id\"])\n            if langs:\n                con.execute(\"UPDATE media SET dub_languages=? WHERE id=?\", (json.dumps(langs), r[\"id\"]))\n                n += 1\n        con.commit()\n    finally:\n        con.close()\n    langs_seen = sorted({l for v in mal_to_langs.values() for l in v})\n    print(f\"populate_langs fertig: {n} Titel, Sprachen: {langs_seen}\", flush=True)\n    return {\"updated\": n, \"languages\": langs_seen}\n\n\nif __name__ == \"__main__\":\n    run()\n";
 
@@ -14220,7 +14358,9 @@ const __vite_glob_0_20 = "\"\"\"Jellyfin-Tracker (REST). Braucht JELLYFIN_URL + 
 
 const __vite_glob_0_21 = "\"\"\"Beschreibungen EN->DE via nexus-Ollama (qwen2.5:3b), Ergebnis in SQLite gecacht\n(nie doppelt). Nur importierte Titel, inkrementell.\"\"\"\nfrom __future__ import annotations\n\nfrom .db import connect\nfrom .sources import ollama\n\n\ndef translate_missing(limit: int = 50, space: str | None = None) -> dict:\n    con = connect()\n    where = \"description_en IS NOT NULL AND description_en <> '' AND (description_de IS NULL OR description_de='')\"\n    params: list = []\n    if space:\n        where += \" AND space=?\"\n        params.append(space)\n    params.append(limit)\n    rows = con.execute(f\"SELECT id, description_en FROM media WHERE {where} LIMIT ?\", params).fetchall()\n    n = 0\n    for r in rows:\n        try:\n            de = ollama.translate(r[\"description_en\"][:2000])\n            con.execute(\"UPDATE media SET description_de=? WHERE id=?\", (de, r[\"id\"]))\n            con.commit()\n            n += 1\n            print(f\"  uebersetzt {n}/{len(rows)}\", flush=True)\n        except Exception as e:\n            print(f\"  translate fail id={r['id']}: {e!r}\", flush=True)\n    con.close()\n    return {\"translated\": n, \"requested\": len(rows)}\n\n\nif __name__ == \"__main__\":\n    import sys\n\n    translate_missing(int(sys.argv[1]) if len(sys.argv) > 1 else 50)\n";
 
-const __vite_glob_1_0 = "\"\"\"Eingebettetes Backend (Pyodide im Handy): ruft die FastAPI-App direkt als ASGI auf, ohne Netzwerk.\n\nDas Plugin legt die App-Quellen nach /app/app, die Datenbank nach /data/anime.db und ruft ``handle``.\nNicht verfuegbar im Handy: sqlite-vec (KI-Suche) und ausgehendes HTTP ueber httpx (AniList-Sync,\nVerfuegbarkeit) — beides wird hier als Stub bereitgestellt und meldet sauber einen Fehler.\n\"\"\"\nimport asyncio\nimport json\nimport os\nimport sys\nimport types\n\nos.environ.setdefault(\"ANIME_DB\", \"/data/anime.db\")\nos.environ.setdefault(\"ORBITLIST_JOURNAL\", \"DELETE\")\nos.environ.setdefault(\"ORBITLIST_UI\", \"/nonexistent\")\n\nif \"sqlite_vec\" not in sys.modules:\n    try:\n        import sqlite_vec  # noqa: F401\n    except Exception:\n        def _nope(*a, **k):\n            raise RuntimeError(\"KI-Suche (sqlite-vec) ist im Handy nicht verfuegbar\")\n        sys.modules[\"sqlite_vec\"] = types.SimpleNamespace(load=_nope, serialize_float32=_nope)\n\nif \"httpx\" not in sys.modules:\n    try:\n        import httpx  # noqa: F401\n    except Exception:\n        def _net(*a, **k):\n            raise RuntimeError(\"Netzwerkzugriff ist im eingebetteten Backend (noch) nicht verfuegbar\")\n        sys.modules[\"httpx\"] = types.SimpleNamespace(get=_net, post=_net, put=_net, request=_net,\n                                                      Client=_net, AsyncClient=_net, HTTPError=Exception)\n\n_app = None\n_started = False\n\n\ndef _no_threads():\n    \"\"\"Pyodide hat keine Threads: sync-Endpunkte laufen direkt in der Ereignisschleife.\"\"\"\n    import starlette.concurrency as sc\n    import fastapi.routing as fr\n    import fastapi.concurrency as fc\n\n    async def inline(func, *args, **kwargs):\n        return func(*args, **kwargs)\n\n    for m in (sc, fr, fc):\n        if hasattr(m, \"run_in_threadpool\"):\n            m.run_in_threadpool = inline\n\n\ndef _load():\n    global _app\n    if _app is None:\n        _no_threads()\n        sys.path.insert(0, \"/app\")\n        from app.main import app  # noqa: PLC0415\n        _app = app\n    return _app\n\n\nasync def _call(method, path, headers, body):\n    app = _load()\n    global _started\n    if not _started:\n        await app.router.startup()\n        _started = True\n    p, _, q = path.partition(\"?\")\n    scope = {\n        \"type\": \"http\", \"asgi\": {\"version\": \"3.0\"}, \"http_version\": \"1.1\", \"method\": method.upper(),\n        \"scheme\": \"http\", \"path\": p, \"raw_path\": p.encode(), \"query_string\": q.encode(), \"root_path\": \"\",\n        \"headers\": [(k.lower().encode(), str(v).encode()) for k, v in (headers or {}).items()],\n        \"client\": (\"127.0.0.1\", 0), \"server\": (\"127.0.0.1\", 0),\n    }\n    sent = False\n    out = {\"status\": 500, \"headers\": {}, \"body\": b\"\"}\n\n    async def receive():\n        nonlocal sent\n        if not sent:\n            sent = True\n            return {\"type\": \"http.request\", \"body\": body or b\"\", \"more_body\": False}\n        return {\"type\": \"http.disconnect\"}\n\n    async def send(msg):\n        if msg[\"type\"] == \"http.response.start\":\n            out[\"status\"] = msg[\"status\"]\n            out[\"headers\"] = {k.decode(): v.decode() for k, v in msg.get(\"headers\", [])}\n        elif msg[\"type\"] == \"http.response.body\":\n            out[\"body\"] += msg.get(\"body\", b\"\")\n\n    await app(scope, receive, send)\n    return out\n\n\nasync def handle(method, path, headers_json=\"{}\", body=\"\"):\n    \"\"\"Gibt (status, content_type, body_text) zurueck.\"\"\"\n    r = await _call(method, path, json.loads(headers_json or \"{}\"), body.encode() if isinstance(body, str) else body)\n    return json.dumps({\"status\": r[\"status\"], \"headers\": r[\"headers\"], \"body\": r[\"body\"].decode(\"utf-8\", \"replace\")})\n";
+const __vite_glob_0_22 = "\"\"\"Nutzerdaten (Liste, Einstellungen) getrennt vom Katalog: Export und Import im Standardformat.\n\n- JSON-Vollbackup (``orbitlist_export``): alle Listenfelder, Einstellungen; Zuordnung beim Import ueber\n  oadb_id → AniList-ID → MAL-ID, damit die Datei mit jedem Katalogstand zusammenpasst.\n- MAL-XML (De-facto-Standard): Import wie Export, nur Status/Fortschritt/Bewertung.\nDas eingebettete Backend sichert damit seine Nutzerdaten (kleine Datei) statt der ganzen Datenbank.\n\"\"\"\nfrom __future__ import annotations\n\nimport json\nimport re\nimport xml.etree.ElementTree as ET\n\nfrom .db import connect, repo\n\nENTRY_COLS = [\"rating\", \"note\", \"watch_status\", \"progress\", \"collection\", \"lent_to\", \"lent_since\",\n              \"favorite\", \"favorite_order\", \"started_at\", \"completed_at\", \"rewatches\"]\nMAL_STATUS = {\"watching\": \"watching\", \"completed\": \"completed\", \"on-hold\": \"paused\", \"onhold\": \"paused\",\n              \"dropped\": \"dropped\", \"plan to watch\": \"planning\", \"plantowatch\": \"planning\"}\nSKIP_META = (\"last_\", \"auth_\", \"pair_token\")  # Laufzeit-/Zugangsdaten gehoeren nicht ins Backup\n\n\ndef export_dict() -> dict:\n    con = connect()\n    try:\n        rows = con.execute(\n            \"SELECT m.oadb_id, m.anilist_id, m.mal_id, m.space, m.title_romaji, m.title_english, \"\n            + \", \".join(f\"u.{c}\" for c in ENTRY_COLS) + \" FROM media m JOIN user_entry u ON u.media_id=m.id \"\n            \"WHERE u.watch_status<>'none' OR u.rating IS NOT NULL OR u.favorite=1 OR u.note IS NOT NULL \"\n            \"OR u.collection<>'none' OR u.lent_to IS NOT NULL\"\n        ).fetchall()\n        meta = {r[\"key\"]: r[\"value\"] for r in con.execute(\"SELECT key, value FROM meta_kv\")\n                if not r[\"key\"].startswith(SKIP_META)}\n        services = [dict(r) for r in con.execute(\"SELECT * FROM services\")]\n        types = [dict(r) for r in con.execute(\"SELECT * FROM media_types\")]\n    finally:\n        con.close()\n    return {\"orbitlist_export\": 2, \"entries\": [dict(r) for r in rows], \"meta\": meta,\n            \"services\": services, \"media_types\": types}\n\n\ndef _find(con, e: dict):\n    for col in (\"oadb_id\", \"anilist_id\", \"mal_id\"):\n        v = e.get(col)\n        if v:\n            r = con.execute(f\"SELECT id FROM media WHERE {col}=? ORDER BY (space='normal') DESC LIMIT 1\", (v,)).fetchone()\n            if r:\n                return r[\"id\"]\n    return None\n\n\ndef _restore_table(con, table: str, rows: list[dict]) -> None:\n    cols = [r[\"name\"] for r in con.execute(f\"PRAGMA table_info({table})\")]\n    con.execute(f\"DELETE FROM {table}\")\n    for r in rows:\n        use = [c for c in cols if c in r]\n        con.execute(f\"INSERT INTO {table}({','.join(use)}) VALUES ({','.join('?' for _ in use)})\", [r[c] for c in use])\n\n\ndef _parse_mal(text: str) -> list[dict]:\n    out = []\n    for a in ET.fromstring(text).iter(\"anime\"):\n        g = lambda t: (a.findtext(t) or \"\").strip()\n        st = MAL_STATUS.get(g(\"my_status\").lower())\n        if not g(\"series_animedb_id\").isdigit() or not st:\n            continue\n        sc = int(g(\"my_score\") or 0)\n        out.append({\"mal_id\": int(g(\"series_animedb_id\")), \"watch_status\": st,\n                    \"progress\": int(g(\"my_watched_episodes\") or 0), \"rating\": sc or None})\n    return out\n\n\ndef import_text(text: str) -> dict:\n    \"\"\"Liest JSON-Vollbackup oder MAL-XML. Eintraege ohne Katalogtreffer werden gezaehlt, nicht erfunden.\"\"\"\n    t = text.lstrip()\n    if t.startswith(\"<\"):\n        data = {\"entries\": _parse_mal(t)}\n    else:\n        data = json.loads(t)\n        if \"orbitlist_export\" not in data:\n            raise ValueError(\"Unbekanntes Format (weder Orbitlist-JSON noch MAL-XML)\")\n    con = connect()\n    matched = missing = 0\n    try:\n        for tbl in (\"services\", \"media_types\"):\n            if data.get(tbl):\n                _restore_table(con, tbl, data[tbl])\n        for k, v in (data.get(\"meta\") or {}).items():\n            if not k.startswith(SKIP_META):\n                con.execute(\"INSERT OR REPLACE INTO meta_kv(key, value) VALUES (?, ?)\", (k, v))\n        con.commit()\n        for e in data.get(\"entries\", []):\n            mid = _find(con, e)\n            if not mid:\n                missing += 1\n                continue\n            patch = {c: e[c] for c in ENTRY_COLS if c in e}\n            if patch:\n                repo.set_user_entry(mid, patch)\n            matched += 1\n    finally:\n        con.close()\n    return {\"entries\": matched + missing, \"matched\": matched, \"not_in_catalog\": missing}\n";
+
+const __vite_glob_1_0 = "\"\"\"Eingebettetes Backend (Pyodide im Handy): ruft die FastAPI-App direkt als ASGI auf, ohne Netzwerk.\n\nDas Plugin legt die App-Quellen nach /app/app, die Datenbank nach /data/anime.db und ruft ``handle``.\nNicht verfuegbar im Handy: sqlite-vec (KI-Suche) und ausgehendes HTTP ueber httpx (AniList-Sync,\nVerfuegbarkeit) — beides wird hier als Stub bereitgestellt und meldet sauber einen Fehler.\n\"\"\"\nimport asyncio\nimport json\nimport os\nimport sys\nimport types\n\nos.environ.setdefault(\"ANIME_DB\", \"/work/anime.db\")\nos.environ.setdefault(\"ORBITLIST_JOURNAL\", \"DELETE\")\nos.environ.setdefault(\"ORBITLIST_UI\", \"/nonexistent\")\n\nif \"sqlite_vec\" not in sys.modules:\n    try:\n        import sqlite_vec  # noqa: F401\n    except Exception:\n        def _nope(*a, **k):\n            raise RuntimeError(\"KI-Suche (sqlite-vec) ist im Handy nicht verfuegbar\")\n        sys.modules[\"sqlite_vec\"] = types.SimpleNamespace(load=_nope, serialize_float32=_nope)\n\nif \"httpx\" not in sys.modules:\n    try:\n        import httpx  # noqa: F401\n    except Exception:\n        def _net(*a, **k):\n            raise RuntimeError(\"Netzwerkzugriff ist im eingebetteten Backend (noch) nicht verfuegbar\")\n        sys.modules[\"httpx\"] = types.SimpleNamespace(get=_net, post=_net, put=_net, request=_net,\n                                                      Client=_net, AsyncClient=_net, HTTPError=Exception)\n\n_app = None\n_started = False\n\n\ndef _no_threads():\n    \"\"\"Pyodide hat keine Threads: sync-Endpunkte laufen direkt in der Ereignisschleife.\"\"\"\n    import starlette.concurrency as sc\n    import fastapi.routing as fr\n    import fastapi.concurrency as fc\n\n    async def inline(func, *args, **kwargs):\n        return func(*args, **kwargs)\n\n    for m in (sc, fr, fc):\n        if hasattr(m, \"run_in_threadpool\"):\n            m.run_in_threadpool = inline\n\n\ndef _load():\n    global _app\n    if _app is None:\n        _no_threads()\n        sys.path.insert(0, \"/app\")\n        from app.main import app  # noqa: PLC0415\n        _app = app\n    return _app\n\n\nasync def _call(method, path, headers, body):\n    app = _load()\n    global _started\n    if not _started:\n        await app.router.startup()\n        _started = True\n    p, _, q = path.partition(\"?\")\n    scope = {\n        \"type\": \"http\", \"asgi\": {\"version\": \"3.0\"}, \"http_version\": \"1.1\", \"method\": method.upper(),\n        \"scheme\": \"http\", \"path\": p, \"raw_path\": p.encode(), \"query_string\": q.encode(), \"root_path\": \"\",\n        \"headers\": [(k.lower().encode(), str(v).encode()) for k, v in (headers or {}).items()],\n        \"client\": (\"127.0.0.1\", 0), \"server\": (\"127.0.0.1\", 0),\n    }\n    sent = False\n    out = {\"status\": 500, \"headers\": {}, \"body\": b\"\"}\n\n    async def receive():\n        nonlocal sent\n        if not sent:\n            sent = True\n            return {\"type\": \"http.request\", \"body\": body or b\"\", \"more_body\": False}\n        return {\"type\": \"http.disconnect\"}\n\n    async def send(msg):\n        if msg[\"type\"] == \"http.response.start\":\n            out[\"status\"] = msg[\"status\"]\n            out[\"headers\"] = {k.decode(): v.decode() for k, v in msg.get(\"headers\", [])}\n        elif msg[\"type\"] == \"http.response.body\":\n            out[\"body\"] += msg.get(\"body\", b\"\")\n\n    await app(scope, receive, send)\n    return out\n\n\nasync def handle(method, path, headers_json=\"{}\", body=\"\"):\n    \"\"\"Gibt (status, content_type, body_text) zurueck.\"\"\"\n    r = await _call(method, path, json.loads(headers_json or \"{}\"), body.encode() if isinstance(body, str) else body)\n    return json.dumps({\"status\": r[\"status\"], \"headers\": r[\"headers\"], \"body\": r[\"body\"].decode(\"utf-8\", \"replace\")})\n";
 
 /* embedded.svelte.ts generated by Svelte v5.57.3 */
 
@@ -14251,7 +14391,8 @@ const SOURCES = Object.assign({
 	"../../../backend/app/sync_anilist.py": __vite_glob_0_18,
 	"../../../backend/app/tracker/__init__.py": __vite_glob_0_19,
 	"../../../backend/app/tracker/jellyfin.py": __vite_glob_0_20,
-	"../../../backend/app/translate.py": __vite_glob_0_21
+	"../../../backend/app/translate.py": __vite_glob_0_21,
+	"../../../backend/app/userdata.py": __vite_glob_0_22
 });
 
 const HOST = Object.values([__vite_glob_1_0])[0];
@@ -14342,7 +14483,9 @@ await micropip.install(${JSON.stringify(PIP)})`);
 	py.FS.mount(py.FS.filesystems.IDBFS, {}, "/data");
 	await syncFs(true);
 
-	if (!py.FS.analyzePath("/data/anime.db").exists) {
+	if (py.FS.analyzePath("/data/anime.db").exists) py.FS.unlink("/data/anime.db");
+
+	if (!py.FS.analyzePath("/data/catalog.db").exists) {
 		if (!emb.catalogUrl) {
 			emb.needCatalogUrl = true;
 
@@ -14359,10 +14502,12 @@ await micropip.install(${JSON.stringify(PIP)})`);
 
 		const db = await gunzip(gz);
 
-		py.FS.writeFile("/data/anime.db", db);
+		py.FS.writeFile("/data/catalog.db", db);
 		await syncFs(false);
 	}
 
+	py.FS.mkdirTree("/work");
+	py.FS.writeFile("/work/anime.db", py.FS.readFile("/data/catalog.db"));
 	py.FS.mkdirTree("/app/app");
 
 	for (const [path, code] of Object.entries(SOURCES)) {
@@ -14383,9 +14528,20 @@ sys.path.insert(0, '/app')
 import host`);
 
 	host = py.pyimport("host");
+
+	if (py.FS.analyzePath("/data/user.json").exists) {
+		const txt = py.FS.readFile("/data/user.json", { encoding: "utf8" });
+
+		await call("POST", "/import", {}, txt);
+	}
+
 	emb.phase = "ready";
 	emb.msg = "";
 	emb.pct = 100;
+}
+
+async function call(method, url, headers, body) {
+	return JSON.parse(await host.handle(method, url, JSON.stringify(headers), body));
 }
 
 let syncTimer = null;
@@ -14394,10 +14550,17 @@ function scheduleSync() {
 	clearTimeout(syncTimer);
 
 	syncTimer = setTimeout(
-		() => {
-			syncFs(false).catch(() => {});
+		async () => {
+			try {
+				const r = await call("GET", "/export/json", {}, "");
+
+				if (r.status === 200) {
+					py.FS.writeFile("/data/user.json", r.body);
+					await syncFs(false);
+				}
+			} catch {}
 		},
-		2500
+		1500
 	);
 }
 
@@ -14405,7 +14568,7 @@ const embeddedHttp = async (url, init) => {
 	if (!host) throw new Error("Backend nicht bereit");
 
 	const method = (init.method || "GET").toUpperCase();
-	const out = JSON.parse(await host.handle(method, url, JSON.stringify(init.headers || {}), init.body || ""));
+	const out = await call(method, url, init.headers || {}, init.body || "");
 
 	if (method !== "GET") scheduleSync();
 
@@ -14605,7 +14768,7 @@ function makePlugin(id, name, opts = {}) {
 const manifest = {
   id: "orbit-list",
   name: "Orbit-List (Test)",
-  version: "0.2.0",
+  version: "0.2.1",
   description: "Anime-Tracker mit eigener offener Datenbank. Das Backend ist eingebaut und läuft auf dem Gerät — kein Server, keine Einrichtung. Beim ersten Start wird der Katalog geladen.",
   author: "Entwicklerfuchs",
   main: "main.js",
