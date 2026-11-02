@@ -33,12 +33,14 @@ def export_dict() -> dict:
                 if not r["key"].startswith(SKIP_META)}
         streaming = [dict(r) for r in con.execute(
             "SELECT m.oadb_id, m.anilist_id, m.mal_id, s.service, s.url, s.source FROM streaming s JOIN media m ON m.id=s.media_id")]
+        scores = [dict(r) for r in con.execute(
+            "SELECT anilist_id, average_score AS score FROM media WHERE anilist_id IS NOT NULL AND average_score IS NOT NULL")]
         services = [dict(r) for r in con.execute("SELECT * FROM services")]
         types = [dict(r) for r in con.execute("SELECT * FROM media_types")]
     finally:
         con.close()
     return {"orbitlist_export": 2, "entries": [dict(r) for r in rows], "meta": meta,
-            "services": services, "media_types": types, "streaming": streaming}
+            "services": services, "media_types": types, "streaming": streaming, "scores": scores}
 
 
 def _find(con, e: dict):
@@ -105,6 +107,9 @@ def import_text(text: str) -> dict:
             if mid and st.get("service"):
                 con.execute("INSERT OR REPLACE INTO streaming (media_id, service, url, source) VALUES (?,?,?,?)",
                             (mid, st["service"], st.get("url"), st.get("source")))
+        for sc in data.get("scores") or []:
+            if sc.get("anilist_id") and sc.get("score"):
+                con.execute("UPDATE media SET average_score=? WHERE anilist_id=? AND average_score IS NULL", (sc["score"], sc["anilist_id"]))
         con.commit()
     finally:
         con.close()

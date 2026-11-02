@@ -564,6 +564,26 @@ def media_streaming_set(media_id: int, body: StreamingBody) -> dict:
     return {"saved": streaming.set_items(media_id, body.items)}
 
 
+class ScoresBody(BaseModel):
+    items: list[dict]  # [{anilist_id, score}]  (Wertung 0-100, vom Geraet bei AniList abgerufen)
+
+
+@app.put("/scores")
+def put_scores(body: ScoresBody) -> dict:
+    """Vom Geraet geladene Wertungen im Katalog zwischenspeichern (Sortierung nach Wertung)."""
+    con = db.connect()
+    try:
+        n = 0
+        for it in body.items[:500]:
+            aid, sc = it.get("anilist_id"), it.get("score")
+            if isinstance(aid, int) and isinstance(sc, (int, float)) and 0 < sc <= 100:
+                n += con.execute("UPDATE media SET average_score=? WHERE anilist_id=?", (int(sc), aid)).rowcount
+        con.commit()
+        return {"saved": n}
+    finally:
+        con.close()
+
+
 @app.get("/streaming")
 def streaming_map(ids: str = Query("")) -> dict:
     """Treffer fuer mehrere Titel auf einmal (Wunschliste/Listen): ?ids=1,2,3"""

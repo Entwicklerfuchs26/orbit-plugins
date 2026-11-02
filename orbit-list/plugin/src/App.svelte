@@ -7,6 +7,13 @@
   import { conn } from './lib/conn.svelte'
   import { emb, boot } from './lib/embedded.svelte'
   if (conn.mode === 'embedded') boot(conn.defaultServer).catch(() => {})
+  let warmed = false
+  $effect(() => {
+    if (conn.mode === 'embedded' && emb.phase === 'ready' && !warmed) {
+      warmed = true
+      setTimeout(() => import('./lib/warmup').then((m) => m.warmScores()).catch(() => {}), 4000)
+    }
+  })
 </script>
 
 {#if conn.mode === 'embedded' && emb.phase !== 'ready'}

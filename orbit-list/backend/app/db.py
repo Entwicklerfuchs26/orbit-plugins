@@ -351,9 +351,9 @@ class SqliteRepo(MediaRepo):
 
     def list_media(self, **f: Any) -> list[dict[str, Any]]:
         where, args = self._where(f)
-        order = {"popularity": "m.popularity IS NULL, m.popularity DESC, m.id", "score": "m.average_score IS NULL, m.average_score DESC, m.popularity DESC",
+        order = {"popularity": "m.average_score IS NULL, m.average_score DESC, m.popularity DESC, m.id", "score": "m.average_score IS NULL, m.average_score DESC, m.popularity DESC, m.id",
                  "title": "m.search_blob ASC", "recent": "m.updated_at DESC",
-                 "favorite": "u.favorite_order IS NULL, u.favorite_order ASC"}.get(f.get("sort", "popularity"), "m.popularity IS NULL, m.popularity DESC, m.id")
+                 "favorite": "u.favorite_order IS NULL, u.favorite_order ASC"}.get(f.get("sort", "popularity"), "m.average_score IS NULL, m.average_score DESC, m.popularity DESC, m.id")
         limit = int(f.get("limit", 60)); offset = int(f.get("offset", 0))
         sql = (
             "SELECT m.*, u.rating, u.note, u.watch_status, u.progress, u.collection, u.lent_to, u.lent_since, u.favorite, u.started_at, u.completed_at, u.rewatches "

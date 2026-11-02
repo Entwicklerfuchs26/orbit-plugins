@@ -1,6 +1,7 @@
 // Reaktive Huelle um anilist.ts: Karten melden ihre anilist_id erst an, wenn sie sichtbar werden;
 // geladene Cover/Wertungen erscheinen dann automatisch (bis dahin Platzhalter).
 import { getLight, cachedLight, type Light } from './anilist'
+import { api } from '../api'
 
 const store = $state<Record<number, Light>>({})
 const asked = new Set<number>()
@@ -11,11 +12,24 @@ export function lightOf(id?: number | null): Light | undefined {
 }
 
 /** Daten fuer eine ID anfordern (einmal pro Sitzung; Zwischenspeicher zuerst, dann gebuendelt per Netz). */
+// Geladene Wertungen im Katalog zwischenspeichern (Sortierung nach Wertung), gebuendelt
+let pending: { anilist_id: number; score: number }[] = []
+let flushT: any = null
+function queueScore(id: number, score?: number) {
+  if (!score) return
+  pending.push({ anilist_id: id, score })
+  clearTimeout(flushT)
+  flushT = setTimeout(() => {
+    const batch = pending.splice(0, 500)
+    if (batch.length) api.putScores(batch).catch(() => {})
+  }, 2000)
+}
+
 export function want(id?: number | null) {
   if (!id || asked.has(id)) return
   asked.add(id)
   cachedLight(id).then((c) => { if (c) store[id] = c.v })
-  getLight(id).then((v) => { if (v) store[id] = v }).catch(() => {})
+  getLight(id).then((v) => { if (v) { store[id] = v; queueScore(id, v.score) } }).catch(() => {})
 }
 
 /** Svelte-Aktion: laedt erst, wenn das Element in (oder nahe) den sichtbaren Bereich kommt. */
