@@ -337,48 +337,48 @@
       ]
     },
     {
-      "id": "anime-liste",
-      "name": "Anime-Liste (Test)",
-      "description": "Anime-Tracker mit eigener Datenbank und KI-Suche. Beim ersten Öffnen verbindest du dein eigenes Backend (Adresse:Port + Passwort) — das Backend kannst du selbst installieren.",
+      "id": "orbit-list",
+      "name": "Orbit-List (Test)",
+      "description": "Anime-Tracker mit eigener offener Datenbank. Das Backend ist eingebaut und läuft auf dem Gerät — kein Server, keine Einrichtung. Beim ersten Start wird der Katalog geladen.",
       "author": "Entwicklerfuchs",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "type": "gui",
       "platforms": [
         "desktop",
         "mobile",
         "web"
       ],
-      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/2909aedea49d35cfb6706c35778052bfa2b5fe91/test/anime-liste/main.js",
+      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/73a4373361a8904c6e3bb90f59fc4e7a3c6543ee/test/orbit-list/main.js",
       "channel": "test",
       "versions": [
         {
-          "label": "0.1.0+2909aed",
-          "version": "0.1.0",
-          "built": "2909aed",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/2909aedea49d35cfb6706c35778052bfa2b5fe91/test/anime-liste/main.js"
+          "label": "0.2.0+73a4373",
+          "version": "0.2.0",
+          "built": "73a4373",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/73a4373361a8904c6e3bb90f59fc4e7a3c6543ee/test/orbit-list/main.js"
         }
       ]
     },
     {
-      "id": "anime-liste-animus",
-      "name": "Anime-Liste · Animus (Test)",
-      "description": "Anime-Tracker, vorverbunden mit dem Heim-Backend auf Animus (Adresse vorbelegt, nur das Passwort eingeben). Braucht den WireGuard-Tunnel.",
+      "id": "orbit-list-connect",
+      "name": "Orbit-List Connect (Test)",
+      "description": "Reines Frontend für mehrere Geräte: verbindet sich mit einem eigenen Orbit-List-Backend (Adresse:Port + Passwort). Das Backend kannst du selbst betreiben.",
       "author": "Entwicklerfuchs",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "type": "gui",
       "platforms": [
         "desktop",
         "mobile",
         "web"
       ],
-      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/129d0b4f28e67f1bc96134730e3b408cd86c9b98/test/anime-liste-animus/main.js",
+      "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/73a4373361a8904c6e3bb90f59fc4e7a3c6543ee/test/orbit-list-connect/main.js",
       "channel": "test",
       "versions": [
         {
-          "label": "0.1.0+129d0b4",
-          "version": "0.1.0",
-          "built": "129d0b4",
-          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/129d0b4f28e67f1bc96134730e3b408cd86c9b98/test/anime-liste-animus/main.js"
+          "label": "0.2.0+73a4373",
+          "version": "0.2.0",
+          "built": "73a4373",
+          "main": "https://raw.githubusercontent.com/Entwicklerfuchs26/orbit-plugins/73a4373361a8904c6e3bb90f59fc4e7a3c6543ee/test/orbit-list-connect/main.js"
         }
       ]
     }
